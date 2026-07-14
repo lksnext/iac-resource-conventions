@@ -8,7 +8,9 @@
 * @sandyperez
 
 # Core project areas
+
 # Future: /specification/ @lksnext/specification-team
+
 /.github/ @sandyperez
 /.devcontainer/ @sandyperez
 /docs/ @sandyperez
@@ -22,7 +24,9 @@
 /scripts/ @sandyperez
 
 # Security-sensitive files
+
 # Future: /SECURITY.md @lksnext/security-team
+
 /SECURITY.md @sandyperez
 /CODEOWNERS @sandyperez
 /LICENSE @sandyperez
@@ -30,9 +34,13 @@
 /CODE_OF_CONDUCT.md @sandyperez
 
 # Repository governance files
+
 # Future: /README.md @lksnext/docs-and-governance
+
 # Future: /.github/dependabot.yml @lksnext/dependency-management
+
 # Future: /.github/workflows/ @lksnext/release-engineering
+
 /README.md @sandyperez
 /package.json @sandyperez
 /.editorconfig @sandyperez
