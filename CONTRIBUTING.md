@@ -13,12 +13,6 @@ improvements, documentation, tests, and bug reports — are welcome and apprecia
 This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md).
 By participating, you are expected to uphold it. Please read it before contributing.
 
-## Project Governance
-
-> The project is currently maintained by a small maintainer team.
-> Repository governance and contribution requirements will evolve as the project grows while maintaining
-> a secure and consistent contribution workflow.
-
 ## Before You Start
 
 We follow a standard fork-and-branch workflow:
@@ -37,6 +31,10 @@ so no platform is treated as a second-class citizen.
 The **recommended** development environment is **Visual Studio Code** with the
 **Development Container** described below. Native development environments — without Docker or
 a Dev Container — are also fully supported.
+
+Visual Studio Code users are encouraged to install the recommended extensions listed in
+[`.vscode/extensions.json`](.vscode/extensions.json). VS Code suggests them automatically when
+you open this repository.
 
 ## Development Container
 
