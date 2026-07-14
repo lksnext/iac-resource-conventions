@@ -1,28 +1,23 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Terraform Format",
-            "type": "shell",
-            "command": "terraform",
-            "args": [
-                "fmt",
-                "-recursive"
-            ],
-            "group": "build",
-            "problemMatcher": []
-        },
-        {
-            "label": "Terraform Validate",
-            "type": "shell",
-            "command": "terraform",
-            "args": [
-                "validate"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}/terraform/modules/resource-conventions"
-            },
-            "problemMatcher": []
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Terraform Format",
+      "type": "shell",
+      "command": "terraform",
+      "args": ["fmt", "-recursive"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Terraform Validate",
+      "type": "shell",
+      "command": "terraform",
+      "args": ["validate"],
+      "options": {
+        "cwd": "${workspaceFolder}/terraform/modules/resource-conventions"
+      },
+      "problemMatcher": []
+    }
+  ]
 }
