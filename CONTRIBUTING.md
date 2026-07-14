@@ -13,6 +13,12 @@ improvements, documentation, tests, and bug reports — are welcome and apprecia
 This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md).
 By participating, you are expected to uphold it. Please read it before contributing.
 
+## Project Governance
+
+> The project is currently maintained by a small maintainer team.
+> Repository governance and contribution requirements will evolve as the project grows while maintaining
+> a secure and consistent contribution workflow.
+
 ## Before You Start
 
 We follow a standard fork-and-branch workflow:
@@ -172,6 +178,27 @@ When opening a pull request:
 - Explain the motivation behind the change.
 - Link related issues, if any.
 - Include screenshots only when they add value (for example, for tooling or CLI output changes).
+
+## Repository Governance
+
+This repository is protected using GitHub Rulesets to ensure code quality, security, and consistency.
+
+Contributors should:
+
+- Always submit changes through Pull Requests — direct commits to protected branches are not allowed.
+- Ensure pull requests satisfy the repository protection rules configured on GitHub before they can be merged.
+- Be aware that repository governance rules may evolve as the project and maintainer team grow.
+
+Repository protection rules may include:
+
+- Required reviews from code owners (enforced via [CODEOWNERS](CODEOWNERS))
+- Required status checks and CI validation
+- Commit signing requirements
+- Other automated checks and validations
+
+Instead of relying on assumptions documented in CONTRIBUTING.md, contributors should verify the current GitHub
+rules configured for the repository. As the maintainer team grows, repository governance is expected to become stricter
+while maintaining a transparent and supportive contribution experience.
 
 ## Reviews
 
