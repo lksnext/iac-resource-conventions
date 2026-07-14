@@ -1,0 +1,2 @@
+- No automated validation commands are defined yet because the repo has no runnable source tree.
+- For future code changes, run the project-specific formatter/linter/test commands once they exist, then confirm `git status` is clean.

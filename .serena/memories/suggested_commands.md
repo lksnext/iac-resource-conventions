@@ -1,0 +1,3 @@
+- From the repo root, use `git status`, `git log --oneline --decorate -1`, and `git diff --check` for basic checks.
+- Use `serena memories check` from the project root to sanity-check memory references after onboarding or memory edits.
+- Linux shell commands are standard GNU-style; no platform-specific overrides are needed yet.

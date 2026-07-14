@@ -1,0 +1,3 @@
+- Keep new project files ASCII unless a file already requires Unicode.
+- Preserve the repo's sparse structure; add new source/config files at the root only when introducing actual implementation work.
+- No code-style or naming conventions are established yet beyond the Apache-2.0 license already added.

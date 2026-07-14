@@ -1,0 +1,3 @@
+- No application language/toolchain is configured yet in `.serena/project.yml` (`languages: []`).
+- Current tracked project artifacts are Serena metadata and the Apache-2.0 `LICENSE` only.
+- No package manager, build system, or test runner is established yet.
