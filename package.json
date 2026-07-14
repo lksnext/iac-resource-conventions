@@ -5,10 +5,12 @@
     "description": "Infrastructure as Code Resource Conventions specification and SDKs.",
     "license": "Apache-2.0",
     "scripts": {
-        "validate": "echo \"Validation not implemented yet\"",
+        "fmt": "terraform fmt -recursive",
+        "validate": "terraform -chdir=terraform/modules/resource-conventions validate",
         "generate": "echo \"Generation not implemented yet\"",
         "test": "echo \"Tests not implemented yet\"",
         "lint": "echo \"Lint not implemented yet\"",
-        "fmt": "echo \"Formatting not implemented yet\""
+        "docs": "echo \"Docs not implemented yet\"",
+        "release:dry-run": "echo \"Release dry run not implemented yet\""
     }
 }
