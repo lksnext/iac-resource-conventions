@@ -1,48 +1,174 @@
 # IaC Resource Conventions
 
-Infrastructure as Code Resource Conventions specification and SDKs.
+> **Project Status**
+>
+> 🚧 This project is currently under active development.
+> APIs, convention packs, and adapters may change until the first stable release (v1.0.0).
 
-## Development Container
+## Overview
 
-This repository includes a [Dev Container](https://containers.dev/) so the full toolchain
-(Terraform, TFLint, terraform-docs, Ansible, Python/Ruff, Node.js, GitHub CLI, jq, yq, shellcheck,
-pre-commit, etc.) is available without installing anything locally beyond Docker and VS Code.
+**IaC Resource Conventions** is an Open Source project that provides a unified Specification and
+a set of SDKs for defining Infrastructure as Code resource conventions.
 
-**Prerequisites**
+Teams adopting Infrastructure as Code across multiple platforms and tools typically end up
+re-implementing the same organizational rules — naming schemes, tags, labels, metadata, and
+validation — separately for every tool they use, which leads to drift and inconsistent behavior
+over time. This project solves that problem by defining conventions once, in a single
+Specification, and deriving consistent, validated behavior from it across every supported
+platform and adapter.
 
-- [Docker](https://docs.docker.com/get-docker/) (or a compatible container runtime).
-- [Visual Studio Code](https://code.visualstudio.com/) with the
-  [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-  extension, or [GitHub Codespaces](https://github.com/features/codespaces).
+The project follows a **Specification First** architecture: the Specification is the single
+source of truth for every convention, and every adapter (Terraform, AWS CDK, Ansible, CLI)
+derives its behavior from it rather than defining equivalent rules independently.
 
-**Opening the repository in the container**
+## Features
 
-1. Open this repository in VS Code.
-2. Run **Dev Containers: Reopen in Container** from the Command Palette (or accept the prompt
-   VS Code shows automatically).
-3. On first start, `postCreateCommand` runs [`scripts/devcontainer-post-create.sh`](scripts/devcontainer-post-create.sh),
-   which installs Node.js/Python/pre-commit dependencies only for the project files that already
-   exist.
+- **Resource Naming** — consistent, validated resource names derived from the Specification.
+- **Resource Tags** — standardized tagging across cloud providers.
+- **Kubernetes Labels** — conventional label sets for Kubernetes workloads.
+- **Kubernetes Annotations** — consistent annotation conventions for Kubernetes resources.
+- **Metadata Generation** — derive structured metadata from a single definition.
+- **Convention Packs** — ready-to-use, organization- or platform-specific rule sets.
+- **Validation** — verify that resources conform to the Specification before they are deployed.
+- **Cross-platform Support** — conventions apply consistently across AWS, Azure, Kubernetes, and
+  GitOps.
+- **Multiple Infrastructure as Code Adapters** — the same conventions are available through
+  Terraform, AWS CDK, Ansible, and a CLI.
 
-**Included tools**
+## Design Principles
 
-Git, GitHub CLI, Node.js LTS + npm, Python 3 + pip/pipx, Terraform, TFLint, terraform-docs,
-Ansible Core, ansible-lint, Ruff, pre-commit, jq, yq, shellcheck, unzip, curl, and make.
+- **Specification First** — every convention is defined in the Specification before it is
+  implemented anywhere else.
+- **Single Source of Truth** — naming, tags, labels, metadata, and validation rules are defined
+  once and consumed everywhere.
+- **Convention over Configuration** — sensible, consistent defaults reduce the amount of
+  configuration required from users.
+- **Platform Agnostic** — the Specification is not tied to any single cloud provider or
+  orchestration platform.
+- **Adapter-based Architecture** — platform-specific tools consume the Specification through thin
+  adapters instead of duplicating logic.
+- **Backward Compatibility** — changes are made with care to avoid breaking existing consumers of
+  the Specification.
+- **Cross-platform Development** — the project and its tooling work consistently on Linux,
+  macOS, and Windows.
 
-**Standard entry point**
+## Architecture Overview
 
-`npm run <script>` (and `npm test`) is the single entry point for project tasks. The same scripts
-defined in [`package.json`](package.json) are used from VS Code, the command line, and CI/CD —
-there are no separate, duplicated task definitions.
+The Specification is consumed by a Convention Engine, which is what every adapter builds on. No
+adapter defines or overrides conventions on its own — this guarantees identical behavior no
+matter which adapter a team chooses to use.
 
-**Rebuilding the container**
+```mermaid
+flowchart TD
+    A[Specification] --> B[Convention Engine]
+    B --> C[Terraform]
+    B --> D[AWS CDK]
+    B --> E[Ansible]
+    B --> F[CLI]
+```
 
-Run **Dev Containers: Rebuild Container** from the Command Palette after changing
-[`.devcontainer/Dockerfile`](.devcontainer/Dockerfile) or [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json).
+## Supported Platforms
 
-**Authentication**
+| Platform   | Description                                    |
+| ---------- | ----------------------------------------------- |
+| AWS        | Amazon Web Services resources and tagging.      |
+| Azure      | Microsoft Azure resources and tagging.           |
+| Kubernetes | Labels, annotations, and metadata conventions.  |
+| GitOps     | Conventions for GitOps-managed deployments.     |
 
-No credentials, tokens, or secrets are stored in the container image or configuration. Git and
-GitHub CLI authentication is expected to be provided by your host environment (credential
-forwarding / `gh auth login` inside the container); cloud provider credentials are not configured
-by default.
+## Supported Adapters
+
+| Adapter   | Description                                           | Status  |
+| --------- | ------------------------------------------------------ | ------- |
+| Terraform | Consumes the Specification from Terraform modules.    | Planned |
+| AWS CDK   | Consumes the Specification from AWS CDK constructs.   | Planned |
+| Ansible   | Consumes the Specification from Ansible roles/tasks.  | Planned |
+| CLI       | Consumes the Specification from the command line.     | Planned |
+
+## Convention Packs
+
+Convention Packs are pre-built collections of conventions for a specific organizational context
+or platform. They let teams adopt a complete, coherent set of naming, tagging, labeling, and
+validation rules without having to configure every individual rule by hand.
+
+Planned examples include:
+
+- `aws-controltower`
+- `azure-enterprise-scale`
+- `kubernetes-shared`
+- `kubernetes-dedicated`
+- `saas`
+
+## Repository Structure
+
+The repository is organized around the Specification-first architecture described above. As the
+project is under active development, not all of the directories below exist yet.
+
+```
+.
+├── .devcontainer/    # Development Container configuration
+├── .github/          # GitHub configuration
+├── spec/             # The Specification (single source of truth)
+├── convention-packs/ # Organization- and platform-specific Convention Packs
+├── adapters/         # Terraform, AWS CDK, Ansible, and CLI adapters
+├── docs/             # Reference documentation
+├── scripts/          # Repository automation scripts
+├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
+├── SECURITY.md
+└── README.md
+```
+
+## Quick Start
+
+```bash
+git clone https://github.com/lksnext/iac-resource-conventions.git
+cd iac-resource-conventions
+npm install
+npm run validate
+```
+
+## Documentation
+
+- [`docs/`](docs/) — reference documentation (planned).
+- Architecture — planned.
+- Convention Packs — planned.
+- Reference Documentation — planned.
+- Examples — planned.
+
+## Roadmap
+
+**v0.1**
+
+- Specification
+- Terraform adapter
+
+**v0.2**
+
+- AWS CDK adapter
+- CLI
+
+**v0.3**
+
+- Ansible adapter
+- Convention Packs
+
+**v1.0**
+
+- Stable APIs
+- Complete documentation
+
+## Contributing
+
+Contributions are welcome. Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for the development
+workflow, [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) for community expectations, and
+[`SECURITY.md`](SECURITY.md) for how to report vulnerabilities.
+
+## Community
+
+- [GitHub Discussions](../../discussions) — for questions, ideas, and design discussions.
+- [GitHub Issues](../../issues) — for reporting bugs and requesting specific features.
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE).
