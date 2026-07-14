@@ -1,0 +1,59 @@
+{
+  "name": "iac-resource-conventions",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  // Base image already ships a pre-configured non-root "vscode" user.
+  "remoteUser": "vscode",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12",
+      "installTools": false
+    },
+    "ghcr.io/devcontainers/features/terraform:1": {
+      "version": "latest",
+      "tflint": "latest"
+    }
+  },
+  "postCreateCommand": "bash scripts/devcontainer-post-create.sh",
+  "mounts": [
+    "source=iac-resource-conventions-npm-cache,target=/home/vscode/.npm,type=volume",
+    "source=iac-resource-conventions-pip-cache,target=/home/vscode/.cache/pip,type=volume",
+    "source=iac-resource-conventions-pre-commit-cache,target=/home/vscode/.cache/pre-commit,type=volume"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "hashicorp.terraform",
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "redhat.vscode-yaml",
+        "redhat.ansible",
+        "EditorConfig.EditorConfig",
+        "davidanson.vscode-markdownlint"
+      ],
+      "settings": {
+        // Only settings that are NOT already defined in .vscode/settings.json.
+        "files.eol": "\n",
+        "npm.enableScriptExplorer": true,
+        "npm.autoDetect": "on",
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.codeActionsOnSave": {
+            "source.organizeImports.ruff": "explicit"
+          }
+        },
+        "[ansible]": {
+          "editor.defaultFormatter": "redhat.ansible"
+        }
+      }
+    }
+  }
+}
