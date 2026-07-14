@@ -52,9 +52,8 @@ acting as an appointed representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the
 community leaders responsible for enforcement through the repository's
-[GitHub Issues](../../issues) or [GitHub Discussions](../../discussions), or by opening a
-private security advisory if the report involves sensitive information. All complaints will be
-reviewed and investigated promptly and fairly.
+[GitHub Issues](../../issues), or by opening a private security advisory if the report involves
+sensitive information. All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the reporter of any
 incident.
