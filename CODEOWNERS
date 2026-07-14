@@ -1,0 +1,41 @@
+# CODEOWNERS
+# This file defines the default reviewers for this repository.
+# GitHub applies the most specific matching rule, so keep broad defaults near the top and
+# add new maintainer/team ownership by replacing individual usernames with GitHub Teams.
+# Future: /terraform/ @lksnext/platform-team
+
+# Default ownership for the repository.
+* @sandyperez
+
+# Core project areas
+# Future: /specification/ @lksnext/specification-team
+/.github/ @sandyperez
+/.devcontainer/ @sandyperez
+/docs/ @sandyperez
+/specification/ @sandyperez
+/core/ @sandyperez
+/terraform/ @sandyperez
+/cdk/ @sandyperez
+/ansible/ @sandyperez
+/cli/ @sandyperez
+/tests/ @sandyperez
+/scripts/ @sandyperez
+
+# Security-sensitive files
+# Future: /SECURITY.md @lksnext/security-team
+/SECURITY.md @sandyperez
+/CODEOWNERS @sandyperez
+/LICENSE @sandyperez
+/CONTRIBUTING.md @sandyperez
+/CODE_OF_CONDUCT.md @sandyperez
+
+# Repository governance files
+# Future: /README.md @lksnext/docs-and-governance
+# Future: /.github/dependabot.yml @lksnext/dependency-management
+# Future: /.github/workflows/ @lksnext/release-engineering
+/README.md @sandyperez
+/package.json @sandyperez
+/.editorconfig @sandyperez
+/.gitignore @sandyperez
+/.github/dependabot.yml @sandyperez
+/.github/workflows/ @sandyperez
