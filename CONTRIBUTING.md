@@ -38,9 +38,6 @@ you open this repository.
 
 ## Development Container
 
-The repository includes a [Dev Container](https://containers.dev/) configuration under
-[`.devcontainer/`](.devcontainer/).
-
 **Benefits:**
 
 - Consistent environment for every contributor, regardless of host OS.
