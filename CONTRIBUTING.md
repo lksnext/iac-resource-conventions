@@ -32,11 +32,10 @@ The **recommended** development environment is **Visual Studio Code** with the
 **Development Container** described below. Native development environments — without Docker or
 a Dev Container — are also fully supported.
 
-Visual Studio Code users are encouraged to install the recommended extensions listed in
-[`.vscode/extensions.json`](.vscode/extensions.json). VS Code suggests them automatically when
-you open this repository.
-
 ## Development Container
+
+The repository includes a [Dev Container](https://containers.dev/) configuration under
+[`.devcontainer/`](.devcontainer/).
 
 **Benefits:**
 
