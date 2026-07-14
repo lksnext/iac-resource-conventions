@@ -1,4 +1,5 @@
 - Repo is currently a skeleton: `.serena/` config plus `LICENSE`; no source code or package/build manifests yet.
 - Root entry point for future navigation should stay here until modules emerge.
+- Prefer Serena MCP tools for discovery and edits in this project.
 - No module-specific memories exist yet.
 - Follow-up notes: `mem:tech_stack`, `mem:suggested_commands`, `mem:conventions`, `mem:task_completion`.
