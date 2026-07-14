@@ -1,0 +1,104 @@
+# Operating system files
+.DS_Store
+.DS_Store?
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.Spotlight-V100/
+.Trashes/
+._*
+
+# Editor and IDE temporary files
+*~
+.#*
+*.swp
+*.swo
+*.tmp
+
+# VS Code local state and logs
+.vscode/*.log
+.vscode/*.code-workspace
+.vscode/workspaceStorage/
+.vscode/.history/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Node.js artifacts and package manager caches
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+.parcel-cache/
+.turbo/
+
+# Terraform artifacts
+.terraform/
+# Keep .terraform.lock.hcl tracked unless this repository explicitly decides otherwise.
+# .terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ansible temporary files
+*.retry
+*.retry.*
+.ansible/tmp/
+.ansible/cp/
+
+# Common caches and temp directories
+.cache/
+.tmp/
+tmp/
+
+# Local release artifacts
+release/
+releases/
+*.7z
+*.bz2
+*.dmg
+*.exe
+*.gz
+*.iso
+*.jar
+*.msi
+*.nar
+*.pkg
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.whl
+*.zip
+*.bin
+
+# Generated documentation
+# Keep documentation under version control unless a specific build step generates it as a disposable artifact.
