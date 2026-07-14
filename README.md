@@ -70,20 +70,20 @@ flowchart TD
 ## Supported Platforms
 
 | Platform   | Description                                    |
-| ---------- | ----------------------------------------------- |
-| AWS        | Amazon Web Services resources and tagging.      |
-| Azure      | Microsoft Azure resources and tagging.           |
-| Kubernetes | Labels, annotations, and metadata conventions.  |
-| GitOps     | Conventions for GitOps-managed deployments.     |
+| ---------- | ---------------------------------------------- |
+| AWS        | Amazon Web Services resources and tagging.     |
+| Azure      | Microsoft Azure resources and tagging.         |
+| Kubernetes | Labels, annotations, and metadata conventions. |
+| GitOps     | Conventions for GitOps-managed deployments.    |
 
 ## Supported Adapters
 
-| Adapter   | Description                                           | Status  |
-| --------- | ------------------------------------------------------ | ------- |
-| Terraform | Consumes the Specification from Terraform modules.    | Planned |
-| AWS CDK   | Consumes the Specification from AWS CDK constructs.   | Planned |
-| Ansible   | Consumes the Specification from Ansible roles/tasks.  | Planned |
-| CLI       | Consumes the Specification from the command line.     | Planned |
+| Adapter   | Description                                          | Status  |
+| --------- | ---------------------------------------------------- | ------- |
+| Terraform | Consumes the Specification from Terraform modules.   | Planned |
+| AWS CDK   | Consumes the Specification from AWS CDK constructs.  | Planned |
+| Ansible   | Consumes the Specification from Ansible roles/tasks. | Planned |
+| CLI       | Consumes the Specification from the command line.    | Planned |
 
 ## Convention Packs
 
