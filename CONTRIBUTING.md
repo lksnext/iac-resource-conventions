@@ -13,12 +13,6 @@ improvements, documentation, tests, and bug reports — are welcome and apprecia
 This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md).
 By participating, you are expected to uphold it. Please read it before contributing.
 
-## Project Governance
-
-> The project is currently maintained by a small maintainer team.
-> Repository governance and contribution requirements will evolve as the project grows while maintaining
-> a secure and consistent contribution workflow.
-
 ## Before You Start
 
 We follow a standard fork-and-branch workflow:
