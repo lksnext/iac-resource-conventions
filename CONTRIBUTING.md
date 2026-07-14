@@ -198,11 +198,11 @@ Issues.**
 
 ## Questions
 
-If you have a question, please use [GitHub Issues](../../issues) for concrete bugs or
-well-defined feature requests.
+If you have a question, please use:
 
-For broader project discussions, please open an issue and describe the topic clearly so the
-maintainers can route it appropriately.
+- [GitHub Discussions](../../discussions) for general questions, ideas, and open-ended
+  conversations.
+- [GitHub Issues](../../issues) for concrete bugs or well-defined feature requests.
 
 ## Thank You
 
