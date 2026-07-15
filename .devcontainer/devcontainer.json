@@ -28,19 +28,7 @@
   ],
   "customizations": {
     "vscode": {
-      "extensions": [
-        "GitHub.copilot",
-        "GitHub.copilot-chat",
-        "hashicorp.terraform",
-        "ms-python.python",
-        "charliermarsh.ruff",
-        "redhat.vscode-yaml",
-        "redhat.ansible",
-        "EditorConfig.EditorConfig",
-        "davidanson.vscode-markdownlint"
-      ],
       "settings": {
-        // Only settings that are NOT already defined in .vscode/settings.json.
         "files.eol": "\n",
         "npm.enableScriptExplorer": true,
         "npm.autoDetect": "on",
