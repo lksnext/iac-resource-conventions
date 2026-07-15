@@ -53,27 +53,68 @@ This project is **not**:
   macOS, and Windows.
 - **Small and Reviewable Changes** — changes are kept focused and scoped to the task at hand.
 
-## Repository Structure
+## Current Repository Structure
 
-Directories marked **(planned)** do not exist yet but are part of the intended architecture; see
-[`README.md`](README.md#repository-structure) for the current roadmap.
+This reflects what actually exists in the repository today. Verify against the live file listing
+before relying on it — this section can lag behind real changes.
 
-| Path               | Responsibility                                                              |
+| Path                 | Responsibility                                                        |
+| -------------------- | ---------------------------------------------------------------------|
+| `README.md`           | Project overview, features, and roadmap.                            |
+| `AGENTS.md`            | This document — the architectural reference.                        |
+| `CONTRIBUTING.md`      | Contribution workflow and guidelines.                                |
+| `CODE_OF_CONDUCT.md`   | Community expectations.                                              |
+| `SECURITY.md`          | Vulnerability reporting process.                                     |
+| `CODEOWNERS`           | Review ownership rules.                                              |
+| `LICENSE`              | Apache License 2.0.                                                  |
+| `package.json`         | npm scripts — the standard task entry point (see below).             |
+| `package-lock.json`    | Locked npm dependency versions.                                      |
+| `scripts/`             | Repository automation (for example, Dev Container setup).           |
+| `.github/`             | GitHub configuration: Copilot instructions, issue forms, workflows.  |
+| `.devcontainer/`       | Development Container configuration (runtime environment only).     |
+| `.vscode/`             | Shared editor settings and extension recommendations.                |
+| `.serena/`             | Serena MCP project configuration and memories.                       |
+| `.editorconfig`        | Repository-wide editor formatting defaults.                          |
+| `.gitignore`           | Ignored files and directories.                                       |
+
+No `specification/`, `core/`, `terraform/`, `cdk/`, `ansible/`, `cli/`, `fixtures/`, `tests/`, or
+`docs/` directory exists yet — see **Planned Architecture** below.
+
+## Planned Architecture
+
+The following directories are part of the intended architecture but **do not exist yet**. They
+represent where the project is heading, not what it currently contains. Create one only when a
+task actually requires it — never speculatively, and never merely because it is listed here.
+
+| Path               | Planned Responsibility                                                    |
 | ------------------ | ----------------------------------------------------------------------------|
-| `specification/`    | (planned) The Specification — the single source of truth for all conventions. |
-| `core/`             | (planned) Convention Engine that evaluates the Specification for adapters. |
-| `terraform/`        | (planned) Terraform adapter consuming the Specification.                   |
-| `cdk/`              | (planned) AWS CDK adapter consuming the Specification.                     |
-| `ansible/`          | (planned) Ansible adapter consuming the Specification.                     |
-| `cli/`              | (planned) Command-line adapter consuming the Specification.                |
-| `fixtures/`         | (planned) Shared, canonical input/output fixtures used by contract tests.  |
-| `tests/`            | (planned) Unit, contract, and integration tests.                          |
-| `scripts/`          | Repository automation (for example, Dev Container setup).                  |
-| `docs/`             | (planned) Reference documentation.                                          |
-| `.github/`          | GitHub configuration, including Copilot instructions and workflows.        |
-| `.devcontainer/`    | Development Container configuration (runtime environment only).            |
-| `.vscode/`          | Shared editor settings and extension recommendations.                      |
-| `.serena/`          | Serena MCP project configuration and memories.                             |
+| `specification/`    | The Specification — will become the single source of truth for naming, tags, labels, annotations, metadata, validation rules, abbreviations, and platform restrictions once it exists. |
+| `core/`             | Convention Engine that evaluates the Specification for adapters. |
+| `terraform/`        | Terraform adapter consuming the Specification.                   |
+| `cdk/`              | AWS CDK adapter consuming the Specification.                     |
+| `ansible/`          | Ansible adapter consuming the Specification.                     |
+| `cli/`              | Command-line adapter consuming the Specification.                |
+| `fixtures/`         | Shared, canonical input/output fixtures used by contract tests.  |
+| `tests/`            | Unit, contract, and integration tests.                          |
+| `docs/`             | Reference documentation.                                          |
+
+## Guidance for AI Agents
+
+- Always inspect the actual repository contents before creating new files or directories — do
+  not rely solely on this document, which can become outdated.
+- Do not create any path listed under **Planned Architecture** simply because it is documented
+  here. Create it only when the requested task genuinely needs it.
+- Repository evolution is incremental: introduce a new directory, adapter, or tool only when
+  there is concrete, immediate work that requires it.
+- Until `specification/` exists, there is no Specification to read from or consume. Do not assume
+  it exists, and do not invent its contents.
+
+## Repository Evolution
+
+This project grows incrementally by design. New directories, adapters, and tooling are
+introduced only when they become necessary for a specific, requested change — never
+speculatively. When in doubt, prefer extending what already exists over creating new top-level
+structure.
 
 ## Specification Rules
 
@@ -81,6 +122,11 @@ The Specification defines *what* a convention is: resource naming schemes, tag a
 formats, annotation conventions, metadata fields, validation rules, abbreviations, and any
 platform-specific restrictions the convention must respect. The Specification does **not** contain
 adapter-specific rendering logic, tool syntax, or infrastructure code — that belongs to adapters.
+
+As of this writing, `specification/` does not yet exist in the repository (see **Current
+Repository Structure** above). Once it exists, it becomes the single source of truth described
+above. Until then, agents must respect the current repository structure and must not assume the
+Specification exists or invent its contents.
 
 ## Adapter Rules
 
