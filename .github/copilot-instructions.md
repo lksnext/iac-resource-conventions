@@ -18,12 +18,18 @@ If Serena is unavailable for a task, fall back to the standard workspace tools.
 ## Project Architecture
 
 This is a **Specification First** monorepo: conventions are defined once and consumed by
-multiple adapters. See [`AGENTS.md`](../AGENTS.md) for full detail. Key rules that affect how
-Copilot should implement changes:
+multiple adapters. See [`AGENTS.md`](../AGENTS.md) for full detail, including the **Current
+Repository Structure** and **Planned Architecture** sections. Key rules that affect how Copilot
+should implement changes:
 
-- **Specification First** — `specification/` (once it exists) is the single source of truth for
-  naming, tags, labels, annotations, metadata, validation rules, abbreviations, and platform
-  restrictions. Do not encode these rules directly in an adapter.
+- **Inspect before creating** — always check the actual repository contents before creating a
+  new file or directory. Never create `specification/`, `core/`, `terraform/`, `cdk/`,
+  `ansible/`, `cli/`, `fixtures/`, `tests/`, or `docs/` just because they are mentioned in
+  `AGENTS.md` — they are planned, not present, until a task genuinely requires them.
+- **Specification First** — `specification/` does not exist yet. Once created, it becomes the
+  single source of truth for naming, tags, labels, annotations, metadata, validation rules,
+  abbreviations, and platform restrictions. Do not assume it exists or invent its contents, and
+  do not encode these rules directly in an adapter.
 - **Adapter Consistency** — Terraform, AWS CDK, Ansible, CLI, and future adapters consume the
   Specification; they must not redefine or independently duplicate convention rules. All adapters
   must produce equivalent results for the same canonical input, unless a documented platform
