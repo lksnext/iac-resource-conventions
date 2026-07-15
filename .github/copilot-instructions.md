@@ -1,5 +1,12 @@
 # Copilot Instructions
 
+This file is concise, operational guidance for Copilot in this repository. For the full project
+architecture, goals, repository structure, and detailed rationale, see
+[`AGENTS.md`](../AGENTS.md) — that document is the primary architectural reference for this
+repository.
+
+## Tools
+
 Use Serena MCP tools for codebase exploration and edits in this repository.
 
 Prefer Serena symbol and reference tools over raw file reads when they are available.
@@ -7,6 +14,38 @@ Prefer Serena symbol and reference tools over raw file reads when they are avail
 Use GitHub MCP tools for GitHub issues, pull requests, notifications, and repository metadata when those tasks come up.
 
 If Serena is unavailable for a task, fall back to the standard workspace tools.
+
+## Project Architecture
+
+This is a **Specification First** monorepo: conventions are defined once and consumed by
+multiple adapters. See [`AGENTS.md`](../AGENTS.md) for full detail. Key rules that affect how
+Copilot should implement changes:
+
+- **Specification First** — `specification/` (once it exists) is the single source of truth for
+  naming, tags, labels, annotations, metadata, validation rules, abbreviations, and platform
+  restrictions. Do not encode these rules directly in an adapter.
+- **Adapter Consistency** — Terraform, AWS CDK, Ansible, CLI, and future adapters consume the
+  Specification; they must not redefine or independently duplicate convention rules. All adapters
+  must produce equivalent results for the same canonical input, unless a documented platform
+  constraint requires a difference. Shared fixtures and contract tests are the authoritative
+  compatibility mechanism across adapters.
+- **Generated Artifacts** — never edit generated files by hand. Changes affecting generated
+  output must start in the Specification, generator, or source template, then regenerate.
+- **Testing Expectations** — any change to the Specification must include corresponding updates
+  to contract tests, and must verify that all affected adapters still behave consistently.
+- **Semantic Versioning and Compatibility** — public APIs, schemas, Convention Packs, generated
+  outputs, naming algorithms, abbreviations, truncation rules, and hash strategies follow SemVer.
+  Treat any change that can alter an existing generated name, tag, label, annotation, canonical
+  identifier, or validation result as potentially breaking; prefer backward-compatible changes.
+- **Cross-platform Development** — prefer portable implementations that work on Linux, macOS,
+  Windows, the Dev Container, and CI/CD. Use the root `package.json` npm scripts as the standard
+  task entry point, and avoid duplicating a command's implementation across VS Code, docs,
+  CI/CD, and local development.
+- **Repository Infrastructure** — do not modify `.github/`, `.devcontainer/`, `.vscode/`,
+  `.serena/`, `.editorconfig`, or `.gitignore` unless the task explicitly calls for it.
+- **Scope** — keep changes focused, reviewable, and limited to the requested scope. Do not
+  introduce new runtime dependencies, tools, frameworks, or build systems unless necessary and
+  justified.
 
 ## Commit Safety and Approval
 
