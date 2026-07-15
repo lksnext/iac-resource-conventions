@@ -1,0 +1,37 @@
+name: Documentation
+description: Report an issue with documentation or propose an improvement.
+title: "docs: <short description>"
+labels:
+  - documentation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for documentation issues or improvements. For questions
+        about how something works, use [GitHub Discussions](../../discussions)
+        instead.
+
+  - type: input
+    id: documentation-affected
+    attributes:
+      label: Documentation Affected
+      description: File(s) or section(s) affected.
+      placeholder: e.g. README.md, CONTRIBUTING.md, AGENTS.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What is missing, unclear, or incorrect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-improvement
+    attributes:
+      label: Proposed Improvement
+      description: Suggested wording, structure, or content changes.
+    validations:
+      required: false
