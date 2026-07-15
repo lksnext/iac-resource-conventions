@@ -1,0 +1,32 @@
+root = true
+
+# Global defaults for all files.
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Markdown keeps trailing spaces for intentional hard line breaks.
+[*.md]
+trim_trailing_whitespace = false
+indent_style = space
+indent_size = 2
+
+# Terraform uses standard two-space indentation only.
+[*.tf]
+indent_style = space
+indent_size = 2
+
+[*.tfvars]
+indent_style = space
+indent_size = 2
+
+# Structured text and scripts stay on the same two-space convention.
+[*.{yml,yaml,json,jsonc,sh}]
+indent_size = 2
+
+[Dockerfile]
+indent_size = 2
