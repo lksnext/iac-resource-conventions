@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a Question or Start a Discussion
+    url: https://github.com/lksnext/iac-resource-conventions/discussions
+    about: >
+      Questions, architectural discussions, and general help belong in GitHub
+      Discussions, not GitHub Issues.
+  - name: Report a Security Vulnerability
+    url: https://github.com/lksnext/iac-resource-conventions/security/advisories/new
+    about: >
+      Please report security vulnerabilities privately. Do not open a public
+      issue. See SECURITY.md for details.

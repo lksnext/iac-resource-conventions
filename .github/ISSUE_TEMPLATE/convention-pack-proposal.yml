@@ -1,0 +1,83 @@
+name: Convention Pack Proposal
+description: Propose a new Convention Pack for a specific organization or platform context.
+title: "feat(convention-pack): <pack name>"
+labels:
+  - convention-pack
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Convention Packs are pre-built, organization- or platform-specific
+        configurations built on top of the common Specification and Convention
+        Engine. A Convention Pack must **extend the Specification**, not
+        introduce platform-specific behaviour or bypass it — it configures how
+        existing conventions are applied, it does not define new, independent
+        rules. See [AGENTS.md](../../blob/main/AGENTS.md) for the full
+        architecture.
+
+        For open-ended discussion before a concrete proposal, use
+        [GitHub Discussions](../../discussions).
+
+  - type: input
+    id: pack-name
+    attributes:
+      label: Convention Pack Name
+      placeholder: e.g. aws-controltower, kubernetes-shared
+    validations:
+      required: true
+
+  - type: input
+    id: target-platforms
+    attributes:
+      label: Target Platform(s)
+      description: Which platforms and/or adapters this pack targets.
+      placeholder: e.g. AWS, Kubernetes, Terraform adapter
+    validations:
+      required: true
+
+  - type: textarea
+    id: organizational-use-case
+    attributes:
+      label: Organizational Use Case
+      description: The organizational context this pack is designed for.
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this pack needed? What gap does it fill?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-conventions
+    attributes:
+      label: Proposed Conventions
+      description: >
+        The naming, tagging, labeling, annotation, or validation conventions this
+        pack configures. Reference existing Specification rules where possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: compatibility-considerations
+    attributes:
+      label: Compatibility Considerations
+      description: >
+        How this pack interacts with existing packs, adapters, and the current
+        Specification version.
+    validations:
+      required: false
+
+  - type: textarea
+    id: breaking-changes
+    attributes:
+      label: Breaking Changes (if any)
+      description: >
+        Any change that could alter existing generated names, tags, labels,
+        annotations, or validation results for current users of this or another
+        pack.
+    validations:
+      required: false
