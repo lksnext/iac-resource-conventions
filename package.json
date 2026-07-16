@@ -6,7 +6,7 @@
     "license": "Apache-2.0",
     "scripts": {
         "fmt": "terraform fmt -recursive",
-        "validate": "terraform -chdir=terraform/modules/resource-conventions validate",
+        "validate": "node scripts/validate-json.mjs",
         "generate": "echo \"Generation not implemented yet\"",
         "test": "echo \"Tests not implemented yet\"",
         "lint": "echo \"Lint not implemented yet\"",

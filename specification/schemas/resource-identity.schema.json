@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/lksnext/iac-resource-conventions/main/specification/schemas/resource-identity.schema.json",
+  "title": "Resource Identity",
+  "description": "The canonical, three-plane domain model describing the complete identity of a resource. This is the internal identity model produced by Context Resolution; Governance Context is modeled separately (see governance-context.schema.json and naming-request.schema.json).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "organizational": {
+      "$ref": "#/$defs/organizationalIdentity"
+    },
+    "deployment": {
+      "$ref": "#/$defs/deploymentIdentity"
+    },
+    "functional": {
+      "$ref": "#/$defs/functionalIdentity"
+    }
+  },
+  "$defs": {
+    "organizationalIdentity": {
+      "type": "object",
+      "description": "Plane 1: Organizational Identity. Answers 'Why does this resource exist?'. These attributes are highly stable and rarely change over the lifetime of a resource.",
+      "additionalProperties": false,
+      "properties": {
+        "organization": {
+          "type": "string",
+          "description": "Enterprise, company, legal entity, or top-level owner of the resource."
+        },
+        "business_unit": {
+          "type": "string",
+          "description": "Organizational area responsible for or funding the system."
+        },
+        "system": {
+          "type": "string",
+          "description": "Software system, product, or business application to which the resource belongs."
+        },
+        "tenant": {
+          "type": "string",
+          "description": "Optional customer or logical tenant associated with the resource."
+        }
+      }
+    },
+    "deploymentIdentity": {
+      "type": "object",
+      "description": "Plane 2: Deployment Identity. Answers 'Where is this resource deployed?'.",
+      "additionalProperties": false,
+      "properties": {
+        "platform": {
+          "type": "string",
+          "description": "Infrastructure platform derived from the resource type, resource definition, or adapter. Part of the canonical resolved identity, but not normally supplied directly by the caller."
+        },
+        "deployment_scope": {
+          "type": "string",
+          "description": "Logical identifier for the administrative or isolation boundary where the resource is deployed, such as an AWS account alias, Azure subscription alias, or Kubernetes cluster name. Not the provider's immutable technical ID."
+        },
+        "environment": {
+          "type": "string",
+          "description": "Lifecycle stage or operational environment in which the resource is used (for example, production or staging)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Logical or physical deployment location when the resource is not global (for example, a region or datacenter)."
+        },
+        "instance": {
+          "type": "string",
+          "description": "Optional discriminator used when multiple equivalent instances of a resource exist."
+        }
+      }
+    },
+    "functionalIdentity": {
+      "type": "object",
+      "description": "Plane 3: Functional Identity. Answers 'What does this resource do?'.",
+      "additionalProperties": false,
+      "properties": {
+        "service": {
+          "type": "string",
+          "description": "Logical workload, subsystem, or deployable capability within the system."
+        },
+        "component": {
+          "type": "string",
+          "description": "Optional functional role or subcomponent within the service."
+        },
+        "resource_type": {
+          "type": "string",
+          "description": "Canonical technical resource kind used to select its Resource Definition and constraints."
+        }
+      }
+    }
+  }
+}

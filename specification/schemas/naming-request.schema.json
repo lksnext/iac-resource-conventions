@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/lksnext/iac-resource-conventions/main/specification/schemas/naming-request.schema.json",
+  "title": "Naming Request",
+  "description": "The public request contract used to ask for a resource to be named, tagged, or labeled according to project conventions. Callers supply only the information specific to the resource being requested; the Context Resolution pipeline enriches this request into a complete Resource Identity and Governance Context (see resource-identity.schema.json and governance-context.schema.json). This schema is intentionally small and is expected to grow in future versions.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "convention": {
+      "type": "string",
+      "description": "Identifier of the Convention Pack used to resolve and evaluate the request."
+    },
+    "resource_type": {
+      "type": "string",
+      "description": "The type of resource being requested."
+    },
+    "functional": {
+      "type": "object",
+      "description": "Functional Identity information specific to this request.",
+      "additionalProperties": false,
+      "properties": {
+        "service": {
+          "type": "string",
+          "description": "Logical workload, subsystem, or deployable capability within the system."
+        },
+        "component": {
+          "type": "string",
+          "description": "Optional functional role or subcomponent within the service."
+        }
+      }
+    },
+    "governance": {
+      "$ref": "./governance-context.schema.json"
+    },
+    "deployment": {
+      "type": "object",
+      "description": "Deployment Identity information specific to this request. Most deployment information is resolved by Context Providers rather than supplied here.",
+      "additionalProperties": false,
+      "properties": {
+        "instance": {
+          "type": "string",
+          "description": "Distinguishes multiple instances of an otherwise identical resource."
+        }
+      }
+    },
+    "overrides": {
+      "type": "object",
+      "description": "Explicit values that intentionally bypass attributes otherwise resolved by Context Resolution. Overrides mirror the canonical Resource Identity and Governance Context hierarchy rather than arbitrary key/value pairs. They are still validated during Convention Evaluation and do not bypass Resource Definition constraints, Convention Pack restrictions, or schema validation.",
+      "additionalProperties": false,
+      "properties": {
+        "organizational": {
+          "$ref": "./resource-identity.schema.json#/$defs/organizationalIdentity"
+        },
+        "deployment": {
+          "$ref": "./resource-identity.schema.json#/$defs/deploymentIdentity"
+        },
+        "functional": {
+          "$ref": "./resource-identity.schema.json#/$defs/functionalIdentity"
+        },
+        "governance": {
+          "$ref": "./governance-context.schema.json"
+        }
+      }
+    },
+    "custom_metadata": {
+      "type": "object",
+      "description": "Additional caller-supplied metadata that does not map to a defined Resource Identity attribute.",
+      "additionalProperties": true
+    }
+  }
+}

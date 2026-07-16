@@ -101,23 +101,34 @@ Planned examples include:
 
 ## Repository Structure
 
-The repository is organized around the Specification-first architecture described above. As the
-project is under active development, not all of the directories below exist yet.
+The repository is organized around the Specification-first architecture described above.
+
+### Current Repository Structure
 
 ```
 .
 ├── .devcontainer/    # Development Container configuration
 ├── .github/          # GitHub configuration
-├── spec/             # The Specification (single source of truth)
-├── convention-packs/ # Organization- and platform-specific Convention Packs
-├── adapters/         # Terraform, AWS CDK, Ansible, and CLI adapters
-├── docs/             # Reference documentation
+├── specification/    # The Specification (single source of truth)
 ├── scripts/          # Repository automation scripts
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
 ├── SECURITY.md
 └── README.md
 ```
+
+### Planned Architecture
+
+The following areas are introduced incrementally as the project develops and may not yet
+exist:
+
+- `core/` — Convention Engine that evaluates the Specification for adapters.
+- `terraform/` — Terraform adapter.
+- `cdk/` — AWS CDK adapter.
+- `ansible/` — Ansible adapter.
+- `cli/` — Command-line adapter.
+- `fixtures/` — Shared, canonical input/output fixtures used by contract tests.
+- `tests/` — Unit, contract, and integration tests.
 
 ## Quick Start
 
