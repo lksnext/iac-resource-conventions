@@ -71,7 +71,8 @@ Possible attributes:
 
 - `service`: Logical workload, subsystem, or deployable capability within the system.
 - `component`: Optional functional role or subcomponent within the service.
-- `resource_type`: Canonical technical resource kind used to select its Resource Definition and constraints.
+- `resource_type`: Canonical technical resource kind used to select its
+  [Resource Definition](./resource-definition.md) and constraints.
 
 `service` is intentionally broader than a microservice: it may represent a workload, a
 subsystem, a logical service, a deployable capability, or another functional unit within

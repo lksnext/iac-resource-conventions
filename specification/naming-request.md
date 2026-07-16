@@ -71,10 +71,15 @@ flowchart TD
     CP --> CR["Context Resolution"]
     CR --> RI["Resource Identity"]
     CR --> GC["Governance Context"]
+    RD["Resource Definition"]
     RI --> CE["Convention Engine"]
     GC --> CE
+    RD --> CE
     CE --> Result["Convention Result"]
 ```
+
+This is the same canonical pipeline described in
+[`specification/README.md`](./README.md#architecture).
 
 - **Naming Request** — the minimal, user-supplied description of the resource.
 - **Convention Pack** — selected explicitly via the request's `convention` field;
@@ -83,20 +88,26 @@ flowchart TD
   appropriate to the organization or platform in use. A Convention Pack does not
   replace Governance Context.
 - **Context Resolution** — derives deployment context and any other shared values needed
-  to complete the model.
+  to complete the model. See [`context-resolution.md`](./context-resolution.md) for the
+  full description, including resolution sources and precedence.
 - **Resource Identity** — the canonical, fully-resolved identity produced by combining
   the request, the Convention Pack, and shared context.
 - **Governance Context** — the resolved ownership and operational governance context for
   the resource. See [`governance-context.md`](./governance-context.md) for the full
   model.
-- **Convention Engine** — evaluates the Specification against Resource Identity and
-  Governance Context.
-- **Convention Result** — the final output produced for the caller.
+- **Resource Definition** — the technical characteristics and constraints of the
+  resource's canonical resource type, selected via `resource_type`. See
+  [`resource-definition.md`](./resource-definition.md) for the full model.
+- **Convention Engine** — evaluates the Specification against Resource Identity,
+  Governance Context, and the resource's Resource Definition.
+- **Convention Result** — the final output produced for the caller. See
+  [`convention-result.md`](./convention-result.md) for its conceptual contents.
 
 In short: Convention Packs project both Resource Identity and Governance Context into
 names, AWS Tags, Azure Tags, Kubernetes Labels, annotations, and other convention
 outputs. Context Resolution supplies the shared data needed to complete the model; the
-Convention Engine evaluates both models to produce a Convention Result.
+Convention Engine evaluates Resource Identity, Governance Context, and the resource's
+Resource Definition to produce a Convention Result.
 
 ## Precedence order
 
@@ -120,6 +131,10 @@ Profiles establish governance defaults. Values explicitly supplied in the Naming
 override any default from either source, and explicit overrides always take the highest
 precedence.
 
+This is the same precedence order defined in
+[`context-resolution.md`](./context-resolution.md#resolution-precedence), which is the
+canonical source for this description.
+
 ## Differences between the core concepts
 
 | Concept              | Description                                                                                       | Supplied by                          |
@@ -129,9 +144,11 @@ precedence.
 | **Governance Context** | The operational ownership and policy context associated with the resource.                         | Resolved from the request and shared context. |
 | **Convention Pack**   | A reusable configuration, selected via `convention`, that supplies naming defaults, deployment defaults, governance defaults (including an optional default Governance Profile), and metadata projection rules. It does not replace Governance Context. | Provided by the project or organization; selected by the caller. |
 | **Governance Profile** | The named governance policy, selected via `governance.profile`, that supplies governance defaults independently of the Convention Pack. | Provided by the project or organization; selected by the caller. |
-| **Convention Result** | The final output produced by evaluating the Specification against Resource Identity and Governance Context. | Produced by the Convention Engine.    |
+| **Resource Definition** | The technical characteristics and constraints of the resource's canonical resource type, selected via `resource_type`. | Provided by the project or platform; referenced via the resource's `resource_type`. |
+| **Convention Result** | The final output produced by evaluating the Specification against Resource Identity, Governance Context, and Resource Definition. | Produced by the Convention Engine.    |
 
 A Naming Request is an *input*; Resource Identity is the *canonical internal model*;
 Governance Context is the separate operational policy model; a Convention Pack is
-*configuration* that shapes how the request is enriched; and a Convention Result is the
+*configuration* that shapes how the request is enriched; a Resource Definition is the
+*technical specification* referenced by `resource_type`; and a Convention Result is the
 *output* consumed by the caller.

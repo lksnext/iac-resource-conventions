@@ -86,11 +86,19 @@ flowchart TD
     CP --> CR["Context Resolution"]
     CR --> RI["Resource Identity"]
     CR --> GC["Governance Context"]
+    RD["Resource Definition"]
     RI --> CE["Convention Engine"]
     GC --> CE
+    RD --> CE
     CE --> Result["Convention Result"]
 ```
 
+This is the same canonical pipeline described in
+[`specification/README.md`](./README.md#architecture); see
+[`context-resolution.md`](./context-resolution.md) for the full description of how this
+resolution happens.
+
 Both Resource Identity and Governance Context participate in convention evaluation: the
-Convention Engine evaluates the Specification against both models to produce a
-Convention Result.
+Convention Engine evaluates the Specification against both models, along with the
+resource's [Resource Definition](./resource-definition.md), to produce a Convention
+Result.
