@@ -115,17 +115,18 @@ in the final Convention Result (see [`convention-result.md`](./convention-result
 The conceptual lifecycle of a Convention Pack, from selection to output, is:
 
 ```text
-Naming Request
-    -> Convention Pack selected
-        -> Context Resolution
-            -> Resource Identity + Governance Context
-                -> Convention Evaluation
-                    -> Convention Result
+Naming Request + Convention Pack
+    -> Context Resolution
+        -> Resource Identity + Governance Context
+            -> Convention Evaluation (with Resource Definition)
+                -> Convention Result
 ```
 
-This describes the conceptual order in which a Convention Pack participates in
-producing a Convention Result. It does not describe an implementation, execution
-runtime, or API.
+A Convention Pack is selected by the Naming Request's `convention` field, but it is an
+input to Context Resolution alongside the Naming Request, not a step between them:
+Context Resolution is the only processing stage that consumes both. This describes the
+conceptual order in which a Convention Pack participates in producing a Convention
+Result. It does not describe an implementation, execution runtime, or API.
 
 ## Convention Pack inheritance
 

@@ -108,7 +108,7 @@ flowchart TD
     GC["Governance Context"]
     RD["Resource Definition"]
     CE["Convention Evaluation"]
-    Result["Convention Result"]
+    RS["Convention Result"]
 
     NR --> CR
     CP --> CR
@@ -117,7 +117,7 @@ flowchart TD
     RI --> CE
     GC --> CE
     RD --> CE
-    CE --> Result
+    CE --> RS
 ```
 
 This is the same canonical pipeline described in
@@ -142,7 +142,8 @@ Convention Pack are both inputs to Context Resolution, not sequential steps.
   the resource. See [`governance-context.md`](./governance-context.md) for the full
   model.
 - **Resource Definition** — the technical characteristics and constraints of the
-  resource's canonical resource type, selected via `resource_type`. See
+  resource's canonical resource type, looked up via `resource_type` once Resource
+  Identity has been completed; it is not resolved by Context Resolution. See
   [`resource-definition.md`](./resource-definition.md) for the full model.
 - **Convention Evaluation** — evaluates the Specification against Resource Identity,
   Governance Context, and the resource's Resource Definition.
@@ -196,7 +197,7 @@ canonical source for this description.
 | **Convention Result** | The final output produced by evaluating the Specification against Resource Identity, Governance Context, and Resource Definition. | Produced by Convention Evaluation.    |
 
 A Naming Request is an *input*; Resource Identity is the *canonical internal model*;
-Governance Context is the separate operational policy model; a Convention Pack is
-*configuration* that shapes how the request is enriched; a Resource Definition is the
-*technical specification* referenced by `resource_type`; and a Convention Result is the
-*output* consumed by the caller.
+Governance Context is the separate operational policy model; a Convention Pack is a
+*Specification Artifact* that shapes how the request is enriched; a Resource Definition
+is the *technical specification* referenced by `resource_type`; and a Convention Result
+is the *output* consumed by the caller.
