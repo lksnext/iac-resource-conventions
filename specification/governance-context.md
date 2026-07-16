@@ -21,7 +21,9 @@ Possible attributes:
 - `owner`: Team or person responsible for the resource.
 - `managed_by`: Tool or platform managing the resource.
 - `cost_center`: Organizational cost allocation identifier.
-- `profile`: Optional governance profile defining operational policies.
+- `profile`: Identifies the Governance Profile — the governance policy applied to the
+  resource. It does not select the Convention Pack, which is chosen independently via
+  the Naming Request's `convention` field (see [`naming-request.md`](./naming-request.md)).
 
 ## Relationship with Resource Identity
 
@@ -38,11 +40,14 @@ resource's identity.
 
 ## Relationship with Convention Packs
 
-A Convention Pack may define governance defaults, metadata projections, and
-organizational policies that are applied when resolving a Naming Request. However,
-Governance Context remains an independent conceptual model: Convention Packs configure
-how governance information is supplied and projected, they do not redefine what
-Governance Context is.
+A Convention Pack may define naming defaults, deployment defaults, governance defaults,
+and metadata projection rules that are applied when resolving a Naming Request. A
+Convention Pack may also declare a default Governance Profile to apply when the caller
+does not select one explicitly. However, Convention Pack and Governance Profile remain
+different concepts: a Convention Pack is selected via the Naming Request's `convention`
+field, while a Governance Profile is selected via `governance.profile`. Selecting a
+Convention Pack does not select a Governance Profile, and a Convention Pack does not
+replace Governance Context — it only supplies defaults that Governance Context may use.
 
 ## Metadata projection
 
@@ -77,7 +82,8 @@ a [Naming Request](./naming-request.md) into a Resource Identity:
 
 ```mermaid
 flowchart TD
-    NR["Naming Request"] --> CR["Context Resolution"]
+    NR["Naming Request"] --> CP["Convention Pack"]
+    CP --> CR["Context Resolution"]
     CR --> RI["Resource Identity"]
     CR --> GC["Governance Context"]
     RI --> CE["Convention Engine"]

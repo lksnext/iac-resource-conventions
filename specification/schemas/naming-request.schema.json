@@ -6,9 +6,9 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "profile": {
+    "convention": {
       "type": "string",
-      "description": "The name of the Convention Pack to use to enrich this request with organizational and governance defaults."
+      "description": "Identifier of the Convention Pack used to resolve and evaluate the request."
     },
     "resource_type": {
       "type": "string",

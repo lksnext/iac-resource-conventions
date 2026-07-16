@@ -20,7 +20,7 @@
     },
     "profile": {
       "type": "string",
-      "description": "Optional governance profile defining operational policies."
+      "description": "Identifier of the Governance Profile applied to the resource. Independent from the Convention Pack, which is selected via the Naming Request's convention field."
     }
   }
 }

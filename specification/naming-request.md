@@ -26,19 +26,39 @@ required for every request. Governance Context may also be supplied when the cal
 knows it:
 
 ```yaml
+convention: aws-workload-default
+
 resource_type: aws_s3_bucket
 
 functional:
   service: ingestion
+  component: storage
+
+deployment:
+  instance: "01"
 
 governance:
   owner: platform-team
   managed_by: terraform
+  profile: standard
 ```
 
 `resource_type` is exposed at the top level of the Naming Request for convenience and is
 resolved into `functional.resource_type` in the canonical Resource Identity. It is not
 duplicated inside the `functional` block of the request.
+
+`convention` and `governance.profile` are independent selectors, even though both are
+optional values supplied on the same request:
+
+- `convention` selects the Convention Pack — the organizational naming, deployment, and
+  metadata projection conventions used to resolve this request.
+- `governance.profile` selects the Governance Profile — the governance policy applied to
+  the resource (see [`governance-context.md`](./governance-context.md)).
+
+Selecting a Convention Pack does not select a Governance Profile, and selecting a
+Governance Profile does not select a Convention Pack. A Convention Pack may declare a
+default Governance Profile to apply when the caller does not supply one, but the two
+selectors remain independent and may be combined freely.
 
 ## The Context Resolution pipeline
 
@@ -57,9 +77,11 @@ flowchart TD
 ```
 
 - **Naming Request** — the minimal, user-supplied description of the resource.
-- **Convention Pack** — enriches the request with identity defaults, governance defaults,
-  naming rules, and metadata projections appropriate to the organization or platform in
-  use.
+- **Convention Pack** — selected explicitly via the request's `convention` field;
+  enriches the request with naming defaults, deployment defaults, governance defaults
+  (including an optional default Governance Profile), and metadata projection rules
+  appropriate to the organization or platform in use. A Convention Pack does not
+  replace Governance Context.
 - **Context Resolution** — derives deployment context and any other shared values needed
   to complete the model.
 - **Resource Identity** — the canonical, fully-resolved identity produced by combining
@@ -76,6 +98,28 @@ names, AWS Tags, Azure Tags, Kubernetes Labels, annotations, and other conventio
 outputs. Context Resolution supplies the shared data needed to complete the model; the
 Convention Engine evaluates both models to produce a Convention Result.
 
+## Precedence order
+
+When Context Resolution completes the model, values are applied in the following order,
+from lowest to highest precedence:
+
+1. **Convention Pack defaults** — naming, deployment, and metadata defaults declared by
+   the selected Convention Pack.
+2. **Shared Organizational Context** — organizational values resolved from shared
+   context (for example, `organization`, `business_unit`).
+3. **Shared Deployment Context** — deployment values resolved from shared context (for
+   example, `platform`, `deployment_scope`).
+4. **Governance Profile defaults** — governance defaults declared by the selected
+   Governance Profile.
+5. **Naming Request values** — values explicitly supplied by the caller in the Naming
+   Request.
+6. **Explicit overrides** — values supplied in the request's `overrides` block.
+
+Convention Packs establish organizational naming and metadata conventions; Governance
+Profiles establish governance defaults. Values explicitly supplied in the Naming Request
+override any default from either source, and explicit overrides always take the highest
+precedence.
+
 ## Differences between the core concepts
 
 | Concept              | Description                                                                                       | Supplied by                          |
@@ -83,7 +127,8 @@ Convention Engine evaluates both models to produce a Convention Result.
 | **Naming Request**    | The minimal, public request describing what is specific to a single resource.                     | The caller (user or system).          |
 | **Resource Identity** | The complete, canonical, three-plane model describing a resource's identity.                      | Resolved by the Convention Engine.    |
 | **Governance Context** | The operational ownership and policy context associated with the resource.                         | Resolved from the request and shared context. |
-| **Convention Pack**   | A reusable configuration that enriches a Naming Request with identity defaults, governance defaults, naming rules, and metadata projections. | Provided by the project or organization. |
+| **Convention Pack**   | A reusable configuration, selected via `convention`, that supplies naming defaults, deployment defaults, governance defaults (including an optional default Governance Profile), and metadata projection rules. It does not replace Governance Context. | Provided by the project or organization; selected by the caller. |
+| **Governance Profile** | The named governance policy, selected via `governance.profile`, that supplies governance defaults independently of the Convention Pack. | Provided by the project or organization; selected by the caller. |
 | **Convention Result** | The final output produced by evaluating the Specification against Resource Identity and Governance Context. | Produced by the Convention Engine.    |
 
 A Naming Request is an *input*; Resource Identity is the *canonical internal model*;
