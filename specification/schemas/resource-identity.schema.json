@@ -27,23 +27,19 @@
       "properties": {
         "organization": {
           "type": "string",
-          "description": "The organization the resource belongs to."
+          "description": "Enterprise, company, legal entity, or top-level owner of the resource."
         },
         "business_unit": {
           "type": "string",
-          "description": "The business unit responsible for the resource."
+          "description": "Organizational area responsible for or funding the system."
         },
-        "portfolio": {
+        "system": {
           "type": "string",
-          "description": "The portfolio of applications or services the resource belongs to."
-        },
-        "application": {
-          "type": "string",
-          "description": "The application the resource belongs to."
+          "description": "Software system, product, or business application to which the resource belongs."
         },
         "tenant": {
           "type": "string",
-          "description": "The tenant the resource is associated with, in a multi-tenant context."
+          "description": "Optional customer or logical tenant associated with the resource."
         }
       }
     },

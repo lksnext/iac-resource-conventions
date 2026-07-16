@@ -19,11 +19,10 @@ is deployed.
 
 Possible attributes:
 
-- `organization`
-- `business_unit`
-- `portfolio`
-- `application`
-- `tenant`
+- `organization`: Enterprise, company, legal entity, or top-level owner of the resource.
+- `business_unit`: Organizational area responsible for or funding the system.
+- `system`: Software system, product, or business application to which the resource belongs.
+- `tenant`: Optional customer or logical tenant associated with the resource.
 
 These attributes are highly stable. They rarely change over the lifetime of a resource,
 because they describe organizational placement rather than technical or operational
