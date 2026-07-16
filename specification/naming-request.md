@@ -101,19 +101,29 @@ Resource Identity and Governance Context, and ultimately into a Convention Resul
 
 ```mermaid
 flowchart TD
-    NR["Naming Request"] --> CP["Convention Pack"]
-    CP --> CR["Context Resolution"]
-    CR --> RI["Resource Identity"]
-    CR --> GC["Governance Context"]
+    NR["Naming Request"]
+    CP["Convention Pack"]
+    CR["Context Resolution"]
+    RI["Resource Identity"]
+    GC["Governance Context"]
     RD["Resource Definition"]
-    RI --> CE["Convention Evaluation"]
+    CE["Convention Evaluation"]
+    Result["Convention Result"]
+
+    NR --> CR
+    CP --> CR
+    CR --> RI
+    CR --> GC
+    RI --> CE
     GC --> CE
     RD --> CE
-    CE --> Result["Convention Result"]
+    CE --> Result
 ```
 
 This is the same canonical pipeline described in
-[`specification/README.md`](./README.md#architecture).
+[`specification/README.md`](./README.md#architecture). The pipeline has exactly two
+processing stages, Context Resolution and Convention Evaluation; the Naming Request and
+Convention Pack are both inputs to Context Resolution, not sequential steps.
 
 - **Naming Request** — the minimal, user-supplied description of the resource.
 - **Convention Pack** — a Specification artifact, selected explicitly via the request's
@@ -121,7 +131,8 @@ This is the same canonical pipeline described in
   platform-specific conventions: naming defaults, deployment defaults, governance
   defaults (including an optional default Governance Profile), abbreviations, ordering
   rules, metadata projection rules, and override policy. A Convention Pack does not
-  replace Governance Context.
+  replace Governance Context. See [`convention-pack.md`](./convention-pack.md) for the
+  full model.
 - **Context Resolution** — derives deployment context and any other shared values needed
   to complete the model. See [`context-resolution.md`](./context-resolution.md) for the
   full description, including resolution sources and precedence.

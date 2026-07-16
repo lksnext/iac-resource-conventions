@@ -29,8 +29,9 @@ another for the same canonical input.
 ## What belongs here
 
 - Independent conceptual and domain models — Resource Identity (what a resource is),
-  Governance Context (how a resource is owned and governed), and Resource Definition
-  (the technical rules for a kind of resource) are modeled as separate, independent
+  Governance Context (how a resource is owned and governed), Resource Definition (the
+  technical rules for a kind of resource), and Convention Pack (how canonical models are
+  projected into platform-specific conventions) are modeled as separate, independent
   concepts.
 - Public request/response contracts (for example, the Naming Request and the Convention
   Result).
@@ -43,9 +44,10 @@ another for the same canonical input.
 - Terraform, AWS CDK, Ansible, or CLI code.
 - Tool-specific syntax or rendering logic.
 - Cloud-provider-specific implementation details.
-- Convention Packs, Resource Definitions catalog entries, or Context Providers — these
-  are configuration and implementation concerns that consume the Specification, not
-  part of the conceptual Specification itself.
+- Concrete Convention Packs (for example, `aws-controltower`), Resource Definitions
+  catalog entries, or Context Providers — these are configuration and implementation
+  concerns that consume the Specification's concepts, not part of the conceptual
+  Specification itself.
 
 Those concerns belong to adapters, which are introduced in later iterations of this
 project.
@@ -65,6 +67,8 @@ The Specification currently consists of the following conceptual documents:
   Context.
 - [`resource-definition.md`](./resource-definition.md) — the technical characteristics
   and constraints of a canonical resource type.
+- [`convention-pack.md`](./convention-pack.md) — the Specification artifact that
+  defines how canonical models are projected into platform-specific conventions.
 - [`convention-result.md`](./convention-result.md) — the conceptual output produced by
   Convention Evaluation.
 - [`schemas/`](./schemas/) — JSON Schema definitions for the models described above that
@@ -77,15 +81,23 @@ conceptual pipeline:
 
 ```mermaid
 flowchart TD
-    NR["Naming Request"] --> CP["Convention Pack"]
-    CP --> CR["Context Resolution"]
-    CR --> RI["Resource Identity"]
-    CR --> GC["Governance Context"]
+    NR["Naming Request"]
+    CP["Convention Pack"]
+    CR["Context Resolution"]
+    RI["Resource Identity"]
+    GC["Governance Context"]
     RD["Resource Definition"]
-    RI --> CE["Convention Evaluation"]
+    CE["Convention Evaluation"]
+    RS["Convention Result"]
+
+    NR --> CR
+    CP --> CR
+    CR --> RI
+    CR --> GC
+    RI --> CE
     GC --> CE
     RD --> CE
-    CE --> RS["Convention Result"]
+    CE --> RS
 ```
 
 - **Naming Request** — the minimal, user-supplied description of the resource being
@@ -93,9 +105,9 @@ flowchart TD
 - **Convention Pack** — a Specification artifact, selected via the request's
   `convention` field, that defines how canonical models are projected into
   platform-specific conventions: naming defaults, deployment defaults, governance
-  defaults, abbreviations, ordering rules, metadata projection, and override policy.
-  Convention Packs participate in Context Resolution; concrete Convention Packs are not
-  yet implemented in this Specification (see **What does not belong here** above).
+  defaults, abbreviations, ordering rules, metadata projection, and override policy (see
+  [`convention-pack.md`](./convention-pack.md)). Convention Packs are not yet
+  implemented in this Specification (see **What does not belong here** above).
 - **Context Resolution** — the process that combines the Naming Request, the Convention
   Pack, and shared context into complete canonical models. Context Resolution only
   produces canonical models; it does not generate names, tags, labels, annotations, or
@@ -115,6 +127,13 @@ flowchart TD
   may be called the Convention Engine.
 - **Convention Result** — the final output returned to the caller (see
   [`convention-result.md`](./convention-result.md)).
+
+The pipeline has exactly two processing stages: Context Resolution and Convention
+Evaluation. The Naming Request, Convention Pack, Resource Identity, Governance Context,
+Resource Definition, and Convention Result are domain models or Specification artifacts
+consumed or produced by those two stages — not processing stages themselves. Convention
+Pack and the Naming Request are both inputs to Context Resolution; Resource Definition
+is an input to Convention Evaluation.
 
 If a document only focuses on one part of this pipeline, it uses a simplified diagram
 showing just the concepts relevant to it. Every diagram in the Specification is expected
