@@ -16,6 +16,20 @@ Instead, a Naming Request carries only the details that are unique to the specif
 resource being named — primarily its functional identity and any deployment detail that
 cannot be inferred from context. Everything else is resolved on the caller's behalf.
 
+## Request model
+
+Callers should provide only the minimum functional information not already available
+from context or the selected Convention Pack. `component` is optional and should not be
+required for every request:
+
+```yaml
+resource_type: aws_s3_bucket
+
+functional:
+  service: ingestion
+  component: storage
+```
+
 ## The Context Resolution pipeline
 
 A Naming Request is transformed into a complete Resource Identity, and ultimately into a

@@ -64,14 +64,68 @@ belongs to.
 
 Possible attributes:
 
-- `domain`
-- `service`
-- `component`
-- `resource_type`
+- `service`: Logical workload, subsystem, or deployable capability within the system.
+- `component`: Optional functional role or subcomponent within the service.
+- `resource_type`: Canonical technical resource kind used to select its Resource Definition and constraints.
 
-This plane follows Domain-Driven Design (DDD) concepts: `domain` and `service` describe
-the bounded context and service a resource belongs to, while `component` and
-`resource_type` narrow that down to the specific building block being identified.
+`service` is intentionally broader than a microservice: it may represent a workload, a
+subsystem, a logical service, a deployable capability, or another functional unit within
+the system. `component` is optional. `resource_type` remains the technical resource kind.
+The selected Convention Pack determines which of these attributes are required for a
+given resource.
+
+The simplified hierarchy is:
+
+```text
+organizational.system
+└── functional.service
+    └── functional.component
+        └── functional.resource_type
+```
+
+Not every level must be present. A minimal example:
+
+```yaml
+organizational:
+  system: telemetry-platform
+
+functional:
+  service: ingestion
+  resource_type: aws_s3_bucket
+```
+
+A more detailed example:
+
+```yaml
+organizational:
+  system: telemetry-platform
+
+functional:
+  service: ingestion
+  component: storage
+  resource_type: aws_s3_bucket
+```
+
+### `system` versus `service`
+
+`organizational.system` identifies the software system, product, or business
+application that owns the resource. `functional.service` identifies the workload,
+subsystem, or deployable capability within that system.
+
+### `service` versus `component`
+
+`service` identifies the logical workload or capability. `component` identifies an
+optional role or subcomponent within that service.
+
+### `component` versus `resource_type`
+
+`component` describes the functional role. `resource_type` describes the canonical
+technical resource kind.
+
+> **Compatibility note:** In this early specification, `domain` has been removed from
+> Functional Identity because it overlapped with `organizational.system` and had an
+> inconsistent meaning across organizations. `system` remains the system-level owner;
+> `service` now represents the workload, subsystem, or deployable capability.
 
 ## Plane 4: Operational Metadata
 

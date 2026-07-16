@@ -72,24 +72,20 @@
     },
     "functionalIdentity": {
       "type": "object",
-      "description": "Plane 3: Functional Identity. Answers 'What does this resource do?'. Follows Domain-Driven Design concepts.",
+      "description": "Plane 3: Functional Identity. Answers 'What does this resource do?'.",
       "additionalProperties": false,
       "properties": {
-        "domain": {
-          "type": "string",
-          "description": "The bounded context or business domain the resource belongs to."
-        },
         "service": {
           "type": "string",
-          "description": "The service within the domain that the resource supports."
+          "description": "Logical workload, subsystem, or deployable capability within the system."
         },
         "component": {
           "type": "string",
-          "description": "The specific building block or module within the service."
+          "description": "Optional functional role or subcomponent within the service."
         },
         "resource_type": {
           "type": "string",
-          "description": "The type of the resource being identified."
+          "description": "Canonical technical resource kind used to select its Resource Definition and constraints."
         }
       }
     },
