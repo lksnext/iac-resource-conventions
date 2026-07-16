@@ -7,9 +7,12 @@ adapter — builds upon.
 
 Resource Identity organizes the information about a resource into three **identity
 planes**. Each plane answers a distinct question about the resource and groups together
-attributes that tend to change — or not change — at the same rate. Governance Context is
-modeled separately so operational policy can evolve without changing the canonical
-identity.
+attributes that tend to change — or not change — at the same rate.
+
+Resource Identity does not include ownership, cost allocation, or operational policy
+information. That concern is modeled independently in
+[Governance Context](./governance-context.md), so operational policy can evolve without
+changing the canonical identity.
 
 ## Plane 1: Organizational Identity
 
@@ -124,29 +127,10 @@ optional role or subcomponent within that service.
 `component` describes the functional role. `resource_type` describes the canonical
 technical resource kind.
 
-## Governance Context
+## Relationships between the three identity planes
 
-**Purpose:** "Who owns, operates and governs this resource?"
-
-Governance Context captures the operational policy and accountability data for a
-resource. It is intentionally separate from Resource Identity so governance can evolve
-independently of the canonical identity model.
-
-Possible attributes:
-
-- `owner`: Team or person responsible for the resource.
-- `managed_by`: Tool or platform managing the resource.
-- `cost_center`: Organizational cost allocation identifier.
-- `profile`: Optional governance profile defining operational policies.
-
-Governance Context is not part of the canonical Resource Identity. It is typically
-projected into tags, labels, annotations, and similar governance outputs.
-
-## Relationships between Resource Identity and Governance Context
-
-Resource Identity answers: "What is this resource?" Governance Context answers: "Who
-owns, pays for and manages this resource?" Together they form the complete conceptual
-input to the Convention Engine, but only Resource Identity is canonical.
+Each identity plane answers a distinct question about a resource, and together they
+compose the complete Resource Identity:
 
 ```mermaid
 flowchart TB
@@ -157,18 +141,9 @@ flowchart TB
         FI["Plane 3: Functional Identity<br/>What does this resource do?"]
     end
 
-    GC["Governance Context"]
-    CE["Convention Engine"]
-
     OI --> RI
     DI --> RI
     FI --> RI
-
-    RI --> CE
-    GC --> CE
-
-    CE --> Naming["Resource naming"]
-    CE --> Tagging["Tags / Labels / Annotations"]
 ```
 
 ## Resource Identity is the canonical internal model
@@ -180,5 +155,6 @@ tags, labels, and annotations.
 
 Resource Identity is **not** the public API. Users of the Specification do not construct
 a full Resource Identity by hand; they submit a much smaller request, described in
-[`naming-request.md`](./naming-request.md), which is resolved together with Governance
-Context by the Convention Engine.
+[`naming-request.md`](./naming-request.md), which is resolved into a Resource Identity
+alongside a separate [Governance Context](./governance-context.md) by the Convention
+Engine.

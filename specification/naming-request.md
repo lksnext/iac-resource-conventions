@@ -8,7 +8,7 @@ requesting, not the resource's complete Resource Identity.
 ## Users should not provide a complete Resource Identity
 
 A complete [Resource Identity](./resource-identity.md) spans three planes: organizational,
-deployment, and functional. [Governance Context](./resource-identity.md) is modeled
+deployment, and functional. [Governance Context](./governance-context.md) is modeled
 separately. Requiring a caller to supply all of that information for every request would
 be repetitive, error-prone, and would leak organizational, deployment, and governance
 details into every call site.
@@ -65,7 +65,8 @@ flowchart TD
 - **Resource Identity** — the canonical, fully-resolved identity produced by combining
   the request, the Convention Pack, and shared context.
 - **Governance Context** — the resolved ownership and operational governance context for
-  the resource.
+  the resource. See [`governance-context.md`](./governance-context.md) for the full
+  model.
 - **Convention Engine** — evaluates the Specification against Resource Identity and
   Governance Context.
 - **Convention Result** — the final output produced for the caller.

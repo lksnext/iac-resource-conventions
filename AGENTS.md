@@ -82,6 +82,7 @@ before relying on it — this section can lag behind real changes.
 specification/
 ├── README.md
 ├── resource-identity.md
+├── governance-context.md
 ├── naming-request.md
 └── schemas/
     ├── resource-identity.schema.json

@@ -28,7 +28,9 @@ another for the same canonical input.
 
 ## What belongs here
 
-- Conceptual and domain models (for example, Resource Identity and Governance Context).
+- Independent conceptual and domain models — Resource Identity (what a resource is) and
+  Governance Context (how a resource is owned and governed) are modeled as separate,
+  independent concepts.
 - Public request/response contracts (for example, the Naming Request).
 - JSON Schemas describing the structure of these models.
 
@@ -44,7 +46,9 @@ project.
 ## Contents
 
 - [`resource-identity.md`](./resource-identity.md) — the canonical domain model for
-  identifying a resource.
+  identifying a resource: what it is.
+- [`governance-context.md`](./governance-context.md) — the canonical domain model for
+  how a resource is owned and governed.
 - [`naming-request.md`](./naming-request.md) — the public request contract used to
   produce a Resource Identity and Governance Context.
 - [`schemas/`](./schemas/) — JSON Schema definitions for the models described above.
