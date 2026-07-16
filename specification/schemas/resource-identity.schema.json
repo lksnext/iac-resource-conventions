@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/iac-resource-conventions/specification/schemas/resource-identity.schema.json",
   "title": "Resource Identity",
-  "description": "The canonical, four-plane domain model describing the complete identity of a resource. This is the internal model produced by the Convention Engine; it is not the public request contract (see naming-request.schema.json).",
+  "description": "The canonical, three-plane domain model describing the complete identity of a resource. This is the internal identity model produced by the Convention Engine; Governance Context is modeled separately (see governance-context.schema.json and naming-request.schema.json).",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -14,9 +14,6 @@
     },
     "functional": {
       "$ref": "#/$defs/functionalIdentity"
-    },
-    "operational": {
-      "$ref": "#/$defs/operationalMetadata"
     }
   },
   "$defs": {
@@ -86,33 +83,6 @@
         "resource_type": {
           "type": "string",
           "description": "Canonical technical resource kind used to select its Resource Definition and constraints."
-        }
-      }
-    },
-    "operationalMetadata": {
-      "type": "object",
-      "description": "Plane 4: Operational Metadata. Answers 'Who owns, supports and governs the resource?'. This plane normally becomes tags, labels, or annotations, and should not usually participate in resource names.",
-      "additionalProperties": false,
-      "properties": {
-        "owner": {
-          "type": "string",
-          "description": "The individual or team accountable for the resource."
-        },
-        "cost_center": {
-          "type": "string",
-          "description": "The cost center the resource should be billed to."
-        },
-        "criticality": {
-          "type": "string",
-          "description": "The operational criticality of the resource."
-        },
-        "classification": {
-          "type": "string",
-          "description": "The data or security classification of the resource."
-        },
-        "managed_by": {
-          "type": "string",
-          "description": "The tool, team, or process responsible for managing the resource."
         }
       }
     }

@@ -5,9 +5,11 @@ a way that is independent of any cloud provider, tool, or naming syntax. It is t
 vocabulary that every adapter — Terraform, AWS CDK, Ansible, the CLI, and any future
 adapter — builds upon.
 
-Resource Identity organizes the information about a resource into four **identity
+Resource Identity organizes the information about a resource into three **identity
 planes**. Each plane answers a distinct question about the resource and groups together
-attributes that tend to change — or not change — at the same rate.
+attributes that tend to change — or not change — at the same rate. Governance Context is
+modeled separately so operational policy can evolve without changing the canonical
+identity.
 
 ## Plane 1: Organizational Identity
 
@@ -127,39 +129,29 @@ technical resource kind.
 > inconsistent meaning across organizations. `system` remains the system-level owner;
 > `service` now represents the workload, subsystem, or deployable capability.
 
-## Plane 4: Operational Metadata
+## Governance Context
 
-**Purpose:** "Who owns, supports and governs the resource?"
+**Purpose:** "Who owns, operates and governs this resource?"
 
-Operational Metadata captures ownership, support, and governance information about a
-resource.
+Governance Context captures the operational policy and accountability data for a
+resource. It is intentionally separate from Resource Identity so governance can evolve
+independently of the canonical identity model.
 
 Possible attributes:
 
-- `owner`
-- `cost_center`
-- `criticality`
-- `classification`
-- `managed_by`
+- `owner`: Team or person responsible for the resource.
+- `managed_by`: Tool or platform managing the resource.
+- `cost_center`: Organizational cost allocation identifier.
+- `profile`: Optional governance profile defining operational policies.
 
-This plane normally becomes:
+Governance Context is not part of the canonical Resource Identity. It is typically
+projected into tags, labels, annotations, and similar governance outputs.
 
-- AWS Tags.
-- Azure Tags.
-- Kubernetes Labels.
+## Relationships between Resource Identity and Governance Context
 
-Operational Metadata should not usually participate in resource names. It informs
-governance, cost allocation, and support processes, but naming conventions are typically
-driven by the other three planes.
-
-## Relationships between the planes
-
-The four planes are complementary rather than hierarchical: together they form a
-complete Resource Identity, but each plane can be reasoned about independently. In
-general, Organizational Identity and Functional Identity attributes are supplied by the
-person or system requesting a resource, while Deployment Identity attributes are largely
-resolved from the context in which the request is made, and Operational Metadata is
-enriched from organizational context and governance rules.
+Resource Identity answers: "What is this resource?" Governance Context answers: "Who
+owns, pays for and manages this resource?" Together they form the complete conceptual
+input to the Convention Engine, but only Resource Identity is canonical.
 
 ```mermaid
 flowchart TB
@@ -168,26 +160,30 @@ flowchart TB
         OI["Plane 1: Organizational Identity<br/>Why does this resource exist?"]
         DI["Plane 2: Deployment Identity<br/>Where is this resource deployed?"]
         FI["Plane 3: Functional Identity<br/>What does this resource do?"]
-        OM["Plane 4: Operational Metadata<br/>Who owns, supports and governs it?"]
     end
+
+    GC["Governance Context"]
+    CE["Convention Engine"]
 
     OI --> RI
     DI --> RI
     FI --> RI
-    OM --> RI
 
-    RI --> Naming["Resource naming"]
-    RI --> Tagging["Tags / Labels / Annotations"]
+    RI --> CE
+    GC --> CE
+
+    CE --> Naming["Resource naming"]
+    CE --> Tagging["Tags / Labels / Annotations"]
 ```
 
 ## Resource Identity is the canonical internal model
 
 Resource Identity is the complete, canonical representation of a resource's identity
-once all four planes have been resolved. It is the model the Convention Engine operates
-on internally, and the model every adapter ultimately consumes to render names, tags,
-labels, and annotations.
+once the three identity planes have been resolved. It is the model the Convention Engine
+operates on internally, and the model every adapter ultimately consumes to render names,
+tags, labels, and annotations.
 
 Resource Identity is **not** the public API. Users of the Specification do not construct
 a full Resource Identity by hand; they submit a much smaller request, described in
-[`naming-request.md`](./naming-request.md), which is resolved into a complete Resource
-Identity by the Convention Engine.
+[`naming-request.md`](./naming-request.md), which is resolved together with Governance
+Context by the Convention Engine.

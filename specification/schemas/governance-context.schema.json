@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/iac-resource-conventions/specification/schemas/governance-context.schema.json",
+  "title": "Governance Context",
+  "description": "The operational ownership and policy context associated with a resource. Governance Context is modeled separately from Resource Identity so operational policy can evolve independently.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "owner": {
+      "type": "string",
+      "description": "Team or person responsible for the resource."
+    },
+    "managed_by": {
+      "type": "string",
+      "description": "Tool or platform managing the resource."
+    },
+    "cost_center": {
+      "type": "string",
+      "description": "Organizational cost allocation identifier."
+    },
+    "profile": {
+      "type": "string",
+      "description": "Optional governance profile defining operational policies."
+    }
+  }
+}
