@@ -86,6 +86,7 @@ specification/
 ├── naming-request.md
 ├── context-resolution.md
 ├── resource-definition.md
+├── convention-pack.md
 ├── convention-result.md
 └── schemas/
     ├── resource-identity.schema.json
@@ -146,11 +147,13 @@ defined there. Agents must inspect its existing contents before changing domain 
 examples, adapters, or documentation, and must not invent concepts that are not yet present in it.
 
 The Specification now consists of multiple independent conceptual models — Resource Identity,
-Governance Context, Naming Request, Context Resolution, Resource Definition, and Convention
-Result — each answering a distinct question and each documented in its own file under
-`specification/`. They are combined into a single conceptual pipeline (Naming Request →
-Convention Pack → Context Resolution → Resource Identity + Governance Context → Resource
-Definition → Convention Engine → Convention Result), described in
+Governance Context, Naming Request, Context Resolution, Resource Definition, Convention Pack, and
+Convention Result — each answering a distinct question and each documented in its own file under
+`specification/`. They are combined into a single conceptual pipeline with exactly two processing
+stages, Context Resolution and Convention Evaluation. The Naming Request and Convention Pack are
+inputs to Context Resolution; Resource Identity and Governance Context are its outputs; Resource
+Definition is an additional input to Convention Evaluation, which produces the Convention Result.
+This pipeline is described in
 [`specification/README.md`](specification/README.md#architecture). Future adapters and the
 Convention Engine implementation must follow these conceptual models rather than redefining or
 reinterpreting them.
@@ -165,10 +168,15 @@ shared Specification or core engine.
 
 ## Convention Packs
 
-Convention Packs are pre-built, organization- or platform-specific configurations (for example,
-`aws-controltower`, `kubernetes-shared`) built on top of the common Specification and Convention
-Engine. They configure organizational behavior; they do not define new conventions or bypass the
-Specification.
+Convention Pack is a Specification concept, conceptually documented in
+[`specification/convention-pack.md`](specification/convention-pack.md): it defines how canonical
+models are projected into platform-specific conventions (naming defaults, deployment defaults,
+governance defaults, abbreviations, ordering rules, metadata projection, and override policy).
+Concrete Convention Packs (for example, `aws-controltower`, `kubernetes-shared`) are
+organization- or platform-specific instances built on top of that concept and the common
+Specification and Convention Engine; they are configuration, not part of the conceptual
+Specification itself. They configure organizational behavior; they do not define new conventions
+or bypass the Specification.
 
 ## Generated Artifacts
 

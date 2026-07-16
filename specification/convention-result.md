@@ -72,15 +72,23 @@ beyond what is described above.
 
 ```mermaid
 flowchart TD
-    NR["Naming Request"] --> CP["Convention Pack"]
-    CP --> CR["Context Resolution"]
-    CR --> RI["Resource Identity"]
-    CR --> GC["Governance Context"]
+    NR["Naming Request"]
+    CP["Convention Pack"]
+    CR["Context Resolution"]
+    RI["Resource Identity"]
+    GC["Governance Context"]
     RD["Resource Definition"]
-    RI --> CE["Convention Evaluation"]
+    CE["Convention Evaluation"]
+    RS["Convention Result"]
+
+    NR --> CR
+    CP --> CR
+    CR --> RI
+    CR --> GC
+    RI --> CE
     GC --> CE
     RD --> CE
-    CE --> RS["Convention Result"]
+    CE --> RS
 ```
 
 This is the complete architecture described in

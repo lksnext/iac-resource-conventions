@@ -27,7 +27,8 @@ Context Resolution combines information from several sources:
   (see [`naming-request.md`](./naming-request.md)).
 - **Convention Pack** — selected explicitly via the request's `convention` field;
   supplies naming defaults, deployment defaults, governance defaults (including an
-  optional default Governance Profile), and metadata projection rules.
+  optional default Governance Profile), and metadata projection rules (see
+  [`convention-pack.md`](./convention-pack.md)).
 - **Shared organizational context** — organizational values that are stable across many
   requests (for example, `organization`, `business_unit`) and do not need to be repeated
   by the caller.
@@ -115,8 +116,8 @@ Context are handed to Convention Evaluation, which also consults the resource's
 
 ```mermaid
 flowchart TD
-    NR["Naming Request"] --> CP["Convention Pack"]
-    CP --> CR["Context Resolution"]
+    NR["Naming Request"] --> CR["Context Resolution"]
+    CP["Convention Pack"] --> CR
     CR --> RI["Resource Identity"]
     CR --> GC["Governance Context"]
 ```
@@ -124,3 +125,5 @@ flowchart TD
 This is a focused view of the pipeline described in
 [`specification/README.md`](./README.md#architecture); it omits Resource Definition and
 Convention Evaluation because they are outside the scope of Context Resolution itself.
+Notice that the Naming Request and Convention Pack are both inputs to Context
+Resolution — Context Resolution is the processing stage, not the Convention Pack.

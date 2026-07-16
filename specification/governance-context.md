@@ -43,7 +43,8 @@ resource's identity.
 A Convention Pack is a Specification artifact that defines how canonical models are
 projected into platform-specific conventions: naming defaults, deployment defaults,
 governance defaults, abbreviations, ordering rules, metadata projection, and override
-policy. A Convention Pack may also declare a default Governance Profile to apply when
+policy (see [`convention-pack.md`](./convention-pack.md)). A Convention Pack may also
+declare a default Governance Profile to apply when
 the caller does not select one explicitly. However, Convention Pack and Governance
 Profile remain different concepts: a Convention Pack is selected via the Naming
 Request's `convention` field, while a Governance Profile is selected via
@@ -84,15 +85,23 @@ a [Naming Request](./naming-request.md) into a Resource Identity:
 
 ```mermaid
 flowchart TD
-    NR["Naming Request"] --> CP["Convention Pack"]
-    CP --> CR["Context Resolution"]
-    CR --> RI["Resource Identity"]
-    CR --> GC["Governance Context"]
+    NR["Naming Request"]
+    CP["Convention Pack"]
+    CR["Context Resolution"]
+    RI["Resource Identity"]
+    GC["Governance Context"]
     RD["Resource Definition"]
-    RI --> CE["Convention Evaluation"]
+    CE["Convention Evaluation"]
+    Result["Convention Result"]
+
+    NR --> CR
+    CP --> CR
+    CR --> RI
+    CR --> GC
+    RI --> CE
     GC --> CE
     RD --> CE
-    CE --> Result["Convention Result"]
+    CE --> Result
 ```
 
 This is the same canonical pipeline described in
