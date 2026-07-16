@@ -124,11 +124,6 @@ optional role or subcomponent within that service.
 `component` describes the functional role. `resource_type` describes the canonical
 technical resource kind.
 
-> **Compatibility note:** In this early specification, `domain` has been removed from
-> Functional Identity because it overlapped with `organizational.system` and had an
-> inconsistent meaning across organizations. `system` remains the system-level owner;
-> `service` now represents the workload, subsystem, or deployable capability.
-
 ## Governance Context
 
 **Purpose:** "Who owns, operates and governs this resource?"
