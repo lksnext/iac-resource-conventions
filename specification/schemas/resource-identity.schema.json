@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/iac-resource-conventions/specification/schemas/resource-identity.schema.json",
+  "title": "Resource Identity",
+  "description": "The canonical, four-plane domain model describing the complete identity of a resource. This is the internal model produced by the Convention Engine; it is not the public request contract (see naming-request.schema.json).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "organizational": {
+      "$ref": "#/$defs/organizationalIdentity"
+    },
+    "deployment": {
+      "$ref": "#/$defs/deploymentIdentity"
+    },
+    "functional": {
+      "$ref": "#/$defs/functionalIdentity"
+    },
+    "operational": {
+      "$ref": "#/$defs/operationalMetadata"
+    }
+  },
+  "$defs": {
+    "organizationalIdentity": {
+      "type": "object",
+      "description": "Plane 1: Organizational Identity. Answers 'Why does this resource exist?'. These attributes are highly stable and rarely change over the lifetime of a resource.",
+      "additionalProperties": false,
+      "properties": {
+        "organization": {
+          "type": "string",
+          "description": "The organization the resource belongs to."
+        },
+        "business_unit": {
+          "type": "string",
+          "description": "The business unit responsible for the resource."
+        },
+        "portfolio": {
+          "type": "string",
+          "description": "The portfolio of applications or services the resource belongs to."
+        },
+        "application": {
+          "type": "string",
+          "description": "The application the resource belongs to."
+        },
+        "tenant": {
+          "type": "string",
+          "description": "The tenant the resource is associated with, in a multi-tenant context."
+        }
+      }
+    },
+    "deploymentIdentity": {
+      "type": "object",
+      "description": "Plane 2: Deployment Identity. Answers 'Where is this resource deployed?'.",
+      "additionalProperties": false,
+      "properties": {
+        "platform": {
+          "type": "string",
+          "description": "The platform the resource is deployed to (for example, a cloud provider or orchestration platform)."
+        },
+        "deployment_scope": {
+          "type": "string",
+          "description": "The platform-independent isolation boundary the resource is deployed into (for example, an AWS Account, an Azure Subscription, or a Kubernetes Cluster)."
+        },
+        "environment": {
+          "type": "string",
+          "description": "The environment the resource is deployed to (for example, production or staging)."
+        },
+        "location": {
+          "type": "string",
+          "description": "The physical or logical location of the deployment (for example, a region or datacenter)."
+        },
+        "instance": {
+          "type": "string",
+          "description": "Distinguishes multiple instances of an otherwise identical resource."
+        }
+      }
+    },
+    "functionalIdentity": {
+      "type": "object",
+      "description": "Plane 3: Functional Identity. Answers 'What does this resource do?'. Follows Domain-Driven Design concepts.",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "type": "string",
+          "description": "The bounded context or business domain the resource belongs to."
+        },
+        "service": {
+          "type": "string",
+          "description": "The service within the domain that the resource supports."
+        },
+        "component": {
+          "type": "string",
+          "description": "The specific building block or module within the service."
+        },
+        "resource_type": {
+          "type": "string",
+          "description": "The type of the resource being identified."
+        }
+      }
+    },
+    "operationalMetadata": {
+      "type": "object",
+      "description": "Plane 4: Operational Metadata. Answers 'Who owns, supports and governs the resource?'. This plane normally becomes tags, labels, or annotations, and should not usually participate in resource names.",
+      "additionalProperties": false,
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "The individual or team accountable for the resource."
+        },
+        "cost_center": {
+          "type": "string",
+          "description": "The cost center the resource should be billed to."
+        },
+        "criticality": {
+          "type": "string",
+          "description": "The operational criticality of the resource."
+        },
+        "classification": {
+          "type": "string",
+          "description": "The data or security classification of the resource."
+        },
+        "managed_by": {
+          "type": "string",
+          "description": "The tool, team, or process responsible for managing the resource."
+        }
+      }
+    }
+  }
+}
