@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/iac-resource-conventions/specification/schemas/naming-request.schema.json",
+  "$id": "https://raw.githubusercontent.com/lksnext/iac-resource-conventions/main/specification/schemas/naming-request.schema.json",
   "title": "Naming Request",
   "description": "The public request contract used to ask for a resource to be named, tagged, or labeled according to project conventions. Callers supply only the information specific to the resource being requested; the Context Resolution pipeline enriches this request into a complete Resource Identity and Governance Context (see resource-identity.schema.json and governance-context.schema.json). This schema is intentionally small and is expected to grow in future versions.",
   "type": "object",

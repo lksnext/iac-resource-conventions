@@ -76,9 +76,21 @@ before relying on it — this section can lag behind real changes.
 | `.serena/`             | Serena MCP project configuration and memories.                       |
 | `.editorconfig`        | Repository-wide editor formatting defaults.                          |
 | `.gitignore`           | Ignored files and directories.                                       |
+| `specification/`      | The Specification — the current single source of truth for the domain concepts and schemas defined so far. See the tree below. |
 
-No `specification/`, `core/`, `terraform/`, `cdk/`, `ansible/`, `cli/`, `fixtures/`, `tests/`, or
-`docs/` directory exists yet — see **Planned Architecture** below.
+```text
+specification/
+├── README.md
+├── resource-identity.md
+├── naming-request.md
+└── schemas/
+    ├── resource-identity.schema.json
+    ├── naming-request.schema.json
+    └── governance-context.schema.json
+```
+
+No `core/`, `terraform/`, `cdk/`, `ansible/`, `cli/`, `fixtures/`, `tests/`, or `docs/` directory
+exists yet — see **Planned Architecture** below.
 
 ## Planned Architecture
 
@@ -88,7 +100,6 @@ task actually requires it — never speculatively, and never merely because it i
 
 | Path               | Planned Responsibility                                                    |
 | ------------------ | ----------------------------------------------------------------------------|
-| `specification/`    | The Specification — will become the single source of truth for naming, tags, labels, annotations, metadata, validation rules, abbreviations, and platform restrictions once it exists. |
 | `core/`             | Convention Engine that evaluates the Specification for adapters. |
 | `terraform/`        | Terraform adapter consuming the Specification.                   |
 | `cdk/`              | AWS CDK adapter consuming the Specification.                     |
@@ -102,12 +113,14 @@ task actually requires it — never speculatively, and never merely because it i
 
 - Always inspect the actual repository contents before creating new files or directories — do
   not rely solely on this document, which can become outdated.
+- `specification/` exists and is the single source of truth for the domain concepts and schemas
+  currently defined there. Inspect it before changing domain models, schemas, examples, adapters,
+  or documentation that depend on it.
+- Do not invent concepts, attributes, or schemas that are not yet present in `specification/`.
 - Do not create any path listed under **Planned Architecture** simply because it is documented
   here. Create it only when the requested task genuinely needs it.
 - Repository evolution is incremental: introduce a new directory, adapter, or tool only when
   there is concrete, immediate work that requires it.
-- Until `specification/` exists, there is no Specification to read from or consume. Do not assume
-  it exists, and do not invent its contents.
 
 ## Repository Evolution
 
@@ -123,10 +136,10 @@ formats, annotation conventions, metadata fields, validation rules, abbreviation
 platform-specific restrictions the convention must respect. The Specification does **not** contain
 adapter-specific rendering logic, tool syntax, or infrastructure code — that belongs to adapters.
 
-As of this writing, `specification/` does not yet exist in the repository (see **Current
-Repository Structure** above). Once it exists, it becomes the single source of truth described
-above. Until then, agents must respect the current repository structure and must not assume the
-Specification exists or invent its contents.
+`specification/` exists in the repository today (see **Current Repository Structure** above) and
+is the single source of truth described above for the domain concepts and schemas currently
+defined there. Agents must inspect its existing contents before changing domain models, schemas,
+examples, adapters, or documentation, and must not invent concepts that are not yet present in it.
 
 ## Adapter Rules
 

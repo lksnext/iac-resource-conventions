@@ -36,15 +36,18 @@ governance:
   managed_by: terraform
 ```
 
+`resource_type` is exposed at the top level of the Naming Request for convenience and is
+resolved into `functional.resource_type` in the canonical Resource Identity. It is not
+duplicated inside the `functional` block of the request.
+
 ## The Context Resolution pipeline
 
-A Resource Request is transformed through the Context Resolution pipeline into a
-complete Resource Identity and Governance Context, and ultimately into a Convention
-Result:
+A Naming Request is transformed through the Context Resolution pipeline into a complete
+Resource Identity and Governance Context, and ultimately into a Convention Result:
 
 ```mermaid
 flowchart TD
-    RR["Resource Request"] --> CP["Convention Pack"]
+    NR["Naming Request"] --> CP["Convention Pack"]
     CP --> CR["Context Resolution"]
     CR --> RI["Resource Identity"]
     CR --> GC["Governance Context"]
@@ -53,7 +56,7 @@ flowchart TD
     CE --> Result["Convention Result"]
 ```
 
-- **Resource Request** — the minimal, user-supplied description of the resource.
+- **Naming Request** — the minimal, user-supplied description of the resource.
 - **Convention Pack** — enriches the request with identity defaults, governance defaults,
   naming rules, and metadata projections appropriate to the organization or platform in
   use.

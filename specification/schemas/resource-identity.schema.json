@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/iac-resource-conventions/specification/schemas/resource-identity.schema.json",
+  "$id": "https://raw.githubusercontent.com/lksnext/iac-resource-conventions/main/specification/schemas/resource-identity.schema.json",
   "title": "Resource Identity",
   "description": "The canonical, three-plane domain model describing the complete identity of a resource. This is the internal identity model produced by the Convention Engine; Governance Context is modeled separately (see governance-context.schema.json and naming-request.schema.json).",
   "type": "object",

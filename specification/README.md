@@ -48,3 +48,11 @@ project.
 - [`naming-request.md`](./naming-request.md) — the public request contract used to
   produce a Resource Identity and Governance Context.
 - [`schemas/`](./schemas/) — JSON Schema definitions for the models described above.
+
+## Schema identifiers
+
+During this pre-1.0 phase, JSON Schema `$id` values use the canonical raw GitHub location
+on the default branch (for example,
+`https://raw.githubusercontent.com/lksnext/iac-resource-conventions/main/specification/schemas/resource-identity.schema.json`).
+These URIs are not yet immutable release contracts; they may be revisited once the
+project adopts versioned schema releases.
