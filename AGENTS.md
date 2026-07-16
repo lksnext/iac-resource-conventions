@@ -172,11 +172,12 @@ Convention Pack is a Specification concept, conceptually documented in
 [`specification/convention-pack.md`](specification/convention-pack.md): it defines how canonical
 models are projected into platform-specific conventions (naming defaults, deployment defaults,
 governance defaults, abbreviations, ordering rules, metadata projection, and override policy).
-Concrete Convention Packs (for example, `aws-controltower`, `kubernetes-shared`) are
-organization- or platform-specific instances built on top of that concept and the common
-Specification and Convention Engine; they are configuration, not part of the conceptual
-Specification itself. They configure organizational behavior; they do not define new conventions
-or bypass the Specification.
+Concrete Convention Packs (for example, `aws-workload-default`, documented under
+[`specification/convention-packs/`](specification/convention-packs/)) are Specification Artifacts
+that apply that concept to a specific organizational policy. A Specification Artifact is part of
+the Specification, not mere configuration external to it — it is expressed as a Markdown policy
+document rather than an abstract, reusable concept. Convention Packs contain organizational
+policy; they do not define new conventions or bypass the Specification.
 
 ## Generated Artifacts
 

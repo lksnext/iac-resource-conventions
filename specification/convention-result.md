@@ -22,14 +22,8 @@ Convention Result conceptually consists of:
   from (see [`resource-identity.md`](./resource-identity.md)).
 - **Governance Context** — the resolved ownership and governance context the result was
   generated from (see [`governance-context.md`](./governance-context.md)).
-- **Generated name** — the canonical name produced for the resource, following the
-  naming conventions defined by the Specification and the selected Convention Pack.
-- **Tags** — platform-specific tags (for example, AWS or Azure tags) projected from
-  Resource Identity and Governance Context.
-- **Labels** — platform-specific labels (for example, Kubernetes labels) projected from
-  the same models.
-- **Annotations** — platform-specific annotations (for example, Kubernetes annotations)
-  projected from the same models.
+- **Convention Outputs** — the platform-specific outputs projected from Resource
+  Identity and Governance Context. See [Convention Outputs](#convention-outputs) below.
 - **Validation** — the outcome of validating the generated outputs against the
   constraints declared by the resource's Resource Definition and the Specification.
 - **Explanation** — a human-readable account of how the result was derived, useful for
@@ -39,6 +33,27 @@ Convention Result conceptually consists of:
 
 This list describes the conceptual shape of a Convention Result. It intentionally does
 not define a JSON Schema; that is left for a later iteration of the Specification.
+
+## Convention Outputs
+
+Convention Outputs is the conceptual grouping for every platform-specific output a
+Convention Result carries. In this iteration of the Specification, Convention Outputs
+conceptually include:
+
+- **Names** — the canonical name produced for the resource, following the naming
+  conventions defined by the Specification and the selected Convention Pack.
+- **Metadata** — platform-specific metadata projected from Resource Identity and
+  Governance Context:
+  - **Tags** — platform-specific tags (for example, AWS or Azure tags).
+  - **Labels** — platform-specific labels (for example, Kubernetes labels).
+  - **Annotations** — platform-specific annotations (for example, Kubernetes
+    annotations).
+
+Future iterations of the Specification may extend Convention Outputs with additional
+output kinds — for example, aliases, DNS names, selectors, or identifiers — without
+changing the conceptual model described here: any such output would still be a
+Convention Output projected from the same resolved Resource Identity and Governance
+Context.
 
 ## Convention Evaluation pipeline
 
@@ -52,8 +67,10 @@ Result from a Naming Request:
    resolved context.
 3. **Build Governance Context** — complete the canonical Governance Context from the
    resolved context.
-4. **Resolve Resource Definition** — select the Resource Definition referenced by the
+4. **Select Resource Definition** — look up the Resource Definition referenced by the
    resolved `resource_type` (see [`resource-definition.md`](./resource-definition.md)).
+   This is a lookup, not a resolution: the Resource Definition is not produced by
+   Context Resolution or Convention Evaluation, only selected by `resource_type`.
 5. **Evaluate Convention** — apply the Specification's naming, tagging, labeling, and
    annotation conventions, as configured by the selected Convention Pack, to the
    resolved models.
@@ -92,6 +109,7 @@ flowchart TD
 ```
 
 This is the complete architecture described in
-[`specification/README.md`](./README.md#architecture): a Convention Result is the final
-stage of the pipeline, produced once Resource Identity, Governance Context, and Resource
-Definition have all been resolved.
+[`specification/README.md`](./README.md#architecture): a Convention Result is produced
+by Convention Evaluation once Resource Identity and Governance Context have been
+resolved by Context Resolution and the Resource Definition has been selected from the
+resolved `resource_type`.

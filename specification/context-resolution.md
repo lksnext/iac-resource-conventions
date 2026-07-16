@@ -107,9 +107,12 @@ Context Resolution produces exactly two canonical models:
 - [Governance Context](./governance-context.md) — the complete description of who owns,
   pays for, and manages the resource.
 
-It does not produce a Convention Result directly. Resource Identity and Governance
-Context are handed to Convention Evaluation, which also consults the resource's
-[Resource Definition](./resource-definition.md) to produce a
+Context Resolution does not produce a Convention Result directly, and it does not
+resolve the resource's [Resource Definition](./resource-definition.md). Once Resource
+Identity has been completed, its `functional.resource_type` value is used to look up
+the corresponding Resource Definition — a lookup, not a step Context Resolution
+performs. Resource Identity, Governance Context, and the selected Resource Definition
+are then handed to Convention Evaluation, which produces a
 [Convention Result](./convention-result.md).
 
 ## Where Context Resolution fits

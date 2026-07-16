@@ -147,8 +147,9 @@ flowchart TD
 - **Governance Context** — the canonical model describing who owns, pays for, and
   manages the resource (see [`governance-context.md`](./governance-context.md)).
 - **Resource Definition** — the technical characteristics and constraints of the
-  resource's canonical resource type; it participates in Convention Evaluation (see
-  [`resource-definition.md`](./resource-definition.md)).
+  resource's canonical resource type; it is selected (looked up) from the resolved
+  `resource_type` once Resource Identity is complete, and participates in Convention
+  Evaluation as an input (see [`resource-definition.md`](./resource-definition.md)).
 - **Convention Evaluation** — evaluates the Specification against Resource Identity,
   Governance Context, and the resource's Resource Definition to produce
   platform-specific outputs. This is the Specification responsibility that generates
@@ -162,7 +163,8 @@ Evaluation. The Naming Request, Convention Pack, Resource Identity, Governance C
 Resource Definition, and Convention Result are domain models or Specification artifacts
 consumed or produced by those two stages — not processing stages themselves. Convention
 Pack and the Naming Request are both inputs to Context Resolution; Resource Definition
-is an input to Convention Evaluation.
+is an input to Convention Evaluation, selected by `resource_type` once Resource Identity
+is complete — Context Resolution does not resolve the Resource Definition.
 
 If a document only focuses on one part of this pipeline, it uses a simplified diagram
 showing just the concepts relevant to it. Every diagram in the Specification is expected

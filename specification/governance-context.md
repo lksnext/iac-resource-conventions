@@ -92,7 +92,7 @@ flowchart TD
     GC["Governance Context"]
     RD["Resource Definition"]
     CE["Convention Evaluation"]
-    Result["Convention Result"]
+    RS["Convention Result"]
 
     NR --> CR
     CP --> CR
@@ -101,7 +101,7 @@ flowchart TD
     RI --> CE
     GC --> CE
     RD --> CE
-    CE --> Result
+    CE --> RS
 ```
 
 This is the same canonical pipeline described in

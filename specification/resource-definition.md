@@ -75,6 +75,11 @@ describes the technical rules that resource must follow. Resource Identity remai
 canonical and independent — it does not embed a Resource Definition's technical details
 directly; it only references one by `resource_type`.
 
+This selection happens once Resource Identity has been completed. Resource Definition
+lookup is independent of [Context Resolution](./context-resolution.md): Context
+Resolution produces Resource Identity and Governance Context only, and does not itself
+select or resolve a Resource Definition.
+
 ## Relationship with Convention Evaluation
 
 Convention Evaluation consults a resource's Resource Definition, alongside its
@@ -106,4 +111,7 @@ flowchart TD
 
 This is a focused view of the pipeline described in
 [`specification/README.md`](./README.md#architecture); it shows only how Resource
-Definition relates to Resource Identity and Convention Evaluation.
+Definition relates to Resource Identity and Convention Evaluation. The arrow from
+Resource Identity to Resource Definition represents a lookup by `resource_type`, not a
+processing stage — the only processing stages in the Specification are Context
+Resolution and Convention Evaluation.
