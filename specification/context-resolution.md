@@ -50,8 +50,10 @@ precedence:
    resolved independently of deployment and organizational placement.
 5. **Naming Request values** — values explicitly supplied by the caller in the Naming
    Request. A caller-supplied value always takes precedence over any default.
-6. **Explicit overrides** — values supplied in the request's `overrides` block. These
-   are the most specific, deliberate values a caller can provide and always win.
+6. **Validated explicit overrides** — values supplied in the request's `overrides`
+   block. These are the most specific, deliberate values a caller can provide and
+   always win, but they are still validated by the Convention Engine (see
+   [Overrides](#overrides) below).
 
 This is the same precedence order described in
 [`naming-request.md`](./naming-request.md); it is defined once here and referenced from
@@ -71,6 +73,17 @@ The `overrides` block on a Naming Request exists specifically to let a caller by
 resolved or defaulted values when a resource is a deliberate, documented exception.
 Because overrides have the highest precedence, they should be used sparingly and only
 when a value genuinely cannot be produced correctly by resolution.
+
+Overrides are still validated by the Convention Engine. They only bypass Context
+Resolution defaults — the Convention Pack defaults, shared organizational and deployment
+context, and Governance Profile defaults described above. They do not bypass:
+
+- Resource Definition constraints (see [`resource-definition.md`](./resource-definition.md));
+- Convention Pack restrictions on which attributes may be overridden;
+- schema validation of the Naming Request itself.
+
+In other words, an override changes *where* a value comes from, not *whether* it must
+still be a valid value for the resource being named.
 
 ## Deterministic behaviour
 

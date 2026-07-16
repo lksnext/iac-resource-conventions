@@ -45,8 +45,22 @@
     },
     "overrides": {
       "type": "object",
-      "description": "Explicit values that override attributes otherwise resolved by the Convention Pack or Context Providers.",
-      "additionalProperties": true
+      "description": "Explicit values that intentionally bypass attributes otherwise resolved by Context Resolution. Overrides mirror the canonical Resource Identity and Governance Context hierarchy rather than arbitrary key/value pairs. They are still validated by the Convention Engine and do not bypass Resource Definition constraints, Convention Pack restrictions, or schema validation.",
+      "additionalProperties": false,
+      "properties": {
+        "organizational": {
+          "$ref": "./resource-identity.schema.json#/$defs/organizationalIdentity"
+        },
+        "deployment": {
+          "$ref": "./resource-identity.schema.json#/$defs/deploymentIdentity"
+        },
+        "functional": {
+          "$ref": "./resource-identity.schema.json#/$defs/functionalIdentity"
+        },
+        "governance": {
+          "$ref": "./governance-context.schema.json"
+        }
+      }
     },
     "custom_metadata": {
       "type": "object",

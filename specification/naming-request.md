@@ -41,6 +41,11 @@ governance:
   owner: platform-team
   managed_by: terraform
   profile: standard
+
+overrides:
+
+  deployment:
+    location: us-east-1
 ```
 
 `resource_type` is exposed at the top level of the Naming Request for convenience and is
@@ -59,6 +64,35 @@ Selecting a Convention Pack does not select a Governance Profile, and selecting 
 Governance Profile does not select a Convention Pack. A Convention Pack may declare a
 default Governance Profile to apply when the caller does not supply one, but the two
 selectors remain independent and may be combined freely.
+
+### Explicit Overrides
+
+The `overrides` block lets a caller intentionally bypass values that Context Resolution
+would otherwise resolve or default. Overrides are modeled using the same structure as
+the canonical Resource Identity — `organizational`, `deployment`, and `functional` — plus
+`governance`, rather than a flat set of arbitrary keys. This makes clear that an override
+targets a specific canonical identity or governance attribute, not an unrelated,
+free-form value.
+
+Overrides intentionally bypass values resolved during Context Resolution, so they should
+only be used for exceptional situations, such as:
+
+- legacy resources that predate current conventions;
+- migrations, where a resource must temporarily keep a prior value;
+- platform-specific exceptions that cannot be expressed any other way.
+
+Overrides remain part of the canonical model: an overridden attribute still populates
+the same Resource Identity or Governance Context attribute it targets, it simply skips
+the defaults and shared context that would otherwise have produced it. Overrides are
+evaluated after the Naming Request values, which is why they hold the highest
+precedence (see [Precedence order](#precedence-order) below).
+
+Future Convention Packs and Resource Definitions may restrict which attributes are
+allowed to be overridden. For example, a deployment may forbid overriding
+`organization`, a Convention Pack may forbid overriding `deployment_scope`, or a
+Resource Definition may reject an overridden value that violates a platform constraint.
+This Specification only describes that responsibility; it does not yet define those
+restriction rules.
 
 ## The Context Resolution pipeline
 
@@ -124,7 +158,9 @@ from lowest to highest precedence:
    Governance Profile.
 5. **Naming Request values** — values explicitly supplied by the caller in the Naming
    Request.
-6. **Explicit overrides** — values supplied in the request's `overrides` block.
+6. **Validated explicit overrides** — values supplied in the request's `overrides`
+   block. See [Explicit Overrides](#explicit-overrides) above for the structure and
+   intended use of this block.
 
 Convention Packs establish organizational naming and metadata conventions; Governance
 Profiles establish governance defaults. Values explicitly supplied in the Naming Request
