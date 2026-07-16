@@ -1,6 +1,6 @@
 # Convention Result
 
-Convention Result is the conceptual output produced by the Convention Engine once it has
+Convention Result is the conceptual output produced by Convention Evaluation once it has
 evaluated the Specification against a resource's resolved
 [Resource Identity](./resource-identity.md), [Governance Context](./governance-context.md),
 and [Resource Definition](./resource-definition.md). It is the final artifact returned to
@@ -16,7 +16,7 @@ and governance context it was derived from, and whether it is safe to use.
 
 ## Conceptual contents
 
-A Convention Result may include:
+Convention Result conceptually consists of:
 
 - **Resource Identity** — the resolved, canonical identity the result was generated
   from (see [`resource-identity.md`](./resource-identity.md)).
@@ -40,9 +40,9 @@ A Convention Result may include:
 This list describes the conceptual shape of a Convention Result. It intentionally does
 not define a JSON Schema; that is left for a later iteration of the Specification.
 
-## Convention Engine pipeline
+## Convention Evaluation pipeline
 
-The Convention Engine conceptually performs the following steps to produce a Convention
+Convention Evaluation conceptually performs the following steps to produce a Convention
 Result from a Naming Request:
 
 1. **Resolve Context** — run Context Resolution to combine the Naming Request, the
@@ -77,7 +77,7 @@ flowchart TD
     CR --> RI["Resource Identity"]
     CR --> GC["Governance Context"]
     RD["Resource Definition"]
-    RI --> CE["Convention Engine"]
+    RI --> CE["Convention Evaluation"]
     GC --> CE
     RD --> CE
     CE --> RS["Convention Result"]

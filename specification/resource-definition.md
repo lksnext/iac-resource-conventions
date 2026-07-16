@@ -13,12 +13,14 @@ and constraints that every instance of that resource type must respect.
 Resource Identity's Functional Identity plane includes a `resource_type` attribute —
 the canonical technical resource kind (see [`resource-identity.md`](./resource-identity.md)).
 A Resource Definition is the technical specification referenced by that `resource_type`.
-It exists so that the Convention Engine and adapters can apply resource-type-specific
+It exists so that Convention Evaluation and adapters can apply resource-type-specific
 rules consistently, instead of re-deriving them ad hoc for every resource.
 
 ## Responsibilities
 
-A Resource Definition is conceptually responsible for describing:
+A Resource Definition is conceptually responsible for describing a resource type's
+canonical identifier, platform, and category, along with the identity constraints and
+rendering constraints that every instance of that resource type must respect:
 
 - **Canonical identifier** — the stable identifier for the resource type (the value used
   as `resource_type` in a Resource Identity).
@@ -26,15 +28,32 @@ A Resource Definition is conceptually responsible for describing:
   AWS, Azure, or Kubernetes).
 - **Category** — a broader technical grouping the resource type belongs to (for example,
   storage, compute, networking).
+
+### Identity constraints
+
+Identity constraints define the identity characteristics of a resource type — whether
+and how instances of it must be distinguished from one another:
+
+- **Uniqueness** — whether names or identifiers for this resource type must be unique
+  within an account, a region, a namespace, or globally.
+- **Scope** — the administrative or isolation boundary within which uniqueness and other
+  identity rules apply.
+- **Global visibility** — whether the resource type is global or bound to a specific
+  location, affecting whether `location` is meaningful for it.
+
+### Rendering constraints
+
+Rendering constraints define how a valid representation of the resource type must be
+generated:
+
 - **Technical constraints** — limits inherent to the resource type itself, such as
-  allowed characters, length limits, or casing rules imposed by the underlying platform.
-- **Uniqueness requirements** — whether names or identifiers for this resource type must
-  be unique within an account, a region, a namespace, or globally.
+  maximum length, allowed characters, casing, and separators imposed by the underlying
+  platform.
 - **Normalization requirements** — how raw input must be transformed to produce a valid
   value for this resource type (for example, lower-casing, character substitution, or
   truncation rules).
 - **Provider-specific capabilities** — technical capabilities or limitations specific to
-  the platform or provider that the Convention Engine must respect when generating
+  the platform or provider that Convention Evaluation must respect when generating
   outputs for this resource type.
 
 This list describes the conceptual responsibilities of a Resource Definition. It is not
@@ -56,13 +75,13 @@ describes the technical rules that resource must follow. Resource Identity remai
 canonical and independent — it does not embed a Resource Definition's technical details
 directly; it only references one by `resource_type`.
 
-## Relationship with the Convention Engine
+## Relationship with Convention Evaluation
 
-The Convention Engine consults a resource's Resource Definition, alongside its
+Convention Evaluation consults a resource's Resource Definition, alongside its
 [Resource Identity](./resource-identity.md) and [Governance Context](./governance-context.md),
 when evaluating conventions and generating outputs. Technical constraints declared by
 the Resource Definition (for example, maximum name length or allowed characters)
-constrain how the Convention Engine generates a name, and inform the validation and
+constrain how Convention Evaluation generates a name, and inform the validation and
 warnings included in the resulting [Convention Result](./convention-result.md).
 
 ## Out of scope for this document
@@ -82,9 +101,9 @@ been validated.
 ```mermaid
 flowchart TD
     RI["Resource Identity"] --> RD["Resource Definition"]
-    RD --> CE["Convention Engine"]
+    RD --> CE["Convention Evaluation"]
 ```
 
 This is a focused view of the pipeline described in
 [`specification/README.md`](./README.md#architecture); it shows only how Resource
-Definition relates to Resource Identity and the Convention Engine.
+Definition relates to Resource Identity and Convention Evaluation.

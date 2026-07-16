@@ -35,19 +35,21 @@ answer different questions and evolve independently:
 
 Changing Governance Context should not change Resource Identity, and changing Resource
 Identity should not require changing Governance Context. Together they form the complete
-conceptual input to the Convention Engine, but only Resource Identity is canonical to a
+conceptual input to Convention Evaluation, but only Resource Identity is canonical to a
 resource's identity.
 
 ## Relationship with Convention Packs
 
-A Convention Pack may define naming defaults, deployment defaults, governance defaults,
-and metadata projection rules that are applied when resolving a Naming Request. A
-Convention Pack may also declare a default Governance Profile to apply when the caller
-does not select one explicitly. However, Convention Pack and Governance Profile remain
-different concepts: a Convention Pack is selected via the Naming Request's `convention`
-field, while a Governance Profile is selected via `governance.profile`. Selecting a
-Convention Pack does not select a Governance Profile, and a Convention Pack does not
-replace Governance Context — it only supplies defaults that Governance Context may use.
+A Convention Pack is a Specification artifact that defines how canonical models are
+projected into platform-specific conventions: naming defaults, deployment defaults,
+governance defaults, abbreviations, ordering rules, metadata projection, and override
+policy. A Convention Pack may also declare a default Governance Profile to apply when
+the caller does not select one explicitly. However, Convention Pack and Governance
+Profile remain different concepts: a Convention Pack is selected via the Naming
+Request's `convention` field, while a Governance Profile is selected via
+`governance.profile`. Selecting a Convention Pack does not select a Governance Profile,
+and a Convention Pack does not replace Governance Context — it only supplies defaults
+that Governance Context may use.
 
 ## Metadata projection
 
@@ -87,7 +89,7 @@ flowchart TD
     CR --> RI["Resource Identity"]
     CR --> GC["Governance Context"]
     RD["Resource Definition"]
-    RI --> CE["Convention Engine"]
+    RI --> CE["Convention Evaluation"]
     GC --> CE
     RD --> CE
     CE --> Result["Convention Result"]
@@ -98,7 +100,7 @@ This is the same canonical pipeline described in
 [`context-resolution.md`](./context-resolution.md) for the full description of how this
 resolution happens.
 
-Both Resource Identity and Governance Context participate in convention evaluation: the
-Convention Engine evaluates the Specification against both models, along with the
+Both Resource Identity and Governance Context participate in convention evaluation:
+Convention Evaluation evaluates the Specification against both models, along with the
 resource's [Resource Definition](./resource-definition.md), to produce a Convention
 Result.

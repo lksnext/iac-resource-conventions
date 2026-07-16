@@ -1,11 +1,15 @@
 # Context Resolution
 
-Context Resolution is the conceptual process by which the Convention Engine turns a
-minimal [Naming Request](./naming-request.md) into the two canonical models every
-adapter consumes: [Resource Identity](./resource-identity.md) and
+Context Resolution is the conceptual process that turns a minimal
+[Naming Request](./naming-request.md) into the two canonical models every adapter
+consumes: [Resource Identity](./resource-identity.md) and
 [Governance Context](./governance-context.md). It is the mechanism, not a model itself —
 it does not introduce new attributes; it explains how the attributes defined elsewhere
 are combined and completed.
+
+Context Resolution only produces canonical models. It does not generate names, tags,
+labels, annotations, or other platform-specific outputs — those belong to Convention
+Evaluation (see [`convention-result.md`](./convention-result.md)).
 
 ## Purpose
 
@@ -52,7 +56,7 @@ precedence:
    Request. A caller-supplied value always takes precedence over any default.
 6. **Validated explicit overrides** — values supplied in the request's `overrides`
    block. These are the most specific, deliberate values a caller can provide and
-   always win, but they are still validated by the Convention Engine (see
+   always win, but they are still validated during Convention Evaluation (see
    [Overrides](#overrides) below).
 
 This is the same precedence order described in
@@ -74,7 +78,7 @@ resolved or defaulted values when a resource is a deliberate, documented excepti
 Because overrides have the highest precedence, they should be used sparingly and only
 when a value genuinely cannot be produced correctly by resolution.
 
-Overrides are still validated by the Convention Engine. They only bypass Context
+Overrides are still validated during Convention Evaluation. They only bypass Context
 Resolution defaults — the Convention Pack defaults, shared organizational and deployment
 context, and Governance Profile defaults described above. They do not bypass:
 
@@ -103,7 +107,7 @@ Context Resolution produces exactly two canonical models:
   pays for, and manages the resource.
 
 It does not produce a Convention Result directly. Resource Identity and Governance
-Context are handed to the Convention Engine, which also consults the resource's
+Context are handed to Convention Evaluation, which also consults the resource's
 [Resource Definition](./resource-definition.md) to produce a
 [Convention Result](./convention-result.md).
 
@@ -119,4 +123,4 @@ flowchart TD
 
 This is a focused view of the pipeline described in
 [`specification/README.md`](./README.md#architecture); it omits Resource Definition and
-the Convention Engine because they are outside the scope of Context Resolution itself.
+Convention Evaluation because they are outside the scope of Context Resolution itself.

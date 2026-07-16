@@ -45,7 +45,7 @@
     },
     "overrides": {
       "type": "object",
-      "description": "Explicit values that intentionally bypass attributes otherwise resolved by Context Resolution. Overrides mirror the canonical Resource Identity and Governance Context hierarchy rather than arbitrary key/value pairs. They are still validated by the Convention Engine and do not bypass Resource Definition constraints, Convention Pack restrictions, or schema validation.",
+      "description": "Explicit values that intentionally bypass attributes otherwise resolved by Context Resolution. Overrides mirror the canonical Resource Identity and Governance Context hierarchy rather than arbitrary key/value pairs. They are still validated during Convention Evaluation and do not bypass Resource Definition constraints, Convention Pack restrictions, or schema validation.",
       "additionalProperties": false,
       "properties": {
         "organizational": {

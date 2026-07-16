@@ -35,7 +35,7 @@ another for the same canonical input.
 - Public request/response contracts (for example, the Naming Request and the Convention
   Result).
 - The conceptual model of how these pieces are combined (Context Resolution) and
-  evaluated (the Convention Engine).
+  evaluated (Convention Evaluation).
 - JSON Schemas describing the structure of the models that already have one.
 
 ## What does not belong here
@@ -66,7 +66,7 @@ The Specification currently consists of the following conceptual documents:
 - [`resource-definition.md`](./resource-definition.md) — the technical characteristics
   and constraints of a canonical resource type.
 - [`convention-result.md`](./convention-result.md) — the conceptual output produced by
-  the Convention Engine.
+  Convention Evaluation.
 - [`schemas/`](./schemas/) — JSON Schema definitions for the models described above that
   already have one.
 
@@ -82,7 +82,7 @@ flowchart TD
     CR --> RI["Resource Identity"]
     CR --> GC["Governance Context"]
     RD["Resource Definition"]
-    RI --> CE["Convention Engine"]
+    RI --> CE["Convention Evaluation"]
     GC --> CE
     RD --> CE
     CE --> RS["Convention Result"]
@@ -90,23 +90,29 @@ flowchart TD
 
 - **Naming Request** — the minimal, user-supplied description of the resource being
   requested (see [`naming-request.md`](./naming-request.md)).
-- **Convention Pack** — configuration, selected via the request's `convention` field,
-  that supplies naming, deployment, and governance defaults. Convention Packs are not
+- **Convention Pack** — a Specification artifact, selected via the request's
+  `convention` field, that defines how canonical models are projected into
+  platform-specific conventions: naming defaults, deployment defaults, governance
+  defaults, abbreviations, ordering rules, metadata projection, and override policy.
+  Convention Packs participate in Context Resolution; concrete Convention Packs are not
   yet implemented in this Specification (see **What does not belong here** above).
 - **Context Resolution** — the process that combines the Naming Request, the Convention
-  Pack, and shared context into complete canonical models (see
+  Pack, and shared context into complete canonical models. Context Resolution only
+  produces canonical models; it does not generate names, tags, labels, annotations, or
+  other platform-specific outputs — those belong to Convention Evaluation (see
   [`context-resolution.md`](./context-resolution.md)).
 - **Resource Identity** — the canonical, three-plane model describing what the resource
   is (see [`resource-identity.md`](./resource-identity.md)).
 - **Governance Context** — the canonical model describing who owns, pays for, and
   manages the resource (see [`governance-context.md`](./governance-context.md)).
 - **Resource Definition** — the technical characteristics and constraints of the
-  resource's canonical resource type (see
+  resource's canonical resource type; it participates in Convention Evaluation (see
   [`resource-definition.md`](./resource-definition.md)).
-- **Convention Engine** — evaluates the Specification against Resource Identity,
-  Governance Context, and the resource's Resource Definition to produce a result. The
-  Convention Engine itself is an implementation concern; the Specification only defines
-  what it consumes and produces.
+- **Convention Evaluation** — evaluates the Specification against Resource Identity,
+  Governance Context, and the resource's Resource Definition to produce
+  platform-specific outputs. This is the Specification responsibility that generates
+  names, tags, labels, and annotations; a future software component that implements it
+  may be called the Convention Engine.
 - **Convention Result** — the final output returned to the caller (see
   [`convention-result.md`](./convention-result.md)).
 

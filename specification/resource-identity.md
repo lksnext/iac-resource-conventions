@@ -150,12 +150,12 @@ flowchart TB
 ## Resource Identity is the canonical internal model
 
 Resource Identity is the complete, canonical representation of a resource's identity
-once the three identity planes have been resolved. It is the model the Convention Engine
-operates on internally, and the model every adapter ultimately consumes to render names,
-tags, labels, and annotations.
+once the three identity planes have been resolved. It is the model Convention
+Evaluation operates on internally, and the model every adapter ultimately consumes to
+render names, tags, labels, and annotations.
 
 Resource Identity is **not** the public API. Users of the Specification do not construct
 a full Resource Identity by hand; they submit a much smaller request, described in
 [`naming-request.md`](./naming-request.md), which is resolved into a Resource Identity
-alongside a separate [Governance Context](./governance-context.md) by the Convention
-Engine.
+alongside a separate [Governance Context](./governance-context.md) through Context
+Resolution (see [`context-resolution.md`](./context-resolution.md)).
