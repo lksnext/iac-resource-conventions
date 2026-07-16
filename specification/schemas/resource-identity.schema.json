@@ -50,23 +50,23 @@
       "properties": {
         "platform": {
           "type": "string",
-          "description": "The platform the resource is deployed to (for example, a cloud provider or orchestration platform)."
+          "description": "Infrastructure platform derived from the resource type, resource definition, or adapter. Part of the canonical resolved identity, but not normally supplied directly by the caller."
         },
         "deployment_scope": {
           "type": "string",
-          "description": "The platform-independent isolation boundary the resource is deployed into (for example, an AWS Account, an Azure Subscription, or a Kubernetes Cluster)."
+          "description": "Logical identifier for the administrative or isolation boundary where the resource is deployed, such as an AWS account alias, Azure subscription alias, or Kubernetes cluster name. Not the provider's immutable technical ID."
         },
         "environment": {
           "type": "string",
-          "description": "The environment the resource is deployed to (for example, production or staging)."
+          "description": "Lifecycle stage or operational environment in which the resource is used (for example, production or staging)."
         },
         "location": {
           "type": "string",
-          "description": "The physical or logical location of the deployment (for example, a region or datacenter)."
+          "description": "Logical or physical deployment location when the resource is not global (for example, a region or datacenter)."
         },
         "instance": {
           "type": "string",
-          "description": "Distinguishes multiple instances of an otherwise identical resource."
+          "description": "Optional discriminator used when multiple equivalent instances of a resource exist."
         }
       }
     },

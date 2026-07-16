@@ -37,23 +37,23 @@ boundary within that platform, and the environment and location within that boun
 
 Possible attributes:
 
-- `platform`
-- `deployment_scope`
-- `environment`
-- `location`
-- `instance`
+- `platform`: Infrastructure platform derived from the resource type, resource definition, or adapter.
+- `deployment_scope`: Logical identifier for the administrative or isolation boundary where the resource is deployed, such as an AWS account alias, Azure subscription alias, or Kubernetes cluster name.
+- `environment`: Lifecycle stage or operational environment in which the resource is used.
+- `location`: Logical or physical deployment location when the resource is not global.
+- `instance`: Optional discriminator used when multiple equivalent instances of a resource exist.
 
-The `deployment_scope` attribute is platform-independent. It represents the
-platform-specific isolation boundary a resource is deployed into, without the
-Specification needing to know what that boundary is called on any given platform. For
-example, `deployment_scope` may correspond to:
+`platform` is part of the canonical resolved identity, but it is normally derived from
+the resource type, resource definition, or adapter rather than repeatedly provided by
+the caller.
 
-- An AWS Account.
-- An Azure Subscription.
-- A Kubernetes Cluster.
+`deployment_scope` is a logical identifier, not the provider's immutable technical ID.
+Prefer `workload-prod` over an AWS account ID, `shared-services` over an Azure
+subscription UUID, or `production-eu` over a Kubernetes cluster UID.
 
-Each adapter maps `deployment_scope` to the concept appropriate for its platform, but the
-Specification itself only ever refers to the platform-independent concept.
+Some resources are global and therefore do not require `location`. A Convention Pack or
+profile determines whether `deployment_scope`, `environment`, or `location` are required
+for a given resource.
 
 ## Plane 3: Functional Identity
 

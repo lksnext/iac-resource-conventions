@@ -35,6 +35,10 @@ flowchart TD
   rules appropriate to the organization or platform in use.
 - **Context Providers** — supply deployment information that can be determined from the
   environment the request is made in, rather than requiring the caller to specify it.
+  `deployment_scope`, `environment`, and `location` typically come from this shared
+  deployment context, while `platform` is normally derived from the resource type or
+  resource definition itself. The Naming Request does not require callers to repeat
+  these derived values.
 - **Complete Resource Identity** — the canonical, fully-resolved identity produced by
   combining the request, the Convention Pack, and the Context Providers.
 - **Convention Engine** — evaluates the Specification against the Complete Resource
