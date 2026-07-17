@@ -3,7 +3,8 @@
 This file is concise, operational guidance for Copilot in this repository. For the full project
 architecture, goals, repository structure, and detailed rationale, see
 [`AGENTS.md`](../AGENTS.md) — that document is the primary architectural reference for this
-repository.
+repository. For the implementation monorepo architecture — package boundaries, dependency
+direction, module format, build/test strategy — see [`IMPLEMENTATION.md`](../IMPLEMENTATION.md).
 
 ## Tools
 
@@ -23,9 +24,11 @@ Repository Structure** and **Planned Architecture** sections. Key rules that aff
 should implement changes:
 
 - **Inspect before creating** — always check the actual repository contents before creating a
-  new file or directory. Never create `core/`, `terraform/`, `cdk/`, `ansible/`, `cli/`,
-  `fixtures/`, `tests/`, or `docs/` just because they are mentioned in `AGENTS.md` — they are
-  planned, not present, until a task genuinely requires them.
+  new file or directory. Never create `packages/catalog/`, `packages/cli/`,
+  `packages/adapters/`, `fixtures/`, `tests/`, or `docs/` just because they are mentioned in
+  `AGENTS.md` or `IMPLEMENTATION.md` — they are planned, not present, until a task genuinely
+  requires them. `packages/core/` already exists — see [`IMPLEMENTATION.md`](../IMPLEMENTATION.md)
+  for its current contents and boundaries.
 - **Specification First** — `specification/` exists and is the current single source of truth
   for the domain models and schemas already defined there (Resource Identity, Governance
   Context, the Naming Request, and their JSON Schemas). Inspect it before proposing changes to

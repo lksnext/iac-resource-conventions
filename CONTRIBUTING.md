@@ -69,10 +69,15 @@ of truth for required tool versions.
 All development workflows — regardless of environment — use the npm scripts defined in the root
 [`package.json`](package.json). This keeps behavior identical across native development,
 the Dev Container, GitHub Codespaces, and CI/CD pipelines, with no duplicated task definitions.
+The repository is an npm workspace monorepo (see [`IMPLEMENTATION.md`](IMPLEMENTATION.md)); root
+scripts delegate to the relevant package(s) under [`packages/`](packages/) instead of duplicating
+their implementation.
 
 ```bash
 npm install
 npm run validate
+npm run build
+npm run typecheck
 npm run generate
 npm test
 npm run lint

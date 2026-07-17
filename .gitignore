@@ -37,8 +37,6 @@ htmlcov/
 .tox/
 .venv/
 venv/
-dist/
-build/
 *.egg-info/
 
 # Node.js artifacts and package manager caches
@@ -55,6 +53,15 @@ pnpm-debug.log*
 .yarn/install-state.gz
 .parcel-cache/
 .turbo/
+
+# Build output (Python and Node.js/TypeScript workspace packages alike, e.g.
+# packages/*/dist/).
+dist/
+build/
+
+# TypeScript build artifacts (compiled output already covered by dist/ and build/
+# above; this also ignores incremental build info files under any package).
+*.tsbuildinfo
 
 # Terraform artifacts
 .terraform/

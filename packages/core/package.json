@@ -1,0 +1,27 @@
+{
+  "name": "@lksnext/iac-conventions-core",
+  "version": "0.1.0",
+  "description": "TypeScript domain contracts and Reference Evaluator for the iac-resource-conventions Specification.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "echo \"Tests not implemented yet\""
+  }
+}
