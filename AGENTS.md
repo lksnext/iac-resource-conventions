@@ -58,25 +58,27 @@ This project is **not**:
 This reflects what actually exists in the repository today. Verify against the live file listing
 before relying on it — this section can lag behind real changes.
 
-| Path                 | Responsibility                                                        |
-| -------------------- | ---------------------------------------------------------------------|
-| `README.md`           | Project overview, features, and roadmap.                            |
-| `AGENTS.md`            | This document — the architectural reference.                        |
-| `CONTRIBUTING.md`      | Contribution workflow and guidelines.                                |
-| `CODE_OF_CONDUCT.md`   | Community expectations.                                              |
-| `SECURITY.md`          | Vulnerability reporting process.                                     |
-| `CODEOWNERS`           | Review ownership rules.                                              |
-| `LICENSE`              | Apache License 2.0.                                                  |
-| `package.json`         | npm scripts — the standard task entry point (see below).             |
-| `package-lock.json`    | Locked npm dependency versions.                                      |
-| `scripts/`             | Repository automation (for example, Dev Container setup).           |
-| `.github/`             | GitHub configuration: Copilot instructions, issue forms, workflows.  |
-| `.devcontainer/`       | Development Container configuration (runtime environment only).     |
-| `.vscode/`             | Shared editor settings and extension recommendations.                |
-| `.serena/`             | Serena MCP project configuration and memories.                       |
-| `.editorconfig`        | Repository-wide editor formatting defaults.                          |
-| `.gitignore`           | Ignored files and directories.                                       |
-| `specification/`      | The Specification — the current single source of truth for the domain concepts and schemas defined so far. See the tree below. |
+<!-- markdownlint-disable MD060 -->
+
+| Path              | Responsibility                                                                                 |
+| ----------------- | ---------------------------------------------------------------------------------------------- |
+| `README.md`       | Project overview, features, and roadmap.                                                       |
+| `AGENTS.md`       | This document — the architectural reference.                                                   |
+| `CONTRIBUTING.md` | Contribution workflow and guidelines.                                                          |
+| `CODE_OF_CONDUCT.md` | Community expectations.                                                                     |
+| `SECURITY.md`     | Vulnerability reporting process.                                                               |
+| `CODEOWNERS`      | Review ownership rules.                                                                        |
+| `LICENSE`         | Apache License 2.0.                                                                            |
+| `package.json`    | npm scripts — the standard task entry point (see below).                                       |
+| `package-lock.json` | Locked npm dependency versions.                                                              |
+| `scripts/`        | Repository automation (for example, Dev Container setup).                                     |
+| `.github/`        | GitHub configuration: Copilot instructions, issue forms, workflows.                            |
+| `.devcontainer/`  | Development Container configuration (runtime environment only).                               |
+| `.vscode/`        | Shared editor settings and extension recommendations.                                          |
+| `.serena/`        | Serena MCP project configuration and memories.                                                 |
+| `.editorconfig`   | Repository-wide editor formatting defaults.                                                    |
+| `.gitignore`      | Ignored files and directories.                                                                 |
+| `specification/`  | The Specification — the current single source of truth for the domain concepts and schemas defined so far. See the tree below. |
 
 ```text
 specification/
@@ -111,16 +113,18 @@ The following directories are part of the intended architecture but **do not exi
 represent where the project is heading, not what it currently contains. Create one only when a
 task actually requires it — never speculatively, and never merely because it is listed here.
 
-| Path               | Planned Responsibility                                                    |
-| ------------------ | ----------------------------------------------------------------------------|
-| `core/`             | Convention Engine that evaluates the Specification for adapters. |
-| `terraform/`        | Terraform adapter consuming the Specification.                   |
-| `cdk/`              | AWS CDK adapter consuming the Specification.                     |
-| `ansible/`          | Ansible adapter consuming the Specification.                     |
-| `cli/`              | Command-line adapter consuming the Specification.                |
-| `fixtures/`         | Shared, canonical input/output fixtures used by contract tests.  |
-| `tests/`            | Unit, contract, and integration tests.                          |
-| `docs/`             | Reference documentation.                                          |
+| Path        | Planned Responsibility                                           |
+| ----------- | --------------------------------------------------------------- |
+| `core/`     | Convention Engine that evaluates the Specification for adapters. |
+| `terraform/` | Terraform adapter consuming the Specification.                  |
+| `cdk/`      | AWS CDK adapter consuming the Specification.                     |
+| `ansible/`  | Ansible adapter consuming the Specification.                    |
+| `cli/`      | Command-line adapter consuming the Specification.               |
+| `fixtures/`  | Shared, canonical input/output fixtures used by contract tests. |
+| `tests/`    | Unit, contract, and integration tests.                          |
+| `docs/`     | Reference documentation.                                         |
+
+<!-- markdownlint-enable MD060 -->
 
 ## Guidance for AI Agents
 

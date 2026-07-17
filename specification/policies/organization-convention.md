@@ -1,12 +1,12 @@
-# Organization Policy
+# Organization Convention
 
-Organization Policy is a reusable policy dimension that an effective
+Organization Convention is a reusable convention dimension that an effective
 [Convention Pack](../convention-pack.md) may compose. It answers:
 
 **Purpose:** "How does this organization structure and govern its infrastructure
 platforms?"
 
-Organization Policy captures the parts of an effective Convention Pack that depend on
+Organization Convention captures the parts of an effective Convention Pack that depend on
 how a specific organization structures itself on a platform — its landing zones,
 account or subscription structure, and organization-wide governance defaults —
 independently of the target platform's own conventions and independently of any
@@ -14,7 +14,7 @@ particular workload's tenancy model.
 
 ## Responsibilities
 
-Organization Policy may contribute:
+Organization Convention may contribute:
 
 - organizational identity defaults, such as a default `organizational.organization` or
   `organizational.business_unit`;
@@ -30,53 +30,53 @@ Organization Policy may contribute:
 
 ## Examples
 
-Organization Policy is where an organization's landing zone is described, for example:
+Organization Convention is where an organization's landing zone is described, for example:
 
 - a corporate AWS Organization managed through Control Tower;
 - a product-specific AWS Organization managed through Control Tower;
 - an Azure Landing Zone;
 - a corporate on-premises Kubernetes platform.
 
-These are examples of the kind of organizational structure Organization Policy
+These are examples of the kind of organizational structure Organization Convention
 describes, not an exhaustive or normative list.
 
-## Control Tower is organizational and provisioning environment, not a Deployment Model
+## Control Tower is organizational and provisioning environment, not a Deployment Convention
 
 AWS Control Tower — and comparable landing-zone tooling on other platforms — governs how
 accounts, subscriptions, or clusters are structured and provisioned. That is an
-Organization Policy and provisioning concern. It must not be treated as a
-[Deployment Model Policy](./deployment-model-policy.md): whether a workload is internal,
+Organization Convention and provisioning concern. It must not be treated as a
+[Deployment Convention](./deployment-convention.md): whether a workload is internal,
 shared SaaS, or tiered SaaS is an independent question from which landing zone or
 account factory provisions its deployment scope.
 
-## Organization Policy describes stable policy, not dynamic instances
+## Organization Convention describes stable convention, not dynamic instances
 
-Organization Policy describes how an organization *structures* its platforms — it is
+Organization Convention describes how an organization *structures* its platforms — it is
 stable, reusable policy. It must not contain:
 
 - dynamically created account instances;
 - customer-specific account IDs.
 
-A dynamically created AWS account for a specific tenant is Runtime or Provisioning
-Context, not Organization Policy (see
-[`context-resolution.md`](../context-resolution.md#runtime-context-and-provisioning-context)).
+A dynamically created AWS account for a specific tenant is Evaluation Context, not
+Organization Convention (see
+[`context-resolution.md`](../context-resolution.md#evaluation-context)).
 
 ## Relationship with Convention Pack
 
-An effective [Convention Pack](../convention-pack.md) may compose an Organization Policy
-alongside a [Platform Policy](./platform-policy.md) and a
-[Deployment Model Policy](./deployment-model-policy.md). See
-[`convention-pack.md`](../convention-pack.md#composed-from-reusable-policy-dimensions)
+An effective [Convention Pack](../convention-pack.md) may compose an Organization Convention
+alongside a [Platform Convention](./platform-convention.md) and a
+[Deployment Convention](./deployment-convention.md). See
+[`convention-pack.md`](../convention-pack.md#composed-from-reusable-convention-dimensions)
 for how these dimensions combine into a single effective Convention Pack.
 
 ## Out of scope
 
-This document defines the *concept* of Organization Policy only. It intentionally does
+This document defines the *concept* of Organization Convention only. It intentionally does
 not define:
 
-- concrete Organization Policy artifacts;
-- YAML, JSON, or generated representations of an Organization Policy;
-- a JSON Schema for Organization Policy;
+- concrete Organization Convention artifacts;
+- YAML, JSON, or generated representations of an Organization Convention;
+- a JSON Schema for Organization Convention;
 - a composition or merge algorithm.
 
 These are left for a later iteration of the Specification, consistent with how

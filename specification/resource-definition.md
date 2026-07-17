@@ -89,15 +89,15 @@ the Resource Definition (for example, maximum name length or allowed characters)
 constrain how Convention Evaluation generates a name, and inform the validation and
 warnings included in the resulting [Convention Result](./convention-result.md).
 
-## Relationship with Convention Pack and Platform Policy
+## Relationship with Convention Pack and Platform Convention
 
 A [Convention Pack](./convention-pack.md) — including a
-[Platform Policy](./policies/platform-policy.md) it may compose — may reference or
+[Platform Convention](./policies/platform-convention.md) it may compose — may reference or
 declare compatibility with a Resource Definition, but it does not replace or duplicate
 the technical constraints a Resource Definition declares. Maximum name length, allowed
 characters, uniqueness scope, and normalization requirements remain Resource Definition
-responsibilities regardless of which Convention Pack, Platform Policy, Organization
-Policy, or Deployment Model Policy applies to a resource.
+responsibilities regardless of which Convention Pack, Platform Convention, Organization
+Convention, or Deployment Convention applies to a resource.
 
 ## Out of scope for this document
 

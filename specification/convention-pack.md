@@ -24,30 +24,30 @@ the request. The selected Convention Pack is then consumed by
 [Context Resolution](./context-resolution.md) and by
 [Convention Evaluation](./convention-result.md#convention-evaluation-pipeline).
 
-## Composed from reusable policy dimensions
+## Composed from reusable convention dimensions
 
 A Convention Pack remains the single Specification Artifact selected by a Naming
 Request's `convention` field — callers select one effective Convention Pack, never three
 independent policies. Internally, however, an effective Convention Pack may be
-assembled from reusable policy dimensions, so that stable policy is written once and
+assembled from reusable convention dimensions, so that stable convention is written once and
 reused across many effective packs instead of being redefined for every organization,
 product, or platform combination:
 
 ```text
 Convention Pack
-├── Platform Policy
-├── Organization Policy
-└── Deployment Model Policy
+├── Platform Convention
+├── Organization Convention
+└── Deployment Convention
 ```
 
-- **[Platform Policy](./policies/platform-policy.md)** — how conventions are projected
+- **[Platform Convention](./policies/platform-convention.md)** — how conventions are projected
   for a target infrastructure platform (for example, AWS, Azure, or Kubernetes).
-- **[Organization Policy](./policies/organization-policy.md)** — how an organization
+- **[Organization Convention](./policies/organization-convention.md)** — how an organization
   structures and governs its infrastructure platforms (for example, an AWS Organization
   managed through Control Tower, or an Azure Landing Zone).
-- **[Deployment Model Policy](./policies/deployment-model-policy.md)** — the operational
-  isolation and tenancy model of a workload (for example, an internal workload, a shared
-  SaaS product, or a tiered SaaS product with dedicated Enterprise deployment scopes).
+- **[Deployment Convention](./policies/deployment-convention.md)** — the workload purpose,
+  tenancy, isolation, and optional service-tier mapping used by a product or platform
+  (for example, an internal workload or a SaaS product).
 
 A concrete Convention Pack may reference, extend, or compose these reusable policy
 artifacts, but resolving that composition into a single effective Convention Pack is a
@@ -56,13 +56,13 @@ authored, not as an additional runtime processing stage. The Specification conti
 have exactly two processing stages, Context Resolution and Convention Evaluation (see
 [`context-resolution.md`](./context-resolution.md) and
 [`convention-result.md`](./convention-result.md#convention-evaluation-pipeline));
-composing Platform Policy, Organization Policy, and Deployment Model Policy into an
+composing Platform Convention, Organization Convention, and Deployment Convention into an
 effective Convention Pack is not a third stage.
 
-Because these dimensions are independent, the same Deployment Model Policy can be
-composed with different Platform Policy and Organization Policy dimensions to target
-different platforms — see
-[Deployment Model Policy: Cross-platform reuse](./policies/deployment-model-policy.md#cross-platform-reuse).
+Because these dimensions are independent, the same Deployment Convention can be
+composed with different Platform Convention and Organization Convention dimensions to
+target different platforms — see
+[Deployment Convention: Cross-platform reuse](./policies/deployment-convention.md#cross-platform-reuse).
 
 This document does not define a composition or merge algorithm for these dimensions,
 consistent with [Out of scope](#out-of-scope) below.
@@ -122,11 +122,11 @@ technically allows*. Confusing the two would let organizational policy silently 
 on provider-specific technical limits, and would prevent the same Convention Pack from
 being reused unchanged across platforms.
 
-This restriction applies equally to every reusable policy dimension a Convention Pack
-may compose — [Platform Policy](./policies/platform-policy.md),
-[Organization Policy](./policies/organization-policy.md), and
-[Deployment Model Policy](./policies/deployment-model-policy.md) alike (see
-[Composed from reusable policy dimensions](#composed-from-reusable-policy-dimensions)
+This restriction applies equally to every reusable convention dimension a Convention Pack
+may compose — [Platform Convention](./policies/platform-convention.md),
+[Organization Convention](./policies/organization-convention.md), and
+[Deployment Convention](./policies/deployment-convention.md) alike (see
+[Composed from reusable convention dimensions](#composed-from-reusable-convention-dimensions)
 above).
 
 ## Relationship with the other concepts
@@ -178,38 +178,15 @@ Context Resolution is the only processing stage that consumes both. This describ
 conceptual order in which a Convention Pack participates in producing a Convention
 Result. It does not describe an implementation, execution runtime, or API.
 
-## Convention Pack inheritance
-
-A Convention Pack may conceptually inherit from another Convention Pack, allowing a more
-specific pack to reuse and refine a more general one rather than redefining every
-responsibility from scratch. For example:
-
-```text
-base
-    -> aws-default
-        -> aws-workload
-            -> aws-workload-production
-```
-
-Inheritance here is conceptual only: a Convention Pack may be described as extending
-another, more general Convention Pack. This document does not define a merge algorithm,
-precedence rules between an inherited and inheriting pack, or any concrete inheritance
-syntax; those are implementation concerns left for a later iteration of the
-Specification.
-
-Composition and inheritance are complementary, not the same mechanism: composition
-assembles an effective Convention Pack from Platform Policy, Organization Policy, and
-Deployment Model Policy dimensions (see
-[Composed from reusable policy dimensions](#composed-from-reusable-policy-dimensions)
-above), while inheritance lets one concrete Convention Pack extend another concrete
-Convention Pack. Neither this document nor the inheritance model above defines how the
-two mechanisms interact structurally; that remains an implementation concern for a
-later iteration of the Specification.
+Convention Pack composition is the primary reuse mechanism in this iteration. This
+document does not define a Convention Pack inheritance model; if inheritance is
+reintroduced later, it must remain separate from the reusable convention dimensions and
+their composition rules.
 
 ## Convention Pack naming
 
-Effective Convention Pack identifiers should be clear about which policy dimensions they
-compose. Examples of effective, composed Convention Pack identifiers:
+Effective Convention Pack identifiers should be clear about which convention dimensions
+they compose. Examples of effective, composed Convention Pack identifiers:
 
 ```text
 corporate-aws-internal
@@ -221,15 +198,16 @@ product-b-azure-saas-enterprise
 product-b-kubernetes-saas-enterprise
 ```
 
-These identifiers represent effective, composed policies — for example,
-`product-b-aws-saas-enterprise` composes an AWS Platform Policy, `product-b`'s AWS
-Organization Policy, and the `saas-tiered` Deployment Model Policy's Enterprise tier.
+These identifiers represent effective, composed conventions — for example,
+`product-b-aws-saas-enterprise` composes an AWS Platform Convention, `product-b`'s AWS
+Organization Convention, and a Deployment Convention that maps the Enterprise service
+tier to dedicated isolation.
 They do not encode individual tenant names or dynamically generated deployment scopes:
 every Enterprise tenant of `product-b` on AWS is named through the same
 `product-b-aws-saas-enterprise` Convention Pack, with the tenant's dedicated deployment
-scope supplied as Runtime Context rather than encoded in the pack's identifier (see
-[`context-resolution.md`](./context-resolution.md#runtime-context-and-provisioning-context)).
-See [`policies/deployment-model-policy.md`](./policies/deployment-model-policy.md#illustrative-scenarios)
+scope supplied as Provisioning Context rather than encoded in the pack's identifier (see
+[`context-resolution.md`](./context-resolution.md#evaluation-context)).
+See [`policies/deployment-convention.md`](./policies/deployment-convention.md#illustrative-scenarios)
 for the scenarios these examples illustrate.
 
 This document does not standardize the exact naming syntax for effective Convention
@@ -293,14 +271,14 @@ This document defines the *concept* of a Convention Pack only. It intentionally 
 not define:
 
 - actual Convention Packs (for example, `aws-workload-default`);
-- concrete Platform Policy, Organization Policy, or Deployment Model Policy artifacts
+- concrete Platform Convention, Organization Convention, or Deployment Convention artifacts
   (see [`policies/`](./policies/));
 - YAML or JSON syntax for expressing a Convention Pack or any of its composed policy
   dimensions;
 - a JSON Schema for Convention Packs or any of its composed policy dimensions;
 - an inheritance algorithm;
-- a composition or merge algorithm for Platform Policy, Organization Policy, and
-  Deployment Model Policy;
+- a composition or merge algorithm for Platform Convention, Organization Convention, and
+  Deployment Convention;
 - any implementation.
 
 These are left for a later iteration of the Specification, once the conceptual model has
@@ -312,7 +290,7 @@ been validated.
 flowchart TD
     NR["Naming Request"]
     CP["Convention Pack"]
-    RC["Runtime and Shared Context"]
+    EC["Evaluation Context"]
     CR["Context Resolution"]
     RI["Resource Identity"]
     GC["Governance Context"]
@@ -322,7 +300,7 @@ flowchart TD
 
     NR --> CR
     CP --> CR
-    RC --> CR
+    EC --> CR
     CR --> RI
     CR --> GC
     RI --> CE
@@ -333,7 +311,7 @@ flowchart TD
 
 This is the same canonical pipeline described in
 [`specification/README.md`](./README.md#architecture). Notice that Convention Pack is an
-input to Context Resolution, alongside the Naming Request — it is not itself a
-processing stage. The pipeline has exactly two processing stages, Context Resolution and
-Convention Evaluation; every other concept, including Convention Pack, is a domain model
-or Specification artifact consumed by one of those two stages.
+input to Context Resolution, alongside the Naming Request and Evaluation Context — it is
+not itself a processing stage. The pipeline has exactly two processing stages, Context
+Resolution and Convention Evaluation; every other concept, including Convention Pack, is
+a domain model or Specification artifact consumed by one of those two stages.

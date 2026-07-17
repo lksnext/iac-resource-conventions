@@ -42,8 +42,8 @@ another for the same canonical input.
   policy, written as Markdown policy documents (for example, the concrete Convention
   Packs under [`convention-packs/`](./convention-packs/)). See **Concepts and
   Specification Artifacts** below.
-- Reusable policy dimension Concepts that an effective Convention Pack may compose —
-  Platform Policy, Organization Policy, and Deployment Model Policy — documented under
+- Reusable convention dimension Concepts that an effective Convention Pack may compose —
+  Platform Convention, Organization Convention, and Deployment Convention — documented under
   [`policies/`](./policies/).
 
 ## What does not belong here
@@ -99,10 +99,10 @@ Artifacts:
   and constraints of a canonical resource type.
 - [`convention-pack.md`](./convention-pack.md) — the Specification artifact that
   defines how canonical models are projected into platform-specific conventions, and
-  how an effective Convention Pack may compose reusable Platform Policy, Organization
-  Policy, and Deployment Model Policy dimensions.
-- [`policies/`](./policies/) — the reusable policy dimension Concepts — Platform
-  Policy, Organization Policy, and Deployment Model Policy — that an effective
+  how an effective Convention Pack may compose reusable Platform Convention, Organization
+  Convention, and Deployment Convention dimensions.
+- [`policies/`](./policies/) — the reusable convention dimension Concepts — Platform
+  Convention, Organization Convention, and Deployment Convention — that an effective
   Convention Pack may compose.
 - [`convention-packs/`](./convention-packs/) — concrete Convention Packs that apply the
   Convention Pack concept to a specific organizational policy.
@@ -120,7 +120,7 @@ conceptual pipeline:
 flowchart TD
     NR["Naming Request"]
     CP["Convention Pack"]
-    RC["Runtime and Shared Context"]
+    EC["Evaluation Context"]
     CR["Context Resolution"]
     RI["Resource Identity"]
     GC["Governance Context"]
@@ -130,7 +130,7 @@ flowchart TD
 
     NR --> CR
     CP --> CR
-    RC --> CR
+    EC --> CR
     CR --> RI
     CR --> GC
     RI --> CE
@@ -141,22 +141,22 @@ flowchart TD
 
 - **Naming Request** — the minimal, user-supplied description of the resource being
   requested (see [`naming-request.md`](./naming-request.md)).
-- **Convention Pack** — a Specification artifact, selected via the request's
+-- **Convention Pack** — a Specification artifact, selected via the request's
   `convention` field, that defines how canonical models are projected into
   platform-specific conventions: naming defaults, deployment defaults, governance
   defaults, abbreviations, ordering rules, metadata projection, and override policy (see
   [`convention-pack.md`](./convention-pack.md)). An effective Convention Pack may be
-  assembled from reusable Platform Policy, Organization Policy, and Deployment Model
-  Policy dimensions (see [`policies/`](./policies/)), but it remains the single artifact
-  selected via `convention`. Convention Packs are not yet implemented in this
+  assembled from reusable Platform Convention, Organization Convention, and Deployment
+  Convention dimensions (see [`policies/`](./policies/)), but it remains the single
+  artifact selected via `convention`. Convention Packs are not yet implemented in this
   Specification (see **What does not belong here** above).
-- **Runtime and Shared Context** — shared organizational and deployment context, and
-  dynamic Runtime or Provisioning Context associated with one execution, tenant, or
-  provisioned deployment scope (see
-  [`context-resolution.md`](./context-resolution.md#runtime-context-and-provisioning-context)).
-  It is not part of the Convention Pack.
-- **Context Resolution** — the process that combines the Naming Request, the Convention
-  Pack, and shared context into complete canonical models. Context Resolution only
+-- **Evaluation Context** — the complete set of external facts available during a
+  specific evaluation, including shared organizational context, shared deployment
+  context, Runtime Context, and Provisioning Context (see
+  [`context-resolution.md`](./context-resolution.md#evaluation-context)). It is not part
+  of the Convention Pack.
+-- **Context Resolution** — the process that combines the Naming Request, the Convention
+  Pack, and Evaluation Context into complete canonical models. Context Resolution only
   produces canonical models; it does not generate names, tags, labels, annotations, or
   other platform-specific outputs — those belong to Convention Evaluation (see
   [`context-resolution.md`](./context-resolution.md)).
@@ -177,19 +177,18 @@ flowchart TD
   [`convention-result.md`](./convention-result.md)).
 
 The pipeline has exactly two processing stages: Context Resolution and Convention
-Evaluation. The Naming Request, Convention Pack, Runtime and Shared Context, Resource
-Identity, Governance Context, Resource Definition, and Convention Result are domain
-models or Specification artifacts consumed or produced by those two stages — not
-processing stages themselves. Convention Pack, the Naming Request, and Runtime and
-Shared Context are all inputs to Context Resolution; Resource Definition is an input to
-Convention Evaluation, selected by `resource_type` once Resource Identity is complete —
-Context Resolution does not resolve the Resource Definition. Composing an effective
-Convention Pack from Platform Policy, Organization Policy, and Deployment Model Policy
-(see [`convention-pack.md`](./convention-pack.md#composed-from-reusable-policy-dimensions))
+Evaluation. The Naming Request, Convention Pack, Evaluation Context, Resource Identity,
+Governance Context, Resource Definition, and Convention Result are domain models or
+Specification artifacts consumed or produced by those two stages — not processing
+stages themselves. Convention Pack, the Naming Request, and Evaluation Context are all
+inputs to Context Resolution; Resource Definition is an input to Convention
+Evaluation, selected by `resource_type` once Resource Identity is complete — Context
+Resolution does not resolve the Resource Definition. Composing an effective Convention
+Pack from Platform Convention, Organization Convention, and Deployment Convention (see
+[`convention-pack.md`](./convention-pack.md#composed-from-reusable-convention-dimensions))
 is a Specification Artifact concern, not a third processing stage; likewise, external
-provisioning systems and IaC that produce Runtime or Provisioning Context are outside
-this pipeline (see
-[`context-resolution.md`](./context-resolution.md#relationship-with-provisioning-systems)).
+provisioning systems and IaC that produce Provisioning Context are outside this pipeline
+(see [`context-resolution.md`](./context-resolution.md#business-to-infrastructure-boundary)).
 
 If a document only focuses on one part of this pipeline, it uses a simplified diagram
 showing just the concepts relevant to it. Every diagram in the Specification is expected

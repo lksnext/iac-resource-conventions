@@ -91,7 +91,7 @@ beyond what is described above.
 flowchart TD
     NR["Naming Request"]
     CP["Convention Pack"]
-    RC["Runtime and Shared Context"]
+    EC["Evaluation Context"]
     CR["Context Resolution"]
     RI["Resource Identity"]
     GC["Governance Context"]
@@ -101,7 +101,7 @@ flowchart TD
 
     NR --> CR
     CP --> CR
-    RC --> CR
+    EC --> CR
     CR --> RI
     CR --> GC
     RI --> CE
