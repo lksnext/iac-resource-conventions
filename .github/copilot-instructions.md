@@ -40,7 +40,7 @@ should implement changes:
   Specification Artifact selected via a Naming Request's `convention` field, but it may compose
   reusable Platform Convention, Organization Convention, and Deployment Convention dimensions (see
   `specification/policies/` and `specification/convention-pack.md`). Never create a Convention
-  Pack per tenant or customer, never treat Control Tower as a platform or deployment model, and
+  Pack per tenant or customer, never treat Control Tower as a platform or deployment convention pattern, and
   never treat Evaluation Context (its shared organizational context, shared deployment context,
   Runtime Context, and Provisioning Context; see
   `specification/context-resolution.md#evaluation-context`) as part of a Convention Pack.
