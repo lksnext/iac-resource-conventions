@@ -36,6 +36,14 @@ should implement changes:
   must produce equivalent results for the same canonical input, unless a documented platform
   constraint requires a difference. Shared fixtures and contract tests are the authoritative
   compatibility mechanism across adapters.
+- **Convention Pack Composition** — an effective Convention Pack is still the single
+  Specification Artifact selected via a Naming Request's `convention` field, but it may compose
+  reusable Platform Convention, Organization Convention, and Deployment Convention dimensions (see
+  `specification/policies/` and `specification/convention-pack.md`). Never create a Convention
+  Pack per tenant or customer, never treat Control Tower as a platform or deployment convention pattern, and
+  never treat Evaluation Context (its shared organizational context, shared deployment context,
+  Runtime Context, and Provisioning Context; see
+  `specification/context-resolution.md#evaluation-context`) as part of a Convention Pack.
 - **Generated Artifacts** — never edit generated files by hand. Changes affecting generated
   output must start in the Specification, generator, or source template, then regenerate.
 - **Testing Expectations** — any change to the Specification must include corresponding updates
@@ -53,6 +61,19 @@ should implement changes:
 - **Scope** — keep changes focused, reviewable, and limited to the requested scope. Do not
   introduce new runtime dependencies, tools, frameworks, or build systems unless necessary and
   justified.
+
+## Specification Freeze (v1.0)
+
+Assume the conceptual Specification is frozen at v1.0 (see
+`specification/README.md#specification-status`).
+
+- Do not redesign Concepts already documented under `specification/`.
+- Prefer implementation changes (Resource Definitions, Convention Packs, the Reference
+  Evaluator, adapters) over conceptual Specification changes.
+- Only propose a Specification modification when implementation demonstrates that the
+  current model cannot represent a valid scenario.
+- Avoid speculative conceptual improvements — the Specification evolves from
+  implementation evidence, not theoretical review.
 
 ## Commit Safety and Approval
 

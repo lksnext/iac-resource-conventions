@@ -25,7 +25,10 @@ Convention Result conceptually consists of:
 - **Convention Outputs** — the platform-specific outputs projected from Resource
   Identity and Governance Context. See [Convention Outputs](#convention-outputs) below.
 - **Validation** — the outcome of validating the generated outputs against the
-  constraints declared by the resource's Resource Definition and the Specification.
+  constraints declared by the resource's Resource Definition — including its technical
+  constraints, uniqueness, normalization, and Placement Constraints (see
+  [`resource-definition.md`](./resource-definition.md#placement-constraints)) — and the
+  Specification.
 - **Explanation** — a human-readable account of how the result was derived, useful for
   troubleshooting and auditing convention decisions.
 - **Warnings** — non-fatal issues detected while generating the result (for example, a
@@ -61,8 +64,8 @@ Convention Evaluation conceptually performs the following steps to produce a Con
 Result from a Naming Request:
 
 1. **Resolve Context** — run Context Resolution to combine the Naming Request, the
-   selected Convention Pack, and shared context (see
-   [`context-resolution.md`](./context-resolution.md)).
+   selected Convention Pack, and Evaluation Context (see
+   [`context-resolution.md`](./context-resolution.md#evaluation-context)).
 2. **Build Resource Identity** — complete the canonical Resource Identity from the
    resolved context.
 3. **Build Governance Context** — complete the canonical Governance Context from the
@@ -75,8 +78,10 @@ Result from a Naming Request:
    annotation conventions, as configured by the selected Convention Pack, to the
    resolved models.
 6. **Generate outputs** — produce the generated name, tags, labels, and annotations.
-7. **Validate outputs** — check the generated outputs against the constraints declared
-   by the Resource Definition and the Specification, collecting any warnings.
+7. **Validate outputs** — check the generated outputs, and the resolved Resource
+   Identity, against the constraints declared by the Resource Definition — including its
+   technical constraints, uniqueness, normalization, and Placement Constraints — and the
+   Specification, collecting any warnings.
 8. **Produce Convention Result** — assemble Resource Identity, Governance Context, the
    generated outputs, validation results, explanation, and warnings into the final
    Convention Result.
@@ -87,28 +92,7 @@ beyond what is described above.
 
 ## Where Convention Result fits
 
-```mermaid
-flowchart TD
-    NR["Naming Request"]
-    CP["Convention Pack"]
-    CR["Context Resolution"]
-    RI["Resource Identity"]
-    GC["Governance Context"]
-    RD["Resource Definition"]
-    CE["Convention Evaluation"]
-    RS["Convention Result"]
-
-    NR --> CR
-    CP --> CR
-    CR --> RI
-    CR --> GC
-    RI --> CE
-    GC --> CE
-    RD --> CE
-    CE --> RS
-```
-
-This is the complete architecture described in
+See the canonical pipeline diagram in
 [`specification/README.md`](./README.md#architecture): a Convention Result is produced
 by Convention Evaluation once Resource Identity and Governance Context have been
 resolved by Context Resolution and the Resource Definition has been selected from the

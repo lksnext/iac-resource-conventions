@@ -39,7 +39,6 @@ deployment:
 
 governance:
   owner: platform-team
-  managed_by: terraform
   profile: standard
 
 overrides:
@@ -56,7 +55,10 @@ duplicated inside the `functional` block of the request.
 optional values supplied on the same request:
 
 - `convention` selects the Convention Pack — the organizational naming, deployment, and
-  metadata projection conventions used to resolve this request.
+  metadata projection conventions used to resolve this request. An effective Convention
+  Pack may be composed from reusable Platform Convention, Organization Convention, and
+  Deployment Convention dimensions, but the request still selects only one effective
+  pack.
 - `governance.profile` selects the Governance Profile — the governance policy applied to
   the resource (see [`governance-context.md`](./governance-context.md)).
 
@@ -97,33 +99,13 @@ restriction rules.
 ## The Context Resolution pipeline
 
 A Naming Request is transformed through the Context Resolution pipeline into a complete
-Resource Identity and Governance Context, and ultimately into a Convention Result:
+Resource Identity and Governance Context, and ultimately into a Convention Result. See
+the canonical pipeline diagram in
+[`specification/README.md`](./README.md#architecture).
 
-```mermaid
-flowchart TD
-    NR["Naming Request"]
-    CP["Convention Pack"]
-    CR["Context Resolution"]
-    RI["Resource Identity"]
-    GC["Governance Context"]
-    RD["Resource Definition"]
-    CE["Convention Evaluation"]
-    RS["Convention Result"]
-
-    NR --> CR
-    CP --> CR
-    CR --> RI
-    CR --> GC
-    RI --> CE
-    GC --> CE
-    RD --> CE
-    CE --> RS
-```
-
-This is the same canonical pipeline described in
-[`specification/README.md`](./README.md#architecture). The pipeline has exactly two
-processing stages, Context Resolution and Convention Evaluation; the Naming Request and
-Convention Pack are both inputs to Context Resolution, not sequential steps.
+The pipeline has exactly two processing stages, Context Resolution and Convention
+Evaluation; the Naming Request, Convention Pack, and Evaluation Context are all inputs
+to Context Resolution, not sequential steps.
 
 - **Naming Request** — the minimal, user-supplied description of the resource.
 - **Convention Pack** — a Specification artifact, selected explicitly via the request's
@@ -133,9 +115,9 @@ Convention Pack are both inputs to Context Resolution, not sequential steps.
   rules, metadata projection rules, and override policy. A Convention Pack does not
   replace Governance Context. See [`convention-pack.md`](./convention-pack.md) for the
   full model.
-- **Context Resolution** — derives deployment context and any other shared values needed
-  to complete the model. See [`context-resolution.md`](./context-resolution.md) for the
-  full description, including resolution sources and precedence.
+- **Context Resolution** — derives deployment context and any other external facts
+  needed to complete the model. See [`context-resolution.md`](./context-resolution.md)
+  for the full description, including Evaluation Context and precedence.
 - **Resource Identity** — the canonical, fully-resolved identity produced by combining
   the request, the Convention Pack, and shared context.
 - **Governance Context** — the resolved ownership and operational governance context for
@@ -152,7 +134,7 @@ Convention Pack are both inputs to Context Resolution, not sequential steps.
 
 In short: Convention Packs project both Resource Identity and Governance Context into
 names, AWS Tags, Azure Tags, Kubernetes Labels, annotations, and other convention
-outputs. Context Resolution supplies the shared data needed to complete the model;
+outputs. Context Resolution supplies the external facts needed to complete the model;
 Convention Evaluation evaluates Resource Identity, Governance Context, and the
 resource's Resource Definition to produce a Convention Result.
 
@@ -167,18 +149,25 @@ from lowest to highest precedence:
    context (for example, `organization`, `business_unit`).
 3. **Shared Deployment Context** — deployment values resolved from shared context (for
    example, `platform`, `deployment_scope`).
-4. **Governance Profile defaults** — governance defaults declared by the selected
-   Governance Profile.
-5. **Naming Request values** — values explicitly supplied by the caller in the Naming
-   Request.
-6. **Validated explicit overrides** — values supplied in the request's `overrides`
-   block. See [Explicit Overrides](#explicit-overrides) above for the structure and
-   intended use of this block.
+4. **Evaluation Context** — external facts available during this evaluation
+   (see `context-resolution.md#evaluation-context`).
+5. **Governance Profile defaults** — governance defaults declared by the selected
+  Governance Profile.
+6. **Naming Request values** — values explicitly supplied by the caller in the Naming
+  Request.
+7. **Validated explicit overrides** — values supplied in the request's `overrides`
+  block. See [Explicit Overrides](#explicit-overrides) above for the structure and
+  intended use of this block.
 
 Convention Packs establish organizational naming and metadata conventions; Governance
 Profiles establish governance defaults. Values explicitly supplied in the Naming Request
-override any default from either source, and explicit overrides always take the highest
-precedence.
+override any default from either source, and explicit overrides normally take the
+highest precedence. However, precedence is not the same as authority or protection: some
+Evaluation Context values — for example, an authoritative `deployment.deployment_scope`
+produced during tenant provisioning — are protected and cannot be replaced by a Naming
+Request value or an override unless the selected Convention Pack explicitly allows it
+(see
+[`context-resolution.md`](./context-resolution.md#precedence-authority-and-protection)).
 
 This is the same precedence order defined in
 [`context-resolution.md`](./context-resolution.md#resolution-precedence), which is the
@@ -186,15 +175,15 @@ canonical source for this description.
 
 ## Differences between the core concepts
 
-| Concept              | Description                                                                                       | Supplied by                          |
-| -------------------- | --------------------------------------------------------------------------------------------------|---------------------------------------|
-| **Naming Request**    | The minimal, public request describing what is specific to a single resource.                     | The caller (user or system).          |
-| **Resource Identity** | The complete, canonical, three-plane model describing a resource's identity.                      | Resolved by Context Resolution.       |
-| **Governance Context** | The operational ownership and policy context associated with the resource.                         | Resolved from the request and shared context. |
-| **Convention Pack**   | A Specification artifact, selected via `convention`, that defines how canonical models are projected into platform-specific conventions: naming defaults, deployment defaults, governance defaults (including an optional default Governance Profile), abbreviations, ordering rules, metadata projection, and override policy. It does not replace Governance Context. | Provided by the project or organization; selected by the caller. |
+| Concept | Description | Supplied by |
+| ------- | ----------- | ----------- |
+| **Naming Request** | The minimal, public request describing what is specific to a single resource. | The caller (user or system). |
+| **Resource Identity** | The complete, canonical, three-plane model describing a resource's identity. | Resolved by Context Resolution. |
+| **Governance Context** | The operational ownership and policy context associated with the resource. | Resolved from the request and shared context. |
+| **Convention Pack** | A Specification artifact, selected via `convention`, that defines how canonical models are projected into platform-specific conventions: naming defaults, deployment defaults, governance defaults (including an optional default Governance Profile), abbreviations, ordering rules, metadata projection, and override policy. It does not replace Governance Context. | Provided by the project or organization; selected by the caller. |
 | **Governance Profile** | The named governance policy, selected via `governance.profile`, that supplies governance defaults independently of the Convention Pack. | Provided by the project or organization; selected by the caller. |
 | **Resource Definition** | The technical characteristics and constraints of the resource's canonical resource type, selected via `resource_type`. | Provided by the project or platform; referenced via the resource's `resource_type`. |
-| **Convention Result** | The final output produced by evaluating the Specification against Resource Identity, Governance Context, and Resource Definition. | Produced by Convention Evaluation.    |
+| **Convention Result** | The final output produced by evaluating the Specification against Resource Identity, Governance Context, and Resource Definition. | Produced by Convention Evaluation. |
 
 A Naming Request is an *input*; Resource Identity is the *canonical internal model*;
 Governance Context is the separate operational policy model; a Convention Pack is a

@@ -58,25 +58,27 @@ This project is **not**:
 This reflects what actually exists in the repository today. Verify against the live file listing
 before relying on it — this section can lag behind real changes.
 
-| Path                 | Responsibility                                                        |
-| -------------------- | ---------------------------------------------------------------------|
-| `README.md`           | Project overview, features, and roadmap.                            |
-| `AGENTS.md`            | This document — the architectural reference.                        |
-| `CONTRIBUTING.md`      | Contribution workflow and guidelines.                                |
-| `CODE_OF_CONDUCT.md`   | Community expectations.                                              |
-| `SECURITY.md`          | Vulnerability reporting process.                                     |
-| `CODEOWNERS`           | Review ownership rules.                                              |
-| `LICENSE`              | Apache License 2.0.                                                  |
-| `package.json`         | npm scripts — the standard task entry point (see below).             |
-| `package-lock.json`    | Locked npm dependency versions.                                      |
-| `scripts/`             | Repository automation (for example, Dev Container setup).           |
-| `.github/`             | GitHub configuration: Copilot instructions, issue forms, workflows.  |
-| `.devcontainer/`       | Development Container configuration (runtime environment only).     |
-| `.vscode/`             | Shared editor settings and extension recommendations.                |
-| `.serena/`             | Serena MCP project configuration and memories.                       |
-| `.editorconfig`        | Repository-wide editor formatting defaults.                          |
-| `.gitignore`           | Ignored files and directories.                                       |
-| `specification/`      | The Specification — the current single source of truth for the domain concepts and schemas defined so far. See the tree below. |
+<!-- markdownlint-disable MD060 -->
+
+| Path              | Responsibility                                                                                 |
+| ----------------- | ---------------------------------------------------------------------------------------------- |
+| `README.md`       | Project overview, features, and roadmap.                                                       |
+| `AGENTS.md`       | This document — the architectural reference.                                                   |
+| `CONTRIBUTING.md` | Contribution workflow and guidelines.                                                          |
+| `CODE_OF_CONDUCT.md` | Community expectations.                                                                     |
+| `SECURITY.md`     | Vulnerability reporting process.                                                               |
+| `CODEOWNERS`      | Review ownership rules.                                                                        |
+| `LICENSE`         | Apache License 2.0.                                                                            |
+| `package.json`    | npm scripts — the standard task entry point (see below).                                       |
+| `package-lock.json` | Locked npm dependency versions.                                                              |
+| `scripts/`        | Repository automation (for example, Dev Container setup).                                     |
+| `.github/`        | GitHub configuration: Copilot instructions, issue forms, workflows.                            |
+| `.devcontainer/`  | Development Container configuration (runtime environment only).                               |
+| `.vscode/`        | Shared editor settings and extension recommendations.                                          |
+| `.serena/`        | Serena MCP project configuration and memories.                                                 |
+| `.editorconfig`   | Repository-wide editor formatting defaults.                                                    |
+| `.gitignore`      | Ignored files and directories.                                                                 |
+| `specification/`  | The Specification — the current single source of truth for the domain concepts and schemas defined so far. See the tree below. |
 
 ```text
 specification/
@@ -88,6 +90,14 @@ specification/
 ├── resource-definition.md
 ├── convention-pack.md
 ├── convention-result.md
+├── policies/
+│   ├── README.md
+│   ├── platform-convention.md
+│   ├── organization-convention.md
+│   └── deployment-convention.md
+├── convention-packs/
+│   ├── README.md
+│   └── aws-workload-default.md
 └── schemas/
     ├── resource-identity.schema.json
     ├── naming-request.schema.json
@@ -103,16 +113,18 @@ The following directories are part of the intended architecture but **do not exi
 represent where the project is heading, not what it currently contains. Create one only when a
 task actually requires it — never speculatively, and never merely because it is listed here.
 
-| Path               | Planned Responsibility                                                    |
-| ------------------ | ----------------------------------------------------------------------------|
-| `core/`             | Convention Engine that evaluates the Specification for adapters. |
-| `terraform/`        | Terraform adapter consuming the Specification.                   |
-| `cdk/`              | AWS CDK adapter consuming the Specification.                     |
-| `ansible/`          | Ansible adapter consuming the Specification.                     |
-| `cli/`              | Command-line adapter consuming the Specification.                |
-| `fixtures/`         | Shared, canonical input/output fixtures used by contract tests.  |
-| `tests/`            | Unit, contract, and integration tests.                          |
-| `docs/`             | Reference documentation.                                          |
+| Path        | Planned Responsibility                                           |
+| ----------- | --------------------------------------------------------------- |
+| `core/`     | Convention Engine that evaluates the Specification for adapters. |
+| `terraform/` | Terraform adapter consuming the Specification.                  |
+| `cdk/`      | AWS CDK adapter consuming the Specification.                     |
+| `ansible/`  | Ansible adapter consuming the Specification.                    |
+| `cli/`      | Command-line adapter consuming the Specification.               |
+| `fixtures/`  | Shared, canonical input/output fixtures used by contract tests. |
+| `tests/`    | Unit, contract, and integration tests.                          |
+| `docs/`     | Reference documentation.                                         |
+
+<!-- markdownlint-enable MD060 -->
 
 ## Guidance for AI Agents
 
@@ -150,10 +162,13 @@ The Specification now consists of multiple independent conceptual models — Res
 Governance Context, Naming Request, Context Resolution, Resource Definition, Convention Pack, and
 Convention Result — each answering a distinct question and each documented in its own file under
 `specification/`. They are combined into a single conceptual pipeline with exactly two processing
-stages, Context Resolution and Convention Evaluation. The Naming Request and Convention Pack are
-inputs to Context Resolution; Resource Identity and Governance Context are its outputs; Resource
-Definition is an additional input to Convention Evaluation, which produces the Convention Result.
-This pipeline is described in
+stages, Context Resolution and Convention Evaluation. The Naming Request, Convention Pack, and
+Evaluation Context (shared organizational context, shared deployment context, Runtime Context, and
+Provisioning Context; see
+[`specification/context-resolution.md`](specification/context-resolution.md#evaluation-context))
+are inputs to Context Resolution; Resource Identity and Governance Context are its outputs;
+Resource Definition is an additional input to Convention Evaluation, which produces the
+Convention Result. This pipeline is described in
 [`specification/README.md`](specification/README.md#architecture). Future adapters and the
 Convention Engine implementation must follow these conceptual models rather than redefining or
 reinterpreting them.
@@ -178,6 +193,33 @@ that apply that concept to a specific organizational policy. A Specification Art
 the Specification, not mere configuration external to it — it is expressed as a Markdown policy
 document rather than an abstract, reusable concept. Convention Packs contain organizational
 policy; they do not define new conventions or bypass the Specification.
+
+An effective Convention Pack remains the single Specification Artifact selected by a Naming
+Request's `convention` field. Internally, it may be assembled from three reusable convention
+dimensions, documented under
+[`specification/policies/`](specification/policies/):
+
+- **Platform Convention** — how conventions are projected for a target infrastructure platform
+  (AWS, Azure, Kubernetes).
+- **Organization Convention** — how an organization structures and governs its infrastructure
+  platforms (for example, an AWS Organization managed through Control Tower, or an Azure
+  Landing Zone).
+- **Deployment Convention** — the workload purpose, tenancy, and isolation model of a workload,
+  with an optional product-specific service-tier mapping (for example, Internal Workload, or
+  SaaS with Trial, Standard, and Enterprise tiers mapped to Shared or Dedicated isolation).
+
+Composing these dimensions into an effective Convention Pack is a Specification Artifact
+concern, not a third processing stage — the pipeline still has exactly two stages, Context
+Resolution and Convention Evaluation. Never create a Convention Pack per tenant or per
+customer: a dynamically provisioned Enterprise tenant is an instance of the same Deployment
+Convention, distinguished by Evaluation Context, not by a new Convention Pack. Evaluation
+Context (its Shared Organizational Context, Shared Deployment Context, Runtime Context, and
+Provisioning Context; see
+[`specification/context-resolution.md`](specification/context-resolution.md#evaluation-context))
+is never part of a Convention Pack, which contains only stable convention. See
+[`specification/convention-pack.md`](specification/convention-pack.md) and
+[`specification/context-resolution.md`](specification/context-resolution.md) for the full
+model.
 
 ## Generated Artifacts
 
@@ -217,6 +259,23 @@ accordingly:
 - Changed schema fields.
 - Changed validation behavior or results.
 - Renamed or removed resource types or Convention Packs.
+
+## Specification Evolution
+
+Specification v1.0 is frozen (see
+[`specification/README.md`](specification/README.md#specification-status)). Conceptual
+changes require implementation evidence, not theoretical improvement.
+
+When working on:
+
+- Resource Definitions;
+- Convention Packs;
+- the Reference Evaluator;
+- adapters;
+
+prefer evolving the implementation rather than modifying the conceptual Specification.
+Only propose a Specification change when implementation reveals an actual limitation or
+inconsistency in the current model — never speculatively.
 
 ## Coding Conventions
 

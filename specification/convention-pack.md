@@ -24,6 +24,49 @@ the request. The selected Convention Pack is then consumed by
 [Context Resolution](./context-resolution.md) and by
 [Convention Evaluation](./convention-result.md#convention-evaluation-pipeline).
 
+## Composed from reusable convention dimensions
+
+A Convention Pack remains the single Specification Artifact selected by a Naming
+Request's `convention` field — callers select one effective Convention Pack, never three
+independent policies. Internally, however, an effective Convention Pack may be
+assembled from reusable convention dimensions, so that stable convention is written once and
+reused across many effective packs instead of being redefined for every organization,
+product, or platform combination:
+
+```text
+Convention Pack
+├── Platform Convention
+├── Organization Convention
+└── Deployment Convention
+```
+
+- **[Platform Convention](./policies/platform-convention.md)** — how conventions are projected
+  for a target infrastructure platform (for example, AWS, Azure, or Kubernetes).
+- **[Organization Convention](./policies/organization-convention.md)** — how an organization
+  structures and governs its infrastructure platforms (for example, an AWS Organization
+  managed through Control Tower, or an Azure Landing Zone).
+- **[Deployment Convention](./policies/deployment-convention.md)** — the workload purpose,
+  tenancy, isolation, and optional service-tier mapping used by a product or platform
+  (for example, an internal workload or a SaaS product).
+
+A concrete Convention Pack may reference, extend, or compose these reusable policy
+artifacts, but resolving that composition into a single effective Convention Pack is a
+Specification Artifact concern — it happens when the effective Convention Pack is
+authored, not as an additional runtime processing stage. The Specification continues to
+have exactly two processing stages, Context Resolution and Convention Evaluation (see
+[`context-resolution.md`](./context-resolution.md) and
+[`convention-result.md`](./convention-result.md#convention-evaluation-pipeline));
+composing Platform Convention, Organization Convention, and Deployment Convention into an
+effective Convention Pack is not a third stage.
+
+Because these dimensions are independent, the same Deployment Convention can be
+composed with different Platform Convention and Organization Convention dimensions to
+target different platforms — see
+[Deployment Convention: Cross-platform reuse](./policies/deployment-convention.md#cross-platform-reuse).
+
+This document does not define a composition or merge algorithm for these dimensions,
+consistent with [Out of scope](#out-of-scope) below.
+
 ## Responsibilities
 
 A Convention Pack may define the following, each described briefly below.
@@ -55,6 +98,10 @@ generated name, independently of any technical constraint imposed by a platform.
 **Metadata projection rules** — how resolved Resource Identity and Governance Context
 attributes map onto platform-specific tags, labels, and annotations.
 
+**Context authority rules** — which Evaluation Context source is considered
+authoritative for a specific canonical attribute whenever more than one source could
+supply it (see [Context authority rules](#context-authority-rules) below).
+
 **Override policy** — which attributes may or may not be overridden on a Naming Request,
 and what validation applies to an override when it is allowed (see
 [Override policy](#override-policy) below).
@@ -67,17 +114,27 @@ A Convention Pack must not define:
 - maximum name lengths;
 - allowed provider characters;
 - uniqueness algorithms;
+- resource placement constraints (for example, requiring a specific region for a
+  resource type; see [`resource-definition.md`](./resource-definition.md#placement-constraints));
 - provider API behaviour;
 - implementation details;
 - adapter logic.
 
 These responsibilities belong to [Resource Definition](./resource-definition.md), which
-describes the technical rules a resource type must respect, or to adapters, which
-translate a Convention Result into a tool-specific interface. A Convention Pack decides
-*how organizational policy is projected*; a Resource Definition decides *what a platform
-technically allows*. Confusing the two would let organizational policy silently depend
-on provider-specific technical limits, and would prevent the same Convention Pack from
-being reused unchanged across platforms.
+describes the technical rules and placement constraints a resource type must respect, or
+to adapters, which translate a Convention Result into a tool-specific interface. A
+Convention Pack decides *how organizational policy is projected*; a Resource Definition
+decides *what a platform technically allows and where a resource may exist*. Confusing
+the two would let organizational policy silently depend on provider-specific technical
+limits, and would prevent the same Convention Pack from being reused unchanged across
+platforms.
+
+This restriction applies equally to every reusable convention dimension a Convention Pack
+may compose — [Platform Convention](./policies/platform-convention.md),
+[Organization Convention](./policies/organization-convention.md), and
+[Deployment Convention](./policies/deployment-convention.md) alike (see
+[Composed from reusable convention dimensions](#composed-from-reusable-convention-dimensions)
+above).
 
 ## Relationship with the other concepts
 
@@ -128,24 +185,41 @@ Context Resolution is the only processing stage that consumes both. This describ
 conceptual order in which a Convention Pack participates in producing a Convention
 Result. It does not describe an implementation, execution runtime, or API.
 
-## Convention Pack inheritance
+Convention Pack composition is the primary reuse mechanism in this iteration. This
+document does not define a Convention Pack inheritance model; if inheritance is
+reintroduced later, it must remain separate from the reusable convention dimensions and
+their composition rules.
 
-A Convention Pack may conceptually inherit from another Convention Pack, allowing a more
-specific pack to reuse and refine a more general one rather than redefining every
-responsibility from scratch. For example:
+## Convention Pack naming
+
+Effective Convention Pack identifiers should be clear about which convention dimensions
+they compose. Examples of effective, composed Convention Pack identifiers:
 
 ```text
-base
-    -> aws-default
-        -> aws-workload
-            -> aws-workload-production
+corporate-aws-internal
+product-a-aws-saas-shared
+product-b-aws-saas-trial
+product-b-aws-saas-standard
+product-b-aws-saas-enterprise
+product-b-azure-saas-enterprise
+product-b-kubernetes-saas-enterprise
 ```
 
-Inheritance here is conceptual only: a Convention Pack may be described as extending
-another, more general Convention Pack. This document does not define a merge algorithm,
-precedence rules between an inherited and inheriting pack, or any concrete inheritance
-syntax; those are implementation concerns left for a later iteration of the
-Specification.
+These identifiers represent effective, composed conventions — for example,
+`product-b-aws-saas-enterprise` composes an AWS Platform Convention, `product-b`'s AWS
+Organization Convention, and a Deployment Convention that maps the Enterprise service
+tier to dedicated isolation.
+They do not encode individual tenant names or dynamically generated deployment scopes:
+every Enterprise tenant of `product-b` on AWS is named through the same
+`product-b-aws-saas-enterprise` Convention Pack, with the tenant's dedicated deployment
+scope supplied as Provisioning Context rather than encoded in the pack's identifier (see
+[`context-resolution.md`](./context-resolution.md#evaluation-context)).
+See [`policies/deployment-convention.md`](./policies/deployment-convention.md#illustrative-scenarios)
+for the scenarios these examples illustrate.
+
+This document does not standardize the exact naming syntax for effective Convention
+Pack identifiers; the examples above illustrate the composition, not a required naming
+grammar.
 
 ## Required attributes
 
@@ -174,6 +248,45 @@ Kubernetes Annotations. This document does not define concrete key mappings or v
 formats; it only describes that this is a Convention Pack responsibility, consistent
 with the metadata projection described in
 [`governance-context.md`](./governance-context.md#metadata-projection).
+
+## Context authority rules
+
+A Convention Pack declares which Evaluation Context source is considered
+authoritative for a specific canonical attribute whenever more than one Evaluation
+Context source could supply it. This is different from precedence, which is a fixed,
+Specification-wide resolution order (see
+[`context-resolution.md`](./context-resolution.md#resolution-precedence)): authority is
+attribute-specific organizational policy, declared per Convention Pack, about which
+source's value should be trusted once several sources are available. Examples of
+attributes a Convention Pack may declare authority rules for:
+
+- `deployment.deployment_scope`;
+- `deployment.platform`;
+- `deployment.environment`;
+- `deployment.location`;
+- `organizational.tenant`.
+
+Context authority rules influence resolution only: they determine which Evaluation
+Context source Context Resolution trusts for a given attribute, but they never become
+part of the resulting [Resource Identity](./resource-identity.md) or
+[Governance Context](./governance-context.md) themselves — only the resolved attribute
+value they helped select does.
+
+Authority and protection are related but independent: a Convention Pack may declare an
+attribute authoritative from a specific source without protecting it from override, or
+protect an attribute without needing to declare an explicit authority rule for it (see
+[Override policy](#override-policy) below and
+[`context-resolution.md`](./context-resolution.md#precedence-authority-and-protection)).
+
+Responsibilities are divided as follows:
+
+- **Convention Pack** declares which Evaluation Context source is authoritative for a
+  given attribute, and declares whether that attribute is protected from override.
+- **Context Resolution** applies the authority and protection rules a Convention Pack
+  declares; it does not decide them itself (see
+  [`context-resolution.md`](./context-resolution.md#precedence-authority-and-protection)).
+- **Convention Evaluation** validates the resulting resolved model against Resource
+  Definition constraints and Specification rules.
 
 ## Override policy
 
@@ -204,10 +317,14 @@ This document defines the *concept* of a Convention Pack only. It intentionally 
 not define:
 
 - actual Convention Packs (for example, `aws-workload-default`);
-- YAML or JSON syntax for expressing a Convention Pack;
-- a JSON Schema for Convention Packs;
+- concrete Platform Convention, Organization Convention, or Deployment Convention artifacts
+  (see [`policies/`](./policies/));
+- YAML or JSON syntax for expressing a Convention Pack or any of its composed policy
+  dimensions;
+- a JSON Schema for Convention Packs or any of its composed policy dimensions;
 - an inheritance algorithm;
-- a merge algorithm;
+- a composition or merge algorithm for Platform Convention, Organization Convention, and
+  Deployment Convention;
 - any implementation.
 
 These are left for a later iteration of the Specification, once the conceptual model has
@@ -215,30 +332,9 @@ been validated.
 
 ## Where Convention Pack fits
 
-```mermaid
-flowchart TD
-    NR["Naming Request"]
-    CP["Convention Pack"]
-    CR["Context Resolution"]
-    RI["Resource Identity"]
-    GC["Governance Context"]
-    RD["Resource Definition"]
-    CE["Convention Evaluation"]
-    RS["Convention Result"]
-
-    NR --> CR
-    CP --> CR
-    CR --> RI
-    CR --> GC
-    RI --> CE
-    GC --> CE
-    RD --> CE
-    CE --> RS
-```
-
-This is the same canonical pipeline described in
-[`specification/README.md`](./README.md#architecture). Notice that Convention Pack is an
-input to Context Resolution, alongside the Naming Request — it is not itself a
-processing stage. The pipeline has exactly two processing stages, Context Resolution and
-Convention Evaluation; every other concept, including Convention Pack, is a domain model
-or Specification artifact consumed by one of those two stages.
+See the canonical pipeline diagram in
+[`specification/README.md`](./README.md#architecture). Convention Pack is an input to
+Context Resolution, alongside the Naming Request and Evaluation Context — it is not
+itself a processing stage. The pipeline has exactly two processing stages, Context
+Resolution and Convention Evaluation; every other concept, including Convention Pack, is
+a domain model or Specification artifact consumed by one of those two stages.

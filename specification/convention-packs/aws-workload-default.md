@@ -15,11 +15,11 @@ define YAML, JSON, or any machine-readable representation (see
 
 ## Purpose
 
-`aws-workload-default` targets AWS workload accounts managed through Terraform: a
-resource is deployed into an AWS account dedicated to a single workload, and that
-account's infrastructure is provisioned using the Terraform adapter. This is the most
-common scenario for early adopters of the Specification, since Terraform is the first
-planned adapter.
+`aws-workload-default` is a concrete Convention Pack that demonstrates composition. It
+combines an AWS Platform Convention, an AWS workload-account Organization Convention,
+and an Internal Workload Deployment Convention into one effective pack for AWS
+workload accounts. The same effective pack can be consumed by multiple adapters,
+including Terraform, AWS CDK, and future CLI or IaC adapters.
 
 The pack assumes:
 
@@ -27,10 +27,51 @@ The pack assumes:
   `aws_s3_bucket`);
 - the resource's `deployment_scope` corresponds to the AWS account alias hosting the
   workload;
-- infrastructure is provisioned and managed through Terraform.
+- the workload is internal rather than customer-tenanted.
 
-It is not intended for shared, multi-workload accounts, non-AWS platforms, or resources
-managed outside Terraform. Those scenarios call for a different Convention Pack.
+It is not intended for shared SaaS, tiered SaaS, non-AWS platforms, or
+adapter-specific management models. Those scenarios call for a different effective
+Convention Pack.
+
+## Composed conventions
+
+`aws-workload-default` demonstrates how an effective Convention Pack is assembled from
+the reusable convention dimensions documented under
+[`policies/`](../policies/README.md). This document does not define new Platform
+Convention, Organization Convention, or Deployment Convention artifacts; it only shows,
+conceptually, which contribution each dimension makes to this effective pack.
+
+### AWS Platform Convention
+
+Contributes:
+
+- `platform` defaults to `aws`;
+- AWS-specific metadata projection, mapping Resource Identity and Governance Context
+  onto AWS Tags;
+- AWS region and location representation used when projecting `deployment.location`.
+
+### AWS Workload Organization Convention
+
+Contributes:
+
+- `deployment_scope` represents the AWS account alias hosting the workload;
+- protection of `organization` and `deployment_scope` against override (see
+  [Override policy](#override-policy) below);
+- account-naming conventions for AWS workload accounts.
+
+### Internal Workload Deployment Convention
+
+Contributes:
+
+- the Internal Workload model — no customer tenancy;
+- shared or dedicated workload accounts according to Organization Convention, rather
+  than a fixed Isolation Model;
+- no Service Tier Mapping, since Internal Workload has no customer-facing service
+  tiers.
+
+Composing these three dimensions into `aws-workload-default` is a Specification
+Artifact concern, not a distinct processing stage — see
+[`convention-pack.md`](../convention-pack.md#composed-from-reusable-convention-dimensions).
 
 ## Identity defaults
 
@@ -40,8 +81,6 @@ with the Context Resolution precedence order described in
 
 - **`platform`** — defaults to `aws`, since every resource named under this pack is an
   AWS resource selected via an AWS `resource_type`.
-- **`managed_by`** — defaults to `terraform`, since this pack targets workloads
-  provisioned through the Terraform adapter.
 - **Deployment conventions** — `deployment_scope` is expected to resolve to the AWS
   account alias hosting the workload, supplied by shared deployment context rather than
   repeated on every request; `environment` is expected to be supplied by the caller or
@@ -52,6 +91,21 @@ This pack does not invent organization-specific values (for example, a specific
 `organization` or `business_unit`); those remain supplied by shared organizational
 context or the Naming Request, as described in
 [`context-resolution.md`](../context-resolution.md#resolution-sources).
+
+## `deployment_scope` is optional for naming, expected for metadata
+
+`aws-workload-default` follows **Option B**: `deployment.deployment_scope` is
+intentionally not listed under [Required attributes](#required-attributes) below, so
+Convention Evaluation can still generate a name without it — for example, during a
+pre-provisioning evaluation that produces a proposed name before the AWS account
+exists (see
+[`context-resolution.md`](../context-resolution.md#pre-provisioning)). A naming output
+may therefore be generated before `deployment_scope` is available. Metadata
+projections that depend on `deployment_scope` — such as tagging a resource with the AWS
+account alias that hosts it — are deferred until `deployment_scope` resolves, normally
+from shared deployment context, consistent with the pre- and post-provisioning
+distinction described in
+[`context-resolution.md`](../context-resolution.md#provisioning-lifecycle).
 
 ## Required attributes
 
@@ -70,7 +124,7 @@ attributes to be available on the resolved Resource Identity:
   all.
 
 As described in [`convention-pack.md`](../convention-pack.md#required-attributes), this
-is organizational policy, not a JSON Schema constraint: the same canonical Resource
+is organizational convention, not a JSON Schema constraint: the same canonical Resource
 Identity model may have different required attributes under a different Convention
 Pack.
 
@@ -109,6 +163,13 @@ attributes onto AWS Tags. Conceptually:
 - Governance Context attributes (for example, `owner`, `managed_by`, `cost_center`)
   become tags that identify who owns, manages, and pays for a resource.
 
+`aws-workload-default` does not fix `managed_by` to a specific tool such as Terraform.
+`managed_by` is a Governance Context attribute (see
+[`governance-context.md`](../governance-context.md)); this pack expects it to be
+supplied by Evaluation Context or the calling adapter, not hard-coded by the pack
+itself, so the same effective pack remains reusable whether the AWS workload account is
+managed by Terraform, AWS CDK, or a future adapter.
+
 This document does not define actual AWS Tag key names, value formats, or casing; those
 concrete mappings are left for a later iteration of this Convention Pack.
 
@@ -126,7 +187,7 @@ responsibilities described in
   was deployed before this pack's conventions existed and must keep its original
   location during a migration window.
 
-This is organizational policy specific to `aws-workload-default`, not a Context
+This is organizational convention specific to `aws-workload-default`, not a Context
 Resolution or Convention Evaluation mechanic: Context Resolution accepts whatever
 overrides are supplied in a Naming Request's `overrides` block, but it is this Convention
 Pack that decides which of those overrides are actually allowed (see
@@ -147,14 +208,14 @@ with how the abstract Convention Pack concept treats versioning (see
   request's `convention` field (see [`naming-request.md`](../naming-request.md)).
 - **Context Resolution** — combines the Naming Request with
   `aws-workload-default`'s identity and deployment defaults, alongside shared
-  organizational and deployment context, to produce a complete Resource Identity and
-  Governance Context (see [`context-resolution.md`](../context-resolution.md)).
+  organizational and deployment Evaluation Context, to produce a complete Resource
+  Identity and Governance Context (see [`context-resolution.md`](../context-resolution.md)).
 - **Resource Identity** — `aws-workload-default`'s required attributes and identity
   defaults apply to the three-plane Resource Identity model; the pack does not change
   what Resource Identity fundamentally is (see
   [`resource-identity.md`](../resource-identity.md)).
-- **Governance Context** — `aws-workload-default`'s `managed_by` default and metadata
-  projection apply to the resolved Governance Context (see
+- **Governance Context** — `aws-workload-default`'s metadata projection applies to the
+  resolved Governance Context (see
   [`governance-context.md`](../governance-context.md)).
 - **Resource Definition** — `aws-workload-default` does not define or override any
   technical constraint; the Resource Definition selected via `resource_type` remains
@@ -175,8 +236,8 @@ them.
 
 - **Valid request** — a Naming Request selects `aws-workload-default`, supplies
   `organizational.system`, `functional.service`, `functional.resource_type`, and either
-  supplies `deployment.environment` or allows it to resolve from shared deployment
-  context. Context Resolution completes successfully, and Convention Evaluation
+  supplies `deployment.environment` or allows it to resolve from shared Evaluation
+  Context. Context Resolution completes successfully, and Convention Evaluation
   produces a Convention Result.
 - **Missing environment** — a Naming Request selects `aws-workload-default` but
   `deployment.environment` cannot be resolved from the request or from shared

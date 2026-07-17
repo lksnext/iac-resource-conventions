@@ -81,31 +81,8 @@ These concerns are not yet defined in the Specification.
 ## The Context Resolution pipeline
 
 Governance Context participates in the same Context Resolution pipeline used to resolve
-a [Naming Request](./naming-request.md) into a Resource Identity:
-
-```mermaid
-flowchart TD
-    NR["Naming Request"]
-    CP["Convention Pack"]
-    CR["Context Resolution"]
-    RI["Resource Identity"]
-    GC["Governance Context"]
-    RD["Resource Definition"]
-    CE["Convention Evaluation"]
-    RS["Convention Result"]
-
-    NR --> CR
-    CP --> CR
-    CR --> RI
-    CR --> GC
-    RI --> CE
-    GC --> CE
-    RD --> CE
-    CE --> RS
-```
-
-This is the same canonical pipeline described in
-[`specification/README.md`](./README.md#architecture); see
+a [Naming Request](./naming-request.md) into a Resource Identity. See the canonical
+pipeline diagram in [`specification/README.md`](./README.md#architecture), and
 [`context-resolution.md`](./context-resolution.md) for the full description of how this
 resolution happens.
 
