@@ -1,4 +1,4 @@
-// Public entry point for @iac-resource-conventions/core.
+// Public entry point for @lksnext/iac-conventions-core.
 //
 // This package will eventually host the TypeScript domain contracts for the frozen
 // Specification (Resource Identity, Governance Context, Naming Request, Context
@@ -11,4 +11,4 @@
 // entry point.
 
 /** The published name of this package, kept in sync with `package.json`. */
-export const CORE_PACKAGE_NAME = "@iac-resource-conventions/core";
+export const CORE_PACKAGE_NAME = "@lksnext/iac-conventions-core";

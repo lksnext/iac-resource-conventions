@@ -29,11 +29,44 @@ This is the **implementation foundation** only. As of this writing:
   a concrete task needs them, per the repository's incremental-evolution principle (see
   [`AGENTS.md`](AGENTS.md#repository-evolution)).
 
+## Package naming policy
+
+The npm scope, package name, and folder name are three independent, deliberately
+distinct concerns:
+
+- **The npm scope (`@lksnext`) identifies the publisher** — the GitHub organization
+  that owns and publishes these packages, not the project.
+- **The package name (`iac-conventions-*`) identifies the project and package
+  responsibility** — `iac-conventions` is the project's package family name, and the
+  suffix (`core`, `catalog`, `cli`, …) identifies what that specific package is
+  responsible for.
+- **The folder name under `packages/`** (`core/`, `catalog/`, `cli/`, …) is
+  intentionally short and independent from the published package name — the directory
+  layout must never be inferred from, or assumed to match, the npm package name.
+
+This keeps published import paths concise (`@lksnext/iac-conventions-core`) while still
+reading as one consistent package family, and keeps the repository's own name
+(`iac-resource-conventions`) free to stay descriptive without leaking into every import
+statement. `iac-conventions` is deliberately shorter than the repository name
+`iac-resource-conventions` — repository names favor descriptiveness, while npm package
+names and the CLI executable favor brevity, since they are typed constantly.
+
+| Convention | Value |
+| --- | --- |
+| GitHub repository | `iac-resource-conventions` |
+| npm scope | `@lksnext` |
+| npm package family | `iac-conventions-*` |
+| TypeScript import specifier | `@lksnext/iac-conventions-*` |
+| CLI executable (planned, not implemented) | `iac-conventions` |
+
+Do not use the `@iac-resource-conventions/*` scope — an npm scope must map to a
+publishing organization (`@lksnext`), not restate the repository name.
+
 ## Package structure
 
 ```text
 packages/
-└── core/               # @iac-resource-conventions/core (exists)
+└── core/               # @lksnext/iac-conventions-core (exists)
     ├── package.json
     ├── README.md
     ├── tsconfig.json
@@ -48,21 +81,27 @@ requires them:
 
 ```text
 packages/
-├── catalog/            # @iac-resource-conventions/catalog (planned)
-├── cli/                # @iac-resource-conventions/cli (planned)
+├── catalog/            # @lksnext/iac-conventions-catalog (planned)
+├── cli/                # @lksnext/iac-conventions-cli (planned)
 └── adapters/
-    ├── terraform/       # @iac-resource-conventions/adapter-terraform (planned)
-    ├── cdk/             # @iac-resource-conventions/adapter-cdk (planned)
+    ├── terraform/       # @lksnext/iac-conventions-terraform (planned)
+    ├── cdk/             # @lksnext/iac-conventions-cdk (planned)
     └── ansible/          # ansible adapter (language TBD; likely not an npm package)
 ```
+
+`@lksnext/iac-conventions` (no suffix) is **reserved** for a possible future convenience
+package that re-exports the public APIs of `core` and `catalog` together. It is not
+created in this task, and must not be created speculatively — only once a concrete
+consumer needs a single combined import instead of depending on `core`/`catalog`
+directly.
 
 ### Package responsibilities
 
 | Package | Responsibility | May depend on |
 | --- | --- | --- |
-| `@iac-resource-conventions/core` | TypeScript domain contracts for the Specification; Context Resolution; Convention Evaluation; deterministic validation; Convention Result production; the public Reference Evaluator API. | *(none internal)* |
-| `@iac-resource-conventions/catalog` | Executable Resource Definitions; executable Convention Packs; registries; built-in canonical artifacts. | `core` |
-| `@iac-resource-conventions/cli` | JSON/YAML input; invoking the Reference Evaluator; machine-readable output; exit codes; local filesystem integration. | `core`, `catalog` |
+| `@lksnext/iac-conventions-core` | TypeScript domain contracts for the Specification; Context Resolution; Convention Evaluation; deterministic validation; Convention Result production; the public Reference Evaluator API. | *(none internal)* |
+| `@lksnext/iac-conventions-catalog` | Executable Resource Definitions; executable Convention Packs; registries; built-in canonical artifacts. | `core` |
+| `@lksnext/iac-conventions-cli` | JSON/YAML input; invoking the Reference Evaluator; machine-readable output; exit codes; local filesystem integration. | `core`, `catalog` |
 | Adapters (`terraform`, `cdk`, `ansible`, …) | Render Convention Results for a target tool; consume the Reference Evaluator contract. | `core`, optionally `catalog` |
 
 `core` must never depend on the AWS SDK, Terraform, CDK, CLI frameworks, filesystem
@@ -156,7 +195,7 @@ cross-package incremental builds become useful.
 
 - Single public entry point per package (`packages/core/src/index.ts`), exported via a
   single `"."` condition in `package.json#exports`. No subpath exports
-  (`@iac-resource-conventions/core/models`, `.../evaluation`, etc.) yet — add them only
+  (`@lksnext/iac-conventions-core/models`, `.../evaluation`, etc.) yet — add them only
   when a real internal boundary needs to be exposed independently.
 - No broad barrel re-exports of internal implementation files; `index.ts` will export
   only the intentionally public surface as domain modules are added.
@@ -265,7 +304,9 @@ implemented.
 
 ## Versioning and publication
 
-- Package names use the `@iac-resource-conventions/*` npm scope.
+- Package names use the `@lksnext` npm scope with the `iac-conventions-*` package family
+  (see [Package naming policy](#package-naming-policy) above); `@lksnext/iac-conventions`
+  itself is reserved for a possible future convenience package and is not created yet.
 - Every workspace package is currently `"private": true` and at `0.1.0` — no package is
   published, and no publish credentials are configured in this task.
 - During this initial implementation phase, package versions are kept synchronized
@@ -296,6 +337,11 @@ The CLI package does not exist yet. Once implemented, it must:
   executable applications, etc.) is chosen in this task; that decision is deferred until
   a concrete distribution need (for example, a Terraform external data source requiring
   a zero-Node-install binary) justifies it.
+
+The planned CLI executable name is `iac-conventions` (see
+[Package naming policy](#package-naming-policy) above) — short and independent from both
+the repository name and the `@lksnext/iac-conventions-cli` package name that publishes
+it.
 
 ## Terraform integration boundary (planned, not implemented)
 

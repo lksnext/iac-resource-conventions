@@ -84,7 +84,7 @@ before relying on it — this section can lag behind real changes.
 | `.editorconfig`   | Repository-wide editor formatting defaults.                                                    |
 | `.gitignore`      | Ignored files and directories.                                                                 |
 | `IMPLEMENTATION.md` | Implementation monorepo architecture: package boundaries, dependency direction, build strategy. |
-| `packages/`       | npm workspace packages implementing the Specification. Currently only `packages/core/` (`@iac-resource-conventions/core`) exists — see [`IMPLEMENTATION.md`](IMPLEMENTATION.md). |
+| `packages/`       | npm workspace packages implementing the Specification. Currently only `packages/core/` (`@lksnext/iac-conventions-core`) exists — see [`IMPLEMENTATION.md`](IMPLEMENTATION.md). |
 | `specification/`  | The Specification — the current single source of truth for the domain concepts and schemas defined so far. See the tree below. |
 
 ```text

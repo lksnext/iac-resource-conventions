@@ -111,7 +111,7 @@ The repository is organized around the Specification-first architecture describe
 ├── .github/          # GitHub configuration
 ├── specification/    # The Specification (single source of truth)
 ├── packages/         # Implementation monorepo packages (npm workspaces)
-│   └── core/         # @iac-resource-conventions/core — domain contracts and Reference Evaluator
+│   └── core/         # @lksnext/iac-conventions-core — domain contracts and Reference Evaluator
 ├── scripts/          # Repository automation scripts
 ├── IMPLEMENTATION.md # Implementation monorepo architecture
 ├── CONTRIBUTING.md

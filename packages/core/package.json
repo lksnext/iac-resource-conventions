@@ -1,5 +1,5 @@
 {
-  "name": "@iac-resource-conventions/core",
+  "name": "@lksnext/iac-conventions-core",
   "version": "0.1.0",
   "description": "TypeScript domain contracts and Reference Evaluator for the iac-resource-conventions Specification.",
   "license": "Apache-2.0",
