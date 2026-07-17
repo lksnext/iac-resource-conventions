@@ -172,24 +172,25 @@ from lowest to highest precedence:
    context (for example, `organization`, `business_unit`).
 3. **Shared Deployment Context** — deployment values resolved from shared context (for
    example, `platform`, `deployment_scope`).
-4. **Runtime Context** — dynamic facts associated with this execution.
-5. **Provisioning Context** — dynamic facts produced or enriched by provisioning or IaC.
-6. **Governance Profile defaults** — governance defaults declared by the selected
+4. **Runtime Context** — dynamic facts associated with this execution, including
+  Provisioning Context (Runtime Context produced or enriched by provisioning or IaC).
+5. **Governance Profile defaults** — governance defaults declared by the selected
   Governance Profile.
-7. **Naming Request values** — values explicitly supplied by the caller in the Naming
+6. **Naming Request values** — values explicitly supplied by the caller in the Naming
   Request.
-8. **Validated explicit overrides** — values supplied in the request's `overrides`
+7. **Validated explicit overrides** — values supplied in the request's `overrides`
   block. See [Explicit Overrides](#explicit-overrides) above for the structure and
   intended use of this block.
 
 Convention Packs establish organizational naming and metadata conventions; Governance
 Profiles establish governance defaults. Values explicitly supplied in the Naming Request
 override any default from either source, and explicit overrides normally take the
-highest precedence. However, precedence is not the same as protection: some Evaluation
-Context values — for example, an authoritative `deployment.deployment_scope` produced
-during tenant provisioning — are protected and cannot be replaced by a Naming Request
-value or an override unless the selected Convention Pack explicitly allows it (see
-[`context-resolution.md`](./context-resolution.md#precedence-versus-protection)).
+highest precedence. However, precedence is not the same as authority or protection: some
+Evaluation Context values — for example, an authoritative `deployment.deployment_scope`
+produced during tenant provisioning — are protected and cannot be replaced by a Naming
+Request value or an override unless the selected Convention Pack explicitly allows it
+(see
+[`context-resolution.md`](./context-resolution.md#precedence-authority-and-protection)).
 
 This is the same precedence order defined in
 [`context-resolution.md`](./context-resolution.md#resolution-precedence), which is the

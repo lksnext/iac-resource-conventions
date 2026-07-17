@@ -61,8 +61,8 @@ Convention Evaluation conceptually performs the following steps to produce a Con
 Result from a Naming Request:
 
 1. **Resolve Context** — run Context Resolution to combine the Naming Request, the
-   selected Convention Pack, and shared or Runtime/Provisioning Context (see
-   [`context-resolution.md`](./context-resolution.md)).
+   selected Convention Pack, and Evaluation Context (see
+   [`context-resolution.md`](./context-resolution.md#evaluation-context)).
 2. **Build Resource Identity** — complete the canonical Resource Identity from the
    resolved context.
 3. **Build Governance Context** — complete the canonical Governance Context from the

@@ -141,21 +141,23 @@ flowchart TD
 
 - **Naming Request** — the minimal, user-supplied description of the resource being
   requested (see [`naming-request.md`](./naming-request.md)).
--- **Convention Pack** — a Specification artifact, selected via the request's
+- **Convention Pack** — a Specification artifact, selected via the request's
   `convention` field, that defines how canonical models are projected into
   platform-specific conventions: naming defaults, deployment defaults, governance
   defaults, abbreviations, ordering rules, metadata projection, and override policy (see
   [`convention-pack.md`](./convention-pack.md)). An effective Convention Pack may be
   assembled from reusable Platform Convention, Organization Convention, and Deployment
   Convention dimensions (see [`policies/`](./policies/)), but it remains the single
-  artifact selected via `convention`. Convention Packs are not yet implemented in this
-  Specification (see **What does not belong here** above).
--- **Evaluation Context** — the complete set of external facts available during a
+  artifact selected via `convention`. Convention Packs are currently defined as
+  conceptual Markdown Specification Artifacts; machine-readable or executable
+  representations are intentionally out of scope for this iteration (see **What does
+  not belong here** above).
+- **Evaluation Context** — the complete set of external facts available during a
   specific evaluation, including shared organizational context, shared deployment
   context, Runtime Context, and Provisioning Context (see
   [`context-resolution.md`](./context-resolution.md#evaluation-context)). It is not part
   of the Convention Pack.
--- **Context Resolution** — the process that combines the Naming Request, the Convention
+- **Context Resolution** — the process that combines the Naming Request, the Convention
   Pack, and Evaluation Context into complete canonical models. Context Resolution only
   produces canonical models; it does not generate names, tags, labels, annotations, or
   other platform-specific outputs — those belong to Convention Evaluation (see

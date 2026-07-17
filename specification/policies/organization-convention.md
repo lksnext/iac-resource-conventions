@@ -25,7 +25,7 @@ Organization Convention may contribute:
 - logical deployment-scope patterns — for example, how `deployment.deployment_scope`
   values are typically named within this organization;
 - protected organizational attributes (see
-  [`context-resolution.md`](../context-resolution.md#precedence-versus-protection));
+  [`context-resolution.md`](../context-resolution.md#precedence-authority-and-protection));
 - organization-wide override restrictions.
 
 ## Examples

@@ -35,7 +35,8 @@ what a Convention Pack fundamentally *is*, that change belongs in
 
 - [`aws-workload-default.md`](./aws-workload-default.md) — the first concrete Convention
   Pack, describing an organizational naming, governance, and metadata policy for AWS
-  workload accounts managed through Terraform.
+  workload accounts, and demonstrating how Platform Convention, Organization
+  Convention, and Deployment Convention compose into a single effective Convention Pack.
 
 ## Scope of this iteration
 

@@ -72,6 +72,9 @@ boundary that the resulting Convention Pack uses.
 
 ## Initial deployment models
 
+These are illustrative combinations of the Workload Model, Tenancy Model, and Isolation
+Model dimensions described above, not additional model dimensions of their own.
+
 ### Internal Workload
 
 For internal projects, experiments, and sandbox workloads. Typical characteristics:
@@ -93,12 +96,20 @@ characteristics:
   application concern rather than an infrastructure concern;
 - shared deployment scope.
 
-### SaaS Tiered
+### SaaS with a product-specific Service Tier Mapping
 
-An Enterprise tenant is an **instance** of the SaaS deployment convention, not a new
-Convention Pack. The same Deployment Convention applies to every Enterprise tenant;
-what differs between tenants is Evaluation Context — for example, which
-`deployment.deployment_scope` was provisioned for a given tenant (see
+A product may apply its own [Optional Service Tier Mapping](#optional-service-tier-mapping)
+to the SaaS Workload Model, so that different service tiers resolve to different
+Isolation Model values — for example, Trial and Standard tiers resolving to Shared
+isolation, and Enterprise resolving to Dedicated isolation. This is not a fourth
+deployment model: it is the SaaS Workload Model combined with a product-specific
+Service Tier Mapping, expressed using the same Workload, Tenancy, and Isolation Model
+dimensions described above.
+
+An Enterprise tenant is an **instance** of this composition, not a new Convention Pack.
+The same Deployment Convention applies to every Enterprise tenant; what differs between
+tenants is Evaluation Context — for example, which `deployment.deployment_scope` was
+provisioned for a given tenant (see
 [`context-resolution.md`](../context-resolution.md#evaluation-context)). A Convention
 Pack must not be created per Enterprise customer.
 

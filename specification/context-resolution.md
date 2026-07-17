@@ -28,8 +28,8 @@ specific Context Resolution evaluation. It is not part of the Convention Pack.
 Evaluation Context
 ├── Shared Organizational Context
 ├── Shared Deployment Context
-├── Runtime Context
-└── Provisioning Context
+└── Runtime Context
+      └── Provisioning Context
 ```
 
 - **Shared Organizational Context** — organizational values that are stable across many
@@ -39,8 +39,10 @@ Evaluation Context
   evaluations or derived from the environment in which the request is made (for
   example, `platform`, `deployment_scope`).
 - **Runtime Context** — dynamic facts associated with a specific execution.
-- **Provisioning Context** — Runtime Context produced or enriched by a provisioning
-  process or IaC execution.
+- **Provisioning Context** — a specialization of Runtime Context: Runtime Context that
+  has been produced or enriched by a provisioning process or IaC execution. Every
+  Provisioning Context is Runtime Context; not every Runtime Context comes from a
+  provisioning process.
 
 ## Resolution sources
 
@@ -71,58 +73,77 @@ precedence:
 3. **Shared Deployment Context** — deployment values from Evaluation Context. These
   override both prior layers because they reflect the shared deployment boundary in
   which the resource is being evaluated.
-4. **Runtime Context** — dynamic facts associated with this execution.
-5. **Provisioning Context** — dynamic facts produced or enriched by provisioning or IaC.
-  These override Runtime Context when they represent authoritative outputs from the
-  provisioning flow.
-6. **Governance Profile defaults** — governance defaults declared by the selected
+4. **Runtime Context** — dynamic facts associated with this execution, including
+  Provisioning Context (Runtime Context produced or enriched by provisioning or IaC).
+  Whether a specific Runtime Context or Provisioning Context value should be treated as
+  authoritative is attribute-specific, not a blanket rule based on precedence order —
+  see [Precedence, authority, and protection](#precedence-authority-and-protection)
+  below.
+5. **Governance Profile defaults** — governance defaults declared by the selected
   Governance Profile. These apply after identity-related context because governance is
   resolved independently of deployment and organizational placement.
-7. **Naming Request values** — values explicitly supplied by the caller in the Naming
+6. **Naming Request values** — values explicitly supplied by the caller in the Naming
   Request. A caller-supplied value always takes precedence over any default, unless the
   value it would replace is protected.
-8. **Validated explicit overrides** — values supplied in the request's `overrides`
+7. **Validated explicit overrides** — values supplied in the request's `overrides`
   block. These are the most specific, deliberate values a caller can provide and
   normally win over non-protected values, but they are still validated during
   Convention Evaluation (see [Overrides](#overrides) below).
 
 Precedence determines which source wins when more than one source supplies the same
-attribute. It does not, by itself, determine whether a caller is allowed to replace an
-authoritative value at all — see
-[Precedence versus protection](#precedence-versus-protection) below.
+attribute. It does not, by itself, determine whether a specific value is authoritative,
+or whether a caller is allowed to replace an authoritative value at all — see
+[Precedence, authority, and protection](#precedence-authority-and-protection) below.
 
 This is the same precedence order described in
 [`naming-request.md`](./naming-request.md); it is defined once here and referenced from
 there to avoid two independent, potentially diverging descriptions.
 
-## Precedence versus protection
+## Precedence, authority, and protection
 
-Precedence and protection answer different questions:
+Precedence, authority, and protection answer three independent questions:
 
 - **Precedence** — which source wins when multiple sources supply a value for the same
   attribute (see [Resolution precedence](#resolution-precedence) above).
+- **Authority** — whether a specific attribute's value from a specific source should be
+  treated as correct and authoritative, independently of precedence order. Authority is
+  attribute-specific, not source-wide: Runtime Context and Provisioning Context do not
+  universally override one another, or anything else — each attribute's authority is
+  judged on its own. For example:
+  - `deployment.deployment_scope` is normally authoritative when it has been produced
+    by a provisioning process, because it reflects the deployment boundary
+    provisioning actually created.
+  - Provider-generated technical identifiers (for example, an AWS Account ID captured
+    in Provisioning Context) are authoritative, since no other source can correctly
+    supply them.
+  - Other Runtime Context values are not automatically authoritative merely because
+    they were available at execution time; they remain governed by the selected
+    Convention Pack's policy like any other resolved value.
 - **Protection** — whether a caller is allowed to replace an authoritative value at
   all, regardless of the normal precedence order.
 
 In dynamically provisioned deployments — most notably a SaaS Enterprise tenant's
 dedicated deployment scope (see
 [`policies/deployment-convention.md`](./policies/deployment-convention.md#dynamic-enterprise-deployment-scopes))
-— some values are produced authoritatively by the provisioning system rather than
-supplied by the caller. Those values should normally be **protected**, including:
+— some values are authoritative because they are produced by the provisioning system
+rather than supplied by the caller. Those values should normally be **protected**,
+including:
 
 - `organizational.tenant`;
-- `deployment.deployment_scope`;
+- `deployment.deployment_scope`, when produced by provisioning;
 - the resolved platform (`deployment.platform`);
-- `deployment.environment` or `deployment.location`, when fixed by provisioning policy.
+- `deployment.environment` or `deployment.location`, when fixed by provisioning policy;
+- provider-generated technical identifiers, when retained as metadata.
 
 A Naming Request value or an `overrides` block entry must not be able to contradict a
-protected, authoritative provisioning fact, even though Naming Request values and
-overrides normally have higher precedence than Evaluation Context. A protected attribute
-may only be replaced when the selected Convention Pack explicitly allows it —
-protection is a Convention Pack policy decision (see
+protected, authoritative value, even though Naming Request values and overrides
+normally have higher precedence than Evaluation Context. A protected attribute may only
+be replaced when the selected Convention Pack explicitly allows it — protection is a
+Convention Pack policy decision (see
 [`convention-pack.md`](./convention-pack.md#override-policy)), not a Context Resolution
-mechanic. Context Resolution enforces whatever protection policy the selected
-Convention Pack declares; it does not itself decide which attributes are protected.
+mechanic. Context Resolution enforces whatever protection and authority policy the
+selected Convention Pack declares; it does not itself decide which attributes are
+authoritative or protected.
 
 ## Business to infrastructure boundary
 
@@ -163,20 +184,13 @@ implementation, IaC execution semantics, Control Tower Account Factory integrati
 Azure subscription vending implementation, or Kubernetes cluster or namespace
 provisioning.
 
-## Evaluation Context details
+## Evaluation Context is not part of the Convention Pack
 
-Runtime Context is the general term for dynamic facts associated with a specific
-execution. Provisioning Context is Runtime Context that is produced, or enriched, by a
-provisioning process — for example, the outputs of an IaC run that created a tenant's
-dedicated AWS account. Every Provisioning Context is Runtime Context; not every Runtime
-Context comes from a provisioning process.
-
-Evaluation Context is not part of the Convention Pack. A Convention Pack contains
-stable convention that applies across many evaluations; Evaluation Context contains
-dynamic facts associated with one execution, tenant, or provisioned deployment scope.
-Conflating the two would make a Convention Pack change every time a tenant is onboarded,
-which defeats its purpose as reusable, stable convention (see
-[`convention-pack.md`](./convention-pack.md)).
+A Convention Pack contains stable convention that applies across many evaluations;
+Evaluation Context contains dynamic facts associated with one execution, tenant, or
+provisioned deployment scope. Conflating the two would make a Convention Pack change
+every time a tenant is onboarded, which defeats its purpose as reusable, stable
+convention (see [`convention-pack.md`](./convention-pack.md)).
 
 ### Deployment Scope versus Provider Scope ID
 
@@ -253,8 +267,8 @@ After a deployment scope has been created, additional context may include:
 - the finalized region or location;
 - other IaC outputs.
 
-A later evaluation may use this completed context — supplied as Runtime or
-Provisioning Context — to generate the workload's own names and metadata.
+A later evaluation may use this completed context — supplied as Provisioning Context —
+to generate the workload's own names and metadata.
 
 ## Relationship with provisioning systems
 

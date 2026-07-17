@@ -33,6 +33,46 @@ It is not intended for shared SaaS, tiered SaaS, non-AWS platforms, or
 adapter-specific management models. Those scenarios call for a different effective
 Convention Pack.
 
+## Composed conventions
+
+`aws-workload-default` demonstrates how an effective Convention Pack is assembled from
+the reusable convention dimensions documented under
+[`policies/`](../policies/README.md). This document does not define new Platform
+Convention, Organization Convention, or Deployment Convention artifacts; it only shows,
+conceptually, which contribution each dimension makes to this effective pack.
+
+### AWS Platform Convention
+
+Contributes:
+
+- `platform` defaults to `aws`;
+- AWS-specific metadata projection, mapping Resource Identity and Governance Context
+  onto AWS Tags;
+- AWS region and location representation used when projecting `deployment.location`.
+
+### AWS Workload Organization Convention
+
+Contributes:
+
+- `deployment_scope` represents the AWS account alias hosting the workload;
+- protection of `organization` and `deployment_scope` against override (see
+  [Override policy](#override-policy) below);
+- account-naming conventions for AWS workload accounts.
+
+### Internal Workload Deployment Convention
+
+Contributes:
+
+- the Internal Workload model — no customer tenancy;
+- shared or dedicated workload accounts according to Organization Convention, rather
+  than a fixed Isolation Model;
+- no Service Tier Mapping, since Internal Workload has no customer-facing service
+  tiers.
+
+Composing these three dimensions into `aws-workload-default` is a Specification
+Artifact concern, not a distinct processing stage — see
+[`convention-pack.md`](../convention-pack.md#composed-from-reusable-convention-dimensions).
+
 ## Identity defaults
 
 `aws-workload-default` supplies the following Resource Identity defaults, consistent
@@ -51,6 +91,22 @@ This pack does not invent organization-specific values (for example, a specific
 `organization` or `business_unit`); those remain supplied by shared organizational
 context or the Naming Request, as described in
 [`context-resolution.md`](../context-resolution.md#resolution-sources).
+
+## `deployment_scope` is optional for naming, expected for metadata
+
+`aws-workload-default` follows **Option B**: `deployment.deployment_scope` is
+intentionally not listed under [Required attributes](#required-attributes) below, so
+Convention Evaluation can still generate a name without it — for example, during a
+pre-provisioning evaluation that produces a proposed name before the AWS account
+exists (see
+[`context-resolution.md`](../context-resolution.md#pre-provisioning)). However, this
+pack expects `deployment_scope` to resolve — normally from shared deployment context —
+before a complete, production-ready Convention Result is produced, since metadata
+projection uses `deployment_scope` to tag every resource with the AWS account alias
+that hosts it. A Convention Result generated without `deployment_scope` is valid but
+incomplete for metadata purposes, consistent with the pre- and post-provisioning
+distinction described in
+[`context-resolution.md`](../context-resolution.md#provisioning-lifecycle).
 
 ## Required attributes
 
@@ -107,6 +163,13 @@ attributes onto AWS Tags. Conceptually:
   identify a resource's functional role.
 - Governance Context attributes (for example, `owner`, `managed_by`, `cost_center`)
   become tags that identify who owns, manages, and pays for a resource.
+
+`aws-workload-default` does not fix `managed_by` to a specific tool such as Terraform.
+`managed_by` is a Governance Context attribute (see
+[`governance-context.md`](../governance-context.md)); this pack expects it to be
+supplied by Evaluation Context or the calling adapter, not hard-coded by the pack
+itself, so the same effective pack remains reusable whether the AWS workload account is
+managed by Terraform, AWS CDK, or a future adapter.
 
 This document does not define actual AWS Tag key names, value formats, or casing; those
 concrete mappings are left for a later iteration of this Convention Pack.
