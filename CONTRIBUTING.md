@@ -81,11 +81,19 @@ npm run typecheck
 npm run generate
 npm test
 npm run lint
+npm run lint:fix
+npm run format
+npm run format:check
+npm run check
+npm run check:fix
 npm run fmt
 ```
 
 Run the script relevant to the change you are making. See `package.json` for the full, current
-list of available scripts.
+list of available scripts. `lint`, `format`, and `check` run [Biome](https://biomejs.dev/) — the
+canonical formatter and linter for TypeScript, JavaScript, JSON, and JSONC in this repository
+(see [`IMPLEMENTATION.md`](IMPLEMENTATION.md#formatting-and-linting)). `fmt` remains
+Terraform-specific (`terraform fmt`); it does not overlap with Biome's scope.
 
 ## Project Architecture
 

@@ -12,14 +12,7 @@ const scriptDir = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = join(scriptDir, "..");
 const targetDir = join(repoRoot, "specification");
 
-const ignoredDirNames = new Set([
-  ".git",
-  "node_modules",
-  ".terraform",
-  "dist",
-  "build",
-  ".serena",
-]);
+const ignoredDirNames = new Set([".git", "node_modules", ".terraform", "dist", "build", ".serena"]);
 
 /**
  * Recursively collects .json file paths under `dir`, skipping ignored directories

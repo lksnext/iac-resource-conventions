@@ -1,5 +1,6 @@
 {
   "recommendations": [
+    "biomejs.biome",
     "DavidAnson.vscode-markdownlint",
     "EditorConfig.EditorConfig",
     "GitHub.copilot-chat",

@@ -21,6 +21,9 @@ This is the **implementation foundation** only. As of this writing:
 
 - `packages/core` exists as a minimal, non-domain-specific placeholder that proves the
   workspace, TypeScript configuration, and build/typecheck scripts work end to end.
+- [Biome](https://biomejs.dev/) is configured as the canonical formatter and linter for
+  TypeScript, JavaScript, JSON, and JSONC across the whole repository (see
+  [Formatting and linting](#formatting-and-linting)). ESLint and Prettier are not used.
 - No Context Resolution, Convention Evaluation, naming algorithm, metadata projection,
   Placement Constraint validation, CLI behavior, or adapter integration has been
   implemented.
@@ -206,6 +209,14 @@ packages/core/tsconfig.json
 - `useUnknownInCatchVariables` — forces explicit narrowing of caught errors, which
   matters once the evaluator starts distinguishing validation failures from unexpected
   errors.
+- `isolatedModules` — every file must be safely transpilable in isolation (no
+  ambiguous `const enum`/namespace-merging patterns), which keeps the codebase
+  compatible with single-file transpilers and bundlers; no known downside for this
+  codebase.
+- `verbatimModuleSyntax` — type-only imports/exports must use `import type`/
+  `export type` explicitly, so the NodeNext ESM output never accidentally imports a
+  type as a value (which would fail at runtime). Pairs with Biome's `useImportType`
+  lint rule (see [Formatting and linting](#formatting-and-linting)).
 - `declaration`, `declarationMap`, `sourceMap` — every package publishes types and
   supports source-mapped debugging.
 
@@ -249,26 +260,74 @@ No domain-model files were added beyond the placeholder `CORE_PACKAGE_NAME` cons
 `src/index.ts`, which exists solely to give the package a real export to build, type-check,
 and import in validation.
 
+## Formatting and linting
+
+[Biome](https://biomejs.dev/) is the canonical formatter and linter for TypeScript,
+JavaScript, JSON, and JSONC in this repository. ESLint and Prettier are intentionally
+not used — Biome replaces both with a single, fast, dependency-light tool, resolving
+the "Linter" item that was previously listed under
+[Deferred decisions](#deferred-decisions).
+
+- Configuration lives at the repository root in [`biome.jsonc`](biome.jsonc) and
+  applies once across the whole workspace; packages do not declare their own
+  Biome config or `lint`/`format` scripts.
+- `vcs.useIgnoreFile: true` means Biome respects [`.gitignore`](.gitignore) (for
+  example `node_modules/`, `dist/`, `build/`) instead of duplicating those patterns.
+- Formatting settings (`indentStyle: space`, `indentWidth: 2`, `lineEnding: lf`) match
+  [`.editorconfig`](.editorconfig); the same settings are not repeated in `.editorconfig`
+  beyond what already existed there.
+- The linter enables Biome's `recommended` rule preset (correctness, suspicious, style,
+  and complexity rules) and explicitly raises `noUnusedImports` and `noUnusedVariables`
+  from their default `warn` severity to `error`, so unused imports/variables fail
+  `biome lint`/`biome check` rather than only warning.
+- Import organization runs via Biome's built-in `assist.actions.source.organizeImports`
+  (no separate plugin); it sorts and groups imports without altering public import
+  paths such as `@lksnext/iac-conventions-core`.
+- Biome's formatter was verified to produce no changes to the existing
+  `specification/schemas/*.json` files — their existing 2-space indentation already
+  matches this configuration, so no frozen Specification content was reformatted.
+- VS Code integration: the `biomejs.biome` extension is recommended in
+  [`.vscode/extensions.json`](.vscode/extensions.json) and configured as the default
+  formatter for `[typescript]`, `[javascript]`, `[json]`, and `[jsonc]` in
+  [`.vscode/settings.json`](.vscode/settings.json), with format-on-save and
+  Biome-specific code actions (`source.fixAll.biome`, `source.organizeImports.biome`).
+  Terraform, YAML, and Markdown keep their existing formatters/settings, unchanged.
+- Root npm scripts (see [Root workspace commands](#root-workspace-commands)) wrap the
+  Biome CLI directly (`biome format`, `biome lint`, `biome check`) rather than
+  delegating through `--workspaces --if-present`, since Biome runs once across the
+  whole repository from the root, not per package.
+
 ## Root workspace commands
 
 The root [`package.json`](package.json) remains the standard task entry point and now
-declares an npm workspace (`"workspaces": ["packages/*"]`). Root scripts delegate to
-per-package scripts instead of duplicating their implementation:
+declares an npm workspace (`"workspaces": ["packages/*"]`). Package-specific scripts
+(`build`, `typecheck`, `test`) delegate to per-package scripts instead of duplicating
+their implementation; formatting/linting scripts invoke Biome directly across the whole
+repository:
 
 ```text
-npm run build      -> npm run build --workspaces --if-present
-npm run typecheck  -> npm run typecheck --workspaces --if-present
-npm test           -> npm run test --workspaces --if-present
-npm run lint       -> npm run lint --workspaces --if-present
-npm run fmt        -> terraform fmt -recursive              (unchanged)
-npm run validate   -> node scripts/validate-json.mjs         (unchanged)
+npm run build          -> npm run build --workspaces --if-present
+npm run typecheck      -> npm run typecheck --workspaces --if-present
+npm test               -> npm run test --workspaces --if-present
+npm run lint           -> biome lint .
+npm run lint:fix        -> biome lint --write .
+npm run format          -> biome format --write .
+npm run format:check    -> biome format .
+npm run check           -> biome check .
+npm run check:fix       -> biome check --write .
+npm run validate        -> npm run typecheck && npm run check && npm run test &&
+                            npm run build && npm run validate:specification
+npm run validate:specification -> node scripts/validate-json.mjs
+npm run fmt             -> terraform fmt -recursive              (unchanged)
 ```
 
 `--if-present` means a package that has not yet defined a given script (for example a
 future `catalog` package before it has tests) is silently skipped rather than failing the
-whole workspace run. `fmt` and `validate` are unchanged because they operate outside the
-new TypeScript workspace (Terraform formatting and specification JSON validation,
-respectively).
+whole workspace run. `fmt` is unchanged because it operates outside Biome's scope
+(Terraform formatting via the Terraform CLI). `validate` is now an aggregate command
+that chains type checking, Biome checks, tests, the build, and the existing
+Specification JSON validation (previously `validate` ran only the JSON validation,
+which is now available on its own as `validate:specification`).
 
 ## Testing and fixture strategy
 
@@ -397,19 +456,15 @@ in this task.
 No GitHub Actions workflows exist in this repository yet (`.github/` currently only
 contains issue templates and Copilot instructions). None are added in this task — doing
 so is out of scope until the workflow would actually run something beyond what
-`npm install && npm run build && npm run typecheck && npm run validate` already
-demonstrates locally. This is called out explicitly as a deferred decision below rather
-than left implicit.
+`npm install && npm run validate` already demonstrates locally (which itself chains
+`typecheck`, `check` (Biome), `test`, `build`, and `validate:specification`). This is
+called out explicitly as a deferred decision below rather than left implicit.
 
 ## Deferred decisions
 
 The following are intentionally **not** decided in this task:
 
 - **Test runner** — Node's built-in test runner vs. Vitest vs. Jest.
-- **Linter** — whether/when to add ESLint (and which config, e.g. `typescript-eslint`)
-  now that `packages/` contains TypeScript source. Root `npm run lint` already delegates
-  to `--workspaces --if-present`, so adding a linter to a package later requires no root
-  script changes.
 - **Runtime validation library** — whether `core` will eventually need AJV/Zod, and
   whether TypeScript types should be generated from the existing JSON Schemas.
 - **CI workflows** — no GitHub Actions workflow is added in this task (see [CI](#ci)

@@ -14,14 +14,21 @@
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "fmt": "terraform fmt -recursive",
-    "validate": "node scripts/validate-json.mjs",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "validate": "npm run typecheck && npm run check && npm run test && npm run build && npm run validate:specification",
+    "validate:specification": "node scripts/validate-json.mjs",
     "generate": "echo \"Generation not implemented yet\"",
     "test": "npm run test --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
     "docs": "echo \"Docs not implemented yet\"",
     "release:dry-run": "echo \"Release dry run not implemented yet\""
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.4",
     "typescript": "^7.0.2"
   }
 }
