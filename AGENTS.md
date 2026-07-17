@@ -9,6 +9,11 @@ For Copilot-specific, day-to-day operational guidance (tool usage, commit approv
 see [`.github/copilot-instructions.md`](.github/copilot-instructions.md). That file defers to
 this one for architectural detail rather than repeating it.
 
+For the implementation monorepo architecture — package boundaries, dependency direction,
+module format, build/test strategy — see [`IMPLEMENTATION.md`](IMPLEMENTATION.md). That
+document implements the concepts defined here and in `specification/`; it does not redefine
+them.
+
 ## Project Overview
 
 **iac-resource-conventions** is an open-source monorepo that defines standardized Infrastructure
@@ -78,6 +83,8 @@ before relying on it — this section can lag behind real changes.
 | `.serena/`        | Serena MCP project configuration and memories.                                                 |
 | `.editorconfig`   | Repository-wide editor formatting defaults.                                                    |
 | `.gitignore`      | Ignored files and directories.                                                                 |
+| `IMPLEMENTATION.md` | Implementation monorepo architecture: package boundaries, dependency direction, build strategy. |
+| `packages/`       | npm workspace packages implementing the Specification. Currently only `packages/core/` (`@iac-resource-conventions/core`) exists — see [`IMPLEMENTATION.md`](IMPLEMENTATION.md). |
 | `specification/`  | The Specification — the current single source of truth for the domain concepts and schemas defined so far. See the tree below. |
 
 ```text
@@ -104,22 +111,23 @@ specification/
     └── governance-context.schema.json
 ```
 
-No `core/`, `terraform/`, `cdk/`, `ansible/`, `cli/`, `fixtures/`, `tests/`, or `docs/` directory
-exists yet — see **Planned Architecture** below.
+No `packages/catalog/`, `packages/cli/`, `packages/adapters/`, `fixtures/`, `tests/`, or `docs/`
+directory exists yet — see **Planned Architecture** below.
 
 ## Planned Architecture
 
 The following directories are part of the intended architecture but **do not exist yet**. They
 represent where the project is heading, not what it currently contains. Create one only when a
 task actually requires it — never speculatively, and never merely because it is listed here.
+See [`IMPLEMENTATION.md`](IMPLEMENTATION.md) for full package boundaries and dependency rules.
 
 | Path        | Planned Responsibility                                           |
 | ----------- | --------------------------------------------------------------- |
-| `core/`     | Convention Engine that evaluates the Specification for adapters. |
-| `terraform/` | Terraform adapter consuming the Specification.                  |
-| `cdk/`      | AWS CDK adapter consuming the Specification.                     |
-| `ansible/`  | Ansible adapter consuming the Specification.                    |
-| `cli/`      | Command-line adapter consuming the Specification.               |
+| `packages/catalog/` | Executable Resource Definitions and Convention Packs consuming `core`. |
+| `packages/cli/`     | Command-line adapter consuming `core` and `catalog`.             |
+| `packages/adapters/terraform/` | Terraform adapter consuming the Specification via `core`. |
+| `packages/adapters/cdk/`       | AWS CDK adapter consuming the Specification via `core`.    |
+| `packages/adapters/ansible/`   | Ansible adapter consuming the Specification via `core`.    |
 | `fixtures/`  | Shared, canonical input/output fixtures used by contract tests. |
 | `tests/`    | Unit, contract, and integration tests.                          |
 | `docs/`     | Reference documentation.                                         |

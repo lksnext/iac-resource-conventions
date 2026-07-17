@@ -110,7 +110,10 @@ The repository is organized around the Specification-first architecture describe
 ├── .devcontainer/    # Development Container configuration
 ├── .github/          # GitHub configuration
 ├── specification/    # The Specification (single source of truth)
+├── packages/         # Implementation monorepo packages (npm workspaces)
+│   └── core/         # @iac-resource-conventions/core — domain contracts and Reference Evaluator
 ├── scripts/          # Repository automation scripts
+├── IMPLEMENTATION.md # Implementation monorepo architecture
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
 ├── SECURITY.md
@@ -120,13 +123,14 @@ The repository is organized around the Specification-first architecture describe
 ### Planned Architecture
 
 The following areas are introduced incrementally as the project develops and may not yet
-exist:
+exist. See [`IMPLEMENTATION.md`](IMPLEMENTATION.md) for the full package boundary and
+dependency rules:
 
-- `core/` — Convention Engine that evaluates the Specification for adapters.
-- `terraform/` — Terraform adapter.
-- `cdk/` — AWS CDK adapter.
-- `ansible/` — Ansible adapter.
-- `cli/` — Command-line adapter.
+- `packages/catalog/` — executable Resource Definitions and Convention Packs.
+- `packages/cli/` — command-line adapter.
+- `packages/adapters/terraform/` — Terraform adapter.
+- `packages/adapters/cdk/` — AWS CDK adapter.
+- `packages/adapters/ansible/` — Ansible adapter.
 - `fixtures/` — Shared, canonical input/output fixtures used by contract tests.
 - `tests/` — Unit, contract, and integration tests.
 
@@ -137,12 +141,13 @@ git clone https://github.com/lksnext/iac-resource-conventions.git
 cd iac-resource-conventions
 npm install
 npm run validate
+npm run build
 ```
 
 ## Documentation
 
+- [`IMPLEMENTATION.md`](IMPLEMENTATION.md) — implementation monorepo architecture.
 - [`docs/`](docs/) — reference documentation (planned).
-- Architecture — planned.
 - Convention Packs — planned.
 - Reference Documentation — planned.
 - Examples — planned.
@@ -156,6 +161,7 @@ npm run validate
 
 ### Phase 2
 
+- ✓ Implementation monorepo architecture (see [`IMPLEMENTATION.md`](IMPLEMENTATION.md)).
 - Reference Evaluator
 - Resource Definition catalog
 - Executable Convention Packs

@@ -1,16 +1,27 @@
 {
-    "name": "iac-resource-conventions",
-    "version": "0.1.0",
-    "private": true,
-    "description": "Infrastructure as Code Resource Conventions specification and SDKs.",
-    "license": "Apache-2.0",
-    "scripts": {
-        "fmt": "terraform fmt -recursive",
-        "validate": "node scripts/validate-json.mjs",
-        "generate": "echo \"Generation not implemented yet\"",
-        "test": "echo \"Tests not implemented yet\"",
-        "lint": "echo \"Lint not implemented yet\"",
-        "docs": "echo \"Docs not implemented yet\"",
-        "release:dry-run": "echo \"Release dry run not implemented yet\""
-    }
+  "name": "iac-resource-conventions",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Infrastructure as Code Resource Conventions specification and SDKs.",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "fmt": "terraform fmt -recursive",
+    "validate": "node scripts/validate-json.mjs",
+    "generate": "echo \"Generation not implemented yet\"",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "docs": "echo \"Docs not implemented yet\"",
+    "release:dry-run": "echo \"Release dry run not implemented yet\""
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
 }
