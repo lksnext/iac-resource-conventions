@@ -61,7 +61,7 @@ Convention Evaluation conceptually performs the following steps to produce a Con
 Result from a Naming Request:
 
 1. **Resolve Context** — run Context Resolution to combine the Naming Request, the
-   selected Convention Pack, and shared context (see
+   selected Convention Pack, and shared or Runtime/Provisioning Context (see
    [`context-resolution.md`](./context-resolution.md)).
 2. **Build Resource Identity** — complete the canonical Resource Identity from the
    resolved context.
@@ -91,6 +91,7 @@ beyond what is described above.
 flowchart TD
     NR["Naming Request"]
     CP["Convention Pack"]
+    RC["Runtime and Shared Context"]
     CR["Context Resolution"]
     RI["Resource Identity"]
     GC["Governance Context"]
@@ -100,6 +101,7 @@ flowchart TD
 
     NR --> CR
     CP --> CR
+    RC --> CR
     CR --> RI
     CR --> GC
     RI --> CE

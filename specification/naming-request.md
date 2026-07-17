@@ -103,6 +103,7 @@ Resource Identity and Governance Context, and ultimately into a Convention Resul
 flowchart TD
     NR["Naming Request"]
     CP["Convention Pack"]
+    RC["Runtime and Shared Context"]
     CR["Context Resolution"]
     RI["Resource Identity"]
     GC["Governance Context"]
@@ -112,6 +113,7 @@ flowchart TD
 
     NR --> CR
     CP --> CR
+    RC --> CR
     CR --> RI
     CR --> GC
     RI --> CE
@@ -122,8 +124,9 @@ flowchart TD
 
 This is the same canonical pipeline described in
 [`specification/README.md`](./README.md#architecture). The pipeline has exactly two
-processing stages, Context Resolution and Convention Evaluation; the Naming Request and
-Convention Pack are both inputs to Context Resolution, not sequential steps.
+processing stages, Context Resolution and Convention Evaluation; the Naming Request,
+Convention Pack, and Runtime and Shared Context are all inputs to Context Resolution,
+not sequential steps.
 
 - **Naming Request** — the minimal, user-supplied description of the resource.
 - **Convention Pack** — a Specification artifact, selected explicitly via the request's
@@ -167,18 +170,25 @@ from lowest to highest precedence:
    context (for example, `organization`, `business_unit`).
 3. **Shared Deployment Context** — deployment values resolved from shared context (for
    example, `platform`, `deployment_scope`).
-4. **Governance Profile defaults** — governance defaults declared by the selected
+4. **Runtime or provisioning context** — dynamic facts associated with this execution,
+   tenant, or provisioned deployment scope.
+5. **Governance Profile defaults** — governance defaults declared by the selected
    Governance Profile.
-5. **Naming Request values** — values explicitly supplied by the caller in the Naming
+6. **Naming Request values** — values explicitly supplied by the caller in the Naming
    Request.
-6. **Validated explicit overrides** — values supplied in the request's `overrides`
+7. **Validated explicit overrides** — values supplied in the request's `overrides`
    block. See [Explicit Overrides](#explicit-overrides) above for the structure and
    intended use of this block.
 
 Convention Packs establish organizational naming and metadata conventions; Governance
 Profiles establish governance defaults. Values explicitly supplied in the Naming Request
-override any default from either source, and explicit overrides always take the highest
-precedence.
+override any default from either source, and explicit overrides normally take the
+highest precedence. However, precedence is not the same as protection: some Runtime or
+Provisioning Context values — for example, an authoritative `deployment.deployment_scope`
+produced during tenant provisioning — are protected and cannot be replaced by a Naming
+Request value or an override unless the selected Convention Pack explicitly allows it
+(see
+[`context-resolution.md`](./context-resolution.md#precedence-versus-protection)).
 
 This is the same precedence order defined in
 [`context-resolution.md`](./context-resolution.md#resolution-precedence), which is the

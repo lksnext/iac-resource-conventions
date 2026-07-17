@@ -88,6 +88,14 @@ specification/
 ├── resource-definition.md
 ├── convention-pack.md
 ├── convention-result.md
+├── policies/
+│   ├── README.md
+│   ├── platform-policy.md
+│   ├── organization-policy.md
+│   └── deployment-model-policy.md
+├── convention-packs/
+│   ├── README.md
+│   └── aws-workload-default.md
 └── schemas/
     ├── resource-identity.schema.json
     ├── naming-request.schema.json
@@ -150,10 +158,12 @@ The Specification now consists of multiple independent conceptual models — Res
 Governance Context, Naming Request, Context Resolution, Resource Definition, Convention Pack, and
 Convention Result — each answering a distinct question and each documented in its own file under
 `specification/`. They are combined into a single conceptual pipeline with exactly two processing
-stages, Context Resolution and Convention Evaluation. The Naming Request and Convention Pack are
-inputs to Context Resolution; Resource Identity and Governance Context are its outputs; Resource
-Definition is an additional input to Convention Evaluation, which produces the Convention Result.
-This pipeline is described in
+stages, Context Resolution and Convention Evaluation. The Naming Request, Convention Pack, and
+Runtime or Shared Context (organizational, deployment, and provisioning facts; see
+[`specification/context-resolution.md`](specification/context-resolution.md#runtime-context-and-provisioning-context))
+are inputs to Context Resolution; Resource Identity and Governance Context are its outputs;
+Resource Definition is an additional input to Convention Evaluation, which produces the
+Convention Result. This pipeline is described in
 [`specification/README.md`](specification/README.md#architecture). Future adapters and the
 Convention Engine implementation must follow these conceptual models rather than redefining or
 reinterpreting them.
@@ -178,6 +188,30 @@ that apply that concept to a specific organizational policy. A Specification Art
 the Specification, not mere configuration external to it — it is expressed as a Markdown policy
 document rather than an abstract, reusable concept. Convention Packs contain organizational
 policy; they do not define new conventions or bypass the Specification.
+
+An effective Convention Pack remains the single Specification Artifact selected by a Naming
+Request's `convention` field. Internally, it may be assembled from three reusable policy
+dimensions, documented under
+[`specification/policies/`](specification/policies/):
+
+- **Platform Policy** — how conventions are projected for a target infrastructure platform
+  (AWS, Azure, Kubernetes).
+- **Organization Policy** — how an organization structures and governs its infrastructure
+  platforms (for example, an AWS Organization managed through Control Tower, or an Azure
+  Landing Zone).
+- **Deployment Model Policy** — the operational isolation and tenancy model of a workload
+  (for example, Internal Workload, SaaS Shared, or SaaS Tiered).
+
+Composing these dimensions into an effective Convention Pack is a Specification Artifact
+concern, not a third processing stage — the pipeline still has exactly two stages, Context
+Resolution and Convention Evaluation. Never create a Convention Pack per tenant or per
+customer: a dynamically provisioned Enterprise tenant is an instance of the same Deployment
+Model Policy, distinguished by Runtime or Provisioning Context, not by a new Convention Pack.
+Runtime Context (dynamic facts tied to one execution, tenant, or provisioned deployment scope)
+is never part of a Convention Pack, which contains only stable policy. See
+[`specification/convention-pack.md`](specification/convention-pack.md) and
+[`specification/context-resolution.md`](specification/context-resolution.md) for the full
+model.
 
 ## Generated Artifacts
 

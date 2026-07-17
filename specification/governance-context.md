@@ -87,6 +87,7 @@ a [Naming Request](./naming-request.md) into a Resource Identity:
 flowchart TD
     NR["Naming Request"]
     CP["Convention Pack"]
+    RC["Runtime and Shared Context"]
     CR["Context Resolution"]
     RI["Resource Identity"]
     GC["Governance Context"]
@@ -96,6 +97,7 @@ flowchart TD
 
     NR --> CR
     CP --> CR
+    RC --> CR
     CR --> RI
     CR --> GC
     RI --> CE
