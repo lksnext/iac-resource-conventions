@@ -72,6 +72,8 @@ Placement Constraints may express concepts such as:
 - global resources, with no meaningful `location`;
 - regional resources, bound to a specific `location`;
 - account-scoped, subscription-scoped, namespace-scoped, or cluster-scoped resources;
+- co-location requirements with another resource (for example, requiring a certificate
+  to be deployed in the same region as the service that consumes it);
 - provider-specific placement restrictions;
 - conditional placement rules, where the required placement depends on how the resource
   is used or which other resource it is associated with;
@@ -109,13 +111,14 @@ Resolution produces Resource Identity and Governance Context only, and does not 
 select or resolve a Resource Definition.
 
 `deployment.location` continues to belong to Resource Identity (see
-[`resource-identity.md`](./resource-identity.md#plane-2-deployment-identity));
-Placement Constraints never replace or duplicate it. Instead, a Resource Definition's
-Placement Constraints define which Resource Identity values are valid for a particular
-resource type — for example, a Resource Identity with `deployment.location: us-east-1`
-satisfies an AWS ACM Certificate's Placement Constraint that requires `us-east-1` when
-the certificate is associated with CloudFront, while a different `deployment.location`
-value would not.
+[`resource-identity.md`](./resource-identity.md#plane-2-deployment-identity)): Resource
+Identity defines the resource's requested canonical deployment location. Placement
+Constraints define whether that location is valid for the selected resource type — they
+never replace or duplicate it. For example, a Resource Identity with
+`deployment.location: us-east-1` satisfies an AWS ACM Certificate's Placement Constraint
+that requires `us-east-1` when the certificate is associated with CloudFront, while a
+different `deployment.location` value would not. Convention Evaluation validates this
+relationship; the Resource Definition itself never changes Resource Identity.
 
 ## Relationship with Convention Evaluation
 

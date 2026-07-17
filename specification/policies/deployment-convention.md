@@ -66,9 +66,10 @@ Enterprise   -> Shared or Dedicated
 Government   -> Dedicated
 ```
 
-Service tier is therefore not a universal deployment model. It is an input to product
-policy or Evaluation Context, while the isolation model describes the infrastructure
-boundary that the resulting Convention Pack uses.
+Service tier is therefore not a shared Deployment Convention pattern. It is a
+product-specific Service Tier mapping, carried as product policy or Evaluation Context,
+while the isolation model describes the infrastructure boundary that the resulting
+Convention Pack uses.
 
 ## Illustrative Deployment Convention patterns
 
