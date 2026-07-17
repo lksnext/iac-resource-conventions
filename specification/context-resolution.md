@@ -119,6 +119,10 @@ Precedence, authority, and protection answer three independent questions:
   - Other Runtime Context values are not automatically authoritative merely because
     they were available at execution time; they remain governed by the selected
     Convention Pack's policy like any other resolved value.
+
+  A Convention Pack declares these authority rules explicitly (see
+  [`convention-pack.md`](./convention-pack.md#context-authority-rules)); Context
+  Resolution only applies them.
 - **Protection** — whether a caller is allowed to replace an authoritative value at
   all, regardless of the normal precedence order.
 
@@ -141,9 +145,10 @@ normally have higher precedence than Evaluation Context. A protected attribute m
 be replaced when the selected Convention Pack explicitly allows it — protection is a
 Convention Pack policy decision (see
 [`convention-pack.md`](./convention-pack.md#override-policy)), not a Context Resolution
-mechanic. Context Resolution enforces whatever protection and authority policy the
-selected Convention Pack declares; it does not itself decide which attributes are
-authoritative or protected.
+mechanic. Context Resolution enforces whatever authority and protection rules the
+selected Convention Pack declares (see
+[`convention-pack.md`](./convention-pack.md#context-authority-rules)); it does not
+itself decide which attributes are authoritative or protected.
 
 ## Business to infrastructure boundary
 
@@ -187,10 +192,12 @@ provisioning.
 ## Evaluation Context is not part of the Convention Pack
 
 A Convention Pack contains stable convention that applies across many evaluations;
-Evaluation Context contains dynamic facts associated with one execution, tenant, or
-provisioned deployment scope. Conflating the two would make a Convention Pack change
-every time a tenant is onboarded, which defeats its purpose as reusable, stable
-convention (see [`convention-pack.md`](./convention-pack.md)).
+Evaluation Context contains the complete hierarchy of facts scoped to one execution,
+tenant, or provisioned deployment scope — Shared Organizational Context, Shared
+Deployment Context, Runtime Context, and Provisioning Context (see
+[Evaluation Context](#evaluation-context) above). Conflating the two would make a
+Convention Pack change every time a tenant is onboarded, which defeats its purpose as
+reusable, stable convention (see [`convention-pack.md`](./convention-pack.md)).
 
 ### Deployment Scope versus Provider Scope ID
 

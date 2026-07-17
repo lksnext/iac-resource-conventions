@@ -213,8 +213,10 @@ concern, not a third processing stage — the pipeline still has exactly two sta
 Resolution and Convention Evaluation. Never create a Convention Pack per tenant or per
 customer: a dynamically provisioned Enterprise tenant is an instance of the same Deployment
 Convention, distinguished by Evaluation Context, not by a new Convention Pack. Evaluation
-Context (dynamic facts tied to one execution, tenant, or provisioned deployment scope) is
-never part of a Convention Pack, which contains only stable convention. See
+Context (its Shared Organizational Context, Shared Deployment Context, Runtime Context, and
+Provisioning Context; see
+[`specification/context-resolution.md`](specification/context-resolution.md#evaluation-context))
+is never part of a Convention Pack, which contains only stable convention. See
 [`specification/convention-pack.md`](specification/convention-pack.md) and
 [`specification/context-resolution.md`](specification/context-resolution.md) for the full
 model.

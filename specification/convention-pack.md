@@ -98,6 +98,10 @@ generated name, independently of any technical constraint imposed by a platform.
 **Metadata projection rules** — how resolved Resource Identity and Governance Context
 attributes map onto platform-specific tags, labels, and annotations.
 
+**Context authority rules** — which Evaluation Context source is considered
+authoritative for a specific canonical attribute whenever more than one source could
+supply it (see [Context authority rules](#context-authority-rules) below).
+
 **Override policy** — which attributes may or may not be overridden on a Naming Request,
 and what validation applies to an override when it is allowed (see
 [Override policy](#override-policy) below).
@@ -241,6 +245,39 @@ Kubernetes Annotations. This document does not define concrete key mappings or v
 formats; it only describes that this is a Convention Pack responsibility, consistent
 with the metadata projection described in
 [`governance-context.md`](./governance-context.md#metadata-projection).
+
+## Context authority rules
+
+A Convention Pack declares which Evaluation Context source is considered
+authoritative for a specific canonical attribute whenever more than one Evaluation
+Context source could supply it. This is different from precedence, which is a fixed,
+Specification-wide resolution order (see
+[`context-resolution.md`](./context-resolution.md#resolution-precedence)): authority is
+attribute-specific organizational policy, declared per Convention Pack, about which
+source's value should be trusted once several sources are available. Examples of
+attributes a Convention Pack may declare authority rules for:
+
+- `deployment.deployment_scope`;
+- `deployment.platform`;
+- `deployment.environment`;
+- `deployment.location`;
+- `organizational.tenant`.
+
+Authority and protection are related but independent: a Convention Pack may declare an
+attribute authoritative from a specific source without protecting it from override, or
+protect an attribute without needing to declare an explicit authority rule for it (see
+[Override policy](#override-policy) below and
+[`context-resolution.md`](./context-resolution.md#precedence-authority-and-protection)).
+
+Responsibilities are divided as follows:
+
+- **Convention Pack** declares which Evaluation Context source is authoritative for a
+  given attribute, and declares whether that attribute is protected from override.
+- **Context Resolution** applies the authority and protection rules a Convention Pack
+  declares; it does not decide them itself (see
+  [`context-resolution.md`](./context-resolution.md#precedence-authority-and-protection)).
+- **Convention Evaluation** validates the resulting resolved model against Resource
+  Definition constraints and Specification rules.
 
 ## Override policy
 

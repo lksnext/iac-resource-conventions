@@ -99,12 +99,11 @@ intentionally not listed under [Required attributes](#required-attributes) below
 Convention Evaluation can still generate a name without it — for example, during a
 pre-provisioning evaluation that produces a proposed name before the AWS account
 exists (see
-[`context-resolution.md`](../context-resolution.md#pre-provisioning)). However, this
-pack expects `deployment_scope` to resolve — normally from shared deployment context —
-before a complete, production-ready Convention Result is produced, since metadata
-projection uses `deployment_scope` to tag every resource with the AWS account alias
-that hosts it. A Convention Result generated without `deployment_scope` is valid but
-incomplete for metadata purposes, consistent with the pre- and post-provisioning
+[`context-resolution.md`](../context-resolution.md#pre-provisioning)). A naming output
+may therefore be generated before `deployment_scope` is available. Metadata
+projections that depend on `deployment_scope` — such as tagging a resource with the AWS
+account alias that hosts it — are deferred until `deployment_scope` resolves, normally
+from shared deployment context, consistent with the pre- and post-provisioning
 distinction described in
 [`context-resolution.md`](../context-resolution.md#provisioning-lifecycle).
 

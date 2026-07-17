@@ -38,8 +38,8 @@ The workload model captures the broad purpose of the deployment.
 
 ### Tenancy Model
 
-The tenancy model captures whether infrastructure tenants are isolated in the
-deployment model itself or handled primarily by the application.
+The tenancy model captures whether infrastructure tenants are isolated within the
+Deployment Convention itself or handled primarily by the application.
 
 ### Isolation Model
 
@@ -70,7 +70,7 @@ Service tier is therefore not a universal deployment model. It is an input to pr
 policy or Evaluation Context, while the isolation model describes the infrastructure
 boundary that the resulting Convention Pack uses.
 
-## Initial deployment models
+## Illustrative Deployment Convention patterns
 
 These are illustrative combinations of the Workload Model, Tenancy Model, and Isolation
 Model dimensions described above, not additional model dimensions of their own.
@@ -102,9 +102,9 @@ A product may apply its own [Optional Service Tier Mapping](#optional-service-ti
 to the SaaS Workload Model, so that different service tiers resolve to different
 Isolation Model values — for example, Trial and Standard tiers resolving to Shared
 isolation, and Enterprise resolving to Dedicated isolation. This is not a fourth
-deployment model: it is the SaaS Workload Model combined with a product-specific
-Service Tier Mapping, expressed using the same Workload, Tenancy, and Isolation Model
-dimensions described above.
+Deployment Convention pattern: it is the SaaS Workload Model combined with a
+product-specific Service Tier Mapping, expressed using the same Workload, Tenancy, and
+Isolation Model dimensions described above.
 
 An Enterprise tenant is an **instance** of this composition, not a new Convention Pack.
 The same Deployment Convention applies to every Enterprise tenant; what differs between
@@ -195,15 +195,14 @@ currently defined).
 ### Scenario A: Corporate internal platform
 
 - AWS Organization managed by Control Tower (Organization Convention).
-- Internal projects, sandbox, and experimental workloads (Internal Workload deployment
-  model).
-- Shared organizational governance; no customer tenancy model.
+- Internal workload with no tenant isolation requirement (Internal Workload Model).
+- Shared organizational governance; no customer tenancy.
 - Example effective Convention Pack name: `corporate-aws-internal`.
 
 ### Scenario B: Shared SaaS product
 
 - A separate AWS Organization managed by Control Tower (Organization Convention).
-- SaaS multitenancy implemented in application code (SaaS Shared deployment model).
+- SaaS workload with application-level multitenancy and Shared isolation.
 - Shared workload infrastructure; no dedicated account per tenant.
 - Example effective Convention Pack name: `product-a-aws-saas-shared`.
 

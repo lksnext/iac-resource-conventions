@@ -41,8 +41,9 @@ should implement changes:
   reusable Platform Convention, Organization Convention, and Deployment Convention dimensions (see
   `specification/policies/` and `specification/convention-pack.md`). Never create a Convention
   Pack per tenant or customer, never treat Control Tower as a platform or deployment model, and
-  never treat Evaluation Context (dynamic facts for one execution, tenant, or provisioned
-  deployment scope) as part of a Convention Pack.
+  never treat Evaluation Context (its shared organizational context, shared deployment context,
+  Runtime Context, and Provisioning Context; see
+  `specification/context-resolution.md#evaluation-context`) as part of a Convention Pack.
 - **Generated Artifacts** — never edit generated files by hand. Changes affecting generated
   output must start in the Specification, generator, or source template, then regenerate.
 - **Testing Expectations** — any change to the Specification must include corresponding updates
