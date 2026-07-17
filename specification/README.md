@@ -29,6 +29,17 @@ validation — independently of any cloud provider, tool, or programming languag
 exists so that conventions are defined once, in one place, using a shared vocabulary,
 rather than being reinvented or reinterpreted by each tool that needs to apply them.
 
+## Design Principles
+
+The Specification is built around a small set of architectural principles:
+
+- Specification First
+- Implementation-independent concepts
+- Canonical resource identity
+- Separation of identity, governance, resource definition, and convention policy
+- Evidence-driven evolution
+- Cross-tool interoperability
+
 ## The Specification is the single source of truth
 
 Every concept an adapter relies on — identity, governance context, naming, tagging,
