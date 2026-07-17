@@ -2,6 +2,25 @@
 
 This directory contains the Specification for `iac-resource-conventions`.
 
+## Specification Status
+
+**Current version:** Specification v1.0
+**Status:** Frozen
+
+The conceptual Specification described in this directory — Resource Identity,
+Governance Context, Naming Request, Context Resolution, Resource Definition, Convention
+Pack, and Convention Result — is now considered stable. Future conceptual changes
+should only be introduced when real implementation experience demonstrates that the
+current model is insufficient.
+
+The Reference Evaluator, Resource Definitions, Convention Packs, and adapters are
+expected to validate this Specification rather than redefine it. (The Reference
+Evaluator is the reference implementation of Convention Evaluation; this document also
+refers to it as the Convention Engine — see [Architecture](#architecture) below.)
+
+"Frozen" does not mean immutable: future evolution is still allowed when justified by
+implementation evidence (see [Future evolution](#future-evolution) below).
+
 ## Purpose
 
 The Specification defines the conventions for Infrastructure as Code (IaC) resources —
@@ -203,3 +222,22 @@ on the default branch (for example,
 `https://raw.githubusercontent.com/lksnext/iac-resource-conventions/main/specification/schemas/resource-identity.schema.json`).
 These URIs are not yet immutable release contracts; they may be revisited once the
 project adopts versioned schema releases.
+
+## Future evolution
+
+The conceptual Specification is frozen as v1.0, but it is expected to evolve over time.
+Future changes should follow these principles:
+
+- **Implementation first** — build the Reference Evaluator, a Resource Definition
+  catalog, executable Convention Packs, and adapters before revisiting conceptual
+  models.
+- **Evidence over speculation** — only propose a conceptual change when real
+  implementation work demonstrates the current model cannot represent a valid
+  scenario, not because a theoretical improvement seems plausible.
+- **Backward compatibility whenever possible** — prefer additive, non-breaking changes
+  to existing concepts, schemas, and Specification Artifacts.
+- **Semantic versioning** — conceptual changes that break compatibility require a new
+  major Specification version (see
+  [`AGENTS.md`](../AGENTS.md#compatibility-and-versioning)).
+- **No conceptual changes without demonstrated need** — do not redesign a Concept
+  documented here unless implementation evidence justifies it.

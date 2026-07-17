@@ -260,6 +260,23 @@ accordingly:
 - Changed validation behavior or results.
 - Renamed or removed resource types or Convention Packs.
 
+## Specification Evolution
+
+Specification v1.0 is frozen (see
+[`specification/README.md`](specification/README.md#specification-status)). Conceptual
+changes require implementation evidence, not theoretical improvement.
+
+When working on:
+
+- Resource Definitions;
+- Convention Packs;
+- the Reference Evaluator;
+- adapters;
+
+prefer evolving the implementation rather than modifying the conceptual Specification.
+Only propose a Specification change when implementation reveals an actual limitation or
+inconsistency in the current model — never speculatively.
+
 ## Coding Conventions
 
 - Prefer clear, simple implementations over clever ones.

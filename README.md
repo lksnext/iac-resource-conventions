@@ -149,25 +149,28 @@ npm run validate
 
 ## Roadmap
 
-**v0.1**
+### Phase 1
 
-- Specification
-- Terraform adapter
+- ✓ Specification — frozen as v1.0 (see
+  [`specification/README.md`](specification/README.md#specification-status)).
 
-**v0.2**
+### Phase 2
 
-- AWS CDK adapter
+- Reference Evaluator
+- Resource Definition catalog
+- Executable Convention Packs
+- Contract Tests
+
+### Phase 3
+
+- Terraform Adapter
+- CDK Adapter
 - CLI
+- Additional adapters
 
-**v0.3**
-
-- Ansible adapter
-- Convention Packs
-
-**v1.0**
-
-- Stable APIs
-- Complete documentation
+Adapters consume the Specification; they do not redefine it. See
+[`AGENTS.md`](AGENTS.md#specification-evolution) for how the Specification itself is
+expected to evolve as implementation progresses.
 
 ## Contributing
 

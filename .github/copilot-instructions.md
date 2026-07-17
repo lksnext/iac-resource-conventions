@@ -62,6 +62,19 @@ should implement changes:
   introduce new runtime dependencies, tools, frameworks, or build systems unless necessary and
   justified.
 
+## Specification Freeze (v1.0)
+
+Assume the conceptual Specification is frozen at v1.0 (see
+`specification/README.md#specification-status`).
+
+- Do not redesign Concepts already documented under `specification/`.
+- Prefer implementation changes (Resource Definitions, Convention Packs, the Reference
+  Evaluator, adapters) over conceptual Specification changes.
+- Only propose a Specification modification when implementation demonstrates that the
+  current model cannot represent a valid scenario.
+- Avoid speculative conceptual improvements — the Specification evolves from
+  implementation evidence, not theoretical review.
+
 ## Commit Safety and Approval
 
 Copilot must never create a commit automatically after modifying files. Committing is always a
