@@ -99,32 +99,8 @@ restriction rules.
 ## The Context Resolution pipeline
 
 A Naming Request is transformed through the Context Resolution pipeline into a complete
-Resource Identity and Governance Context, and ultimately into a Convention Result:
-
-```mermaid
-flowchart TD
-    NR["Naming Request"]
-    CP["Convention Pack"]
-    EC["Evaluation Context"]
-    CR["Context Resolution"]
-    RI["Resource Identity"]
-    GC["Governance Context"]
-    RD["Resource Definition"]
-    CE["Convention Evaluation"]
-    RS["Convention Result"]
-
-    NR --> CR
-    CP --> CR
-    EC --> CR
-    CR --> RI
-    CR --> GC
-    RI --> CE
-    GC --> CE
-    RD --> CE
-    CE --> RS
-```
-
-This is the same canonical pipeline described in
+Resource Identity and Governance Context, and ultimately into a Convention Result. See
+the canonical pipeline diagram in
 [`specification/README.md`](./README.md#architecture). The pipeline has exactly two
 processing stages, Context Resolution and Convention Evaluation; the Naming Request,
 Convention Pack, and Evaluation Context are all inputs to Context Resolution, not

@@ -87,30 +87,7 @@ beyond what is described above.
 
 ## Where Convention Result fits
 
-```mermaid
-flowchart TD
-    NR["Naming Request"]
-    CP["Convention Pack"]
-    EC["Evaluation Context"]
-    CR["Context Resolution"]
-    RI["Resource Identity"]
-    GC["Governance Context"]
-    RD["Resource Definition"]
-    CE["Convention Evaluation"]
-    RS["Convention Result"]
-
-    NR --> CR
-    CP --> CR
-    EC --> CR
-    CR --> RI
-    CR --> GC
-    RI --> CE
-    GC --> CE
-    RD --> CE
-    CE --> RS
-```
-
-This is the complete architecture described in
+See the canonical pipeline diagram in
 [`specification/README.md`](./README.md#architecture): a Convention Result is produced
 by Convention Evaluation once Resource Identity and Governance Context have been
 resolved by Context Resolution and the Resource Definition has been selected from the

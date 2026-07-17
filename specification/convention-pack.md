@@ -263,6 +263,12 @@ attributes a Convention Pack may declare authority rules for:
 - `deployment.location`;
 - `organizational.tenant`.
 
+Context authority rules influence resolution only: they determine which Evaluation
+Context source Context Resolution trusts for a given attribute, but they never become
+part of the resulting [Resource Identity](./resource-identity.md) or
+[Governance Context](./governance-context.md) themselves — only the resolved attribute
+value they helped select does.
+
 Authority and protection are related but independent: a Convention Pack may declare an
 attribute authoritative from a specific source without protecting it from override, or
 protect an attribute without needing to declare an explicit authority rule for it (see
@@ -323,32 +329,9 @@ been validated.
 
 ## Where Convention Pack fits
 
-```mermaid
-flowchart TD
-    NR["Naming Request"]
-    CP["Convention Pack"]
-    EC["Evaluation Context"]
-    CR["Context Resolution"]
-    RI["Resource Identity"]
-    GC["Governance Context"]
-    RD["Resource Definition"]
-    CE["Convention Evaluation"]
-    RS["Convention Result"]
-
-    NR --> CR
-    CP --> CR
-    EC --> CR
-    CR --> RI
-    CR --> GC
-    RI --> CE
-    GC --> CE
-    RD --> CE
-    CE --> RS
-```
-
-This is the same canonical pipeline described in
-[`specification/README.md`](./README.md#architecture). Notice that Convention Pack is an
-input to Context Resolution, alongside the Naming Request and Evaluation Context — it is
-not itself a processing stage. The pipeline has exactly two processing stages, Context
+See the canonical pipeline diagram in
+[`specification/README.md`](./README.md#architecture). Convention Pack is an input to
+Context Resolution, alongside the Naming Request and Evaluation Context — it is not
+itself a processing stage. The pipeline has exactly two processing stages, Context
 Resolution and Convention Evaluation; every other concept, including Convention Pack, is
 a domain model or Specification artifact consumed by one of those two stages.
