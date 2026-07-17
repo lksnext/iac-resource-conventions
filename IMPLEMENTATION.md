@@ -29,35 +29,61 @@ This is the **implementation foundation** only. As of this writing:
   a concrete task needs them, per the repository's incremental-evolution principle (see
   [`AGENTS.md`](AGENTS.md#repository-evolution)).
 
-## Package naming policy
+## Package Naming Policy
 
-The npm scope, package name, and folder name are three independent, deliberately
-distinct concerns:
+The GitHub repository name, npm scope, package family, and package suffix are four
+independent, deliberately distinct concerns:
 
-- **The npm scope (`@lksnext`) identifies the publisher** — the GitHub organization
-  that owns and publishes these packages, not the project.
-- **The package name (`iac-conventions-*`) identifies the project and package
-  responsibility** — `iac-conventions` is the project's package family name, and the
-  suffix (`core`, `catalog`, `cli`, …) identifies what that specific package is
-  responsible for.
-- **The folder name under `packages/`** (`core/`, `catalog/`, `cli/`, …) is
-  intentionally short and independent from the published package name — the directory
-  layout must never be inferred from, or assumed to match, the npm package name.
+- **The GitHub repository name identifies the project** —
+  `iac-resource-conventions` is the project as a whole: the Specification, this
+  implementation monorepo, and every package and adapter it contains.
+- **The npm scope identifies the publishing organization** — `@lksnext` is the GitHub
+  organization that owns and publishes these packages, not the project itself.
+- **The package family identifies the reusable library ecosystem** —
+  `iac-conventions` is the shared name every published package in this repository
+  builds on, independent of the (longer, more descriptive) repository name.
+- **The package suffix identifies the package responsibility** — `core`, `catalog`,
+  `cli`, and future suffixes (`terraform`, `cdk`, `ansible`, `testing`, `vscode`, …)
+  identify what that specific package is responsible for.
 
-This keeps published import paths concise (`@lksnext/iac-conventions-core`) while still
-reading as one consistent package family, and keeps the repository's own name
-(`iac-resource-conventions`) free to stay descriptive without leaking into every import
-statement. `iac-conventions` is deliberately shorter than the repository name
-`iac-resource-conventions` — repository names favor descriptiveness, while npm package
-names and the CLI executable favor brevity, since they are typed constantly.
+The folder name under `packages/` (`core/`, `catalog/`, `cli/`, …) is intentionally
+short and independent from the published package name — the directory layout must
+never be inferred from, or assumed to match, the npm package name.
 
-| Convention | Value |
+| Purpose | Name |
 | --- | --- |
 | GitHub repository | `iac-resource-conventions` |
 | npm scope | `@lksnext` |
-| npm package family | `iac-conventions-*` |
-| TypeScript import specifier | `@lksnext/iac-conventions-*` |
-| CLI executable (planned, not implemented) | `iac-conventions` |
+| Package family | `iac-conventions` |
+| Core package | `@lksnext/iac-conventions-core` |
+| Catalog package | `@lksnext/iac-conventions-catalog` |
+| CLI package | `@lksnext/iac-conventions-cli` |
+| Future aggregate package | `@lksnext/iac-conventions` |
+
+Future packages follow the same `@lksnext/iac-conventions-<suffix>` convention, for
+example `@lksnext/iac-conventions-terraform`, `@lksnext/iac-conventions-cdk`,
+`@lksnext/iac-conventions-ansible`, `@lksnext/iac-conventions-testing`, and
+`@lksnext/iac-conventions-vscode`. `@lksnext/iac-conventions` (no suffix) is
+**reserved** for a possible future convenience package that re-exports the public APIs
+of `core` and `catalog` together — it is not created in this task, and must not be
+created speculatively.
+
+The repository name intentionally differs from the published package names:
+
+- **Repository names optimize discoverability** — `iac-resource-conventions` is
+  descriptive and unambiguous when someone finds the project on GitHub.
+- **Package names optimize usability and imports** — `iac-conventions-*` is shorter,
+  since it is typed in every import statement, `package.json` dependency, and CLI
+  invocation.
+- **The npm scope already identifies the publisher** — `@lksnext` makes restating
+  "iac-resource-conventions" as part of the scope redundant; the scope and the package
+  family together (`@lksnext/iac-conventions-*`) are sufficient to identify both the
+  publisher and the project unambiguously.
+
+The planned CLI executable name is `iac-conventions` (see
+[CLI distribution](#cli-distribution-planned-not-implemented) below) — short and
+independent from both the repository name and the `@lksnext/iac-conventions-cli`
+package name that publishes it.
 
 Do not use the `@iac-resource-conventions/*` scope — an npm scope must map to a
 publishing organization (`@lksnext`), not restate the repository name.
@@ -89,11 +115,9 @@ packages/
     └── ansible/          # ansible adapter (language TBD; likely not an npm package)
 ```
 
-`@lksnext/iac-conventions` (no suffix) is **reserved** for a possible future convenience
-package that re-exports the public APIs of `core` and `catalog` together. It is not
-created in this task, and must not be created speculatively — only once a concrete
-consumer needs a single combined import instead of depending on `core`/`catalog`
-directly.
+`@lksnext/iac-conventions` (no suffix) is reserved for a possible future convenience
+package (see [Package Naming Policy](#package-naming-policy) above) — it is not created
+in this task, and must not be created speculatively.
 
 ### Package responsibilities
 
@@ -305,7 +329,7 @@ implemented.
 ## Versioning and publication
 
 - Package names use the `@lksnext` npm scope with the `iac-conventions-*` package family
-  (see [Package naming policy](#package-naming-policy) above); `@lksnext/iac-conventions`
+  (see [Package Naming Policy](#package-naming-policy) above); `@lksnext/iac-conventions`
   itself is reserved for a possible future convenience package and is not created yet.
 - Every workspace package is currently `"private": true` and at `0.1.0` — no package is
   published, and no publish credentials are configured in this task.
@@ -339,7 +363,7 @@ The CLI package does not exist yet. Once implemented, it must:
   a zero-Node-install binary) justifies it.
 
 The planned CLI executable name is `iac-conventions` (see
-[Package naming policy](#package-naming-policy) above) — short and independent from both
+[Package Naming Policy](#package-naming-policy) above) — short and independent from both
 the repository name and the `@lksnext/iac-conventions-cli` package name that publishes
 it.
 
