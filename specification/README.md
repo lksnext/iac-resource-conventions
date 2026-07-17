@@ -212,15 +212,21 @@ The pipeline has exactly two processing stages: Context Resolution and Conventio
 Evaluation. The Naming Request, Convention Pack, Evaluation Context, Resource Identity,
 Governance Context, Resource Definition, and Convention Result are domain models or
 Specification artifacts consumed or produced by those two stages — not processing
-stages themselves. Convention Pack, the Naming Request, and Evaluation Context are all
-inputs to Context Resolution; Resource Definition is an input to Convention
-Evaluation, selected by `resource_type` once Resource Identity is complete — Context
-Resolution does not resolve the Resource Definition. Composing an effective Convention
-Pack from Platform Convention, Organization Convention, and Deployment Convention (see
+stages themselves.
+
+Convention Pack, the Naming Request, and Evaluation Context are all inputs to Context
+Resolution. Resource Definition is an input to Convention Evaluation, selected by
+`resource_type` once Resource Identity is complete — Context Resolution does not
+resolve the Resource Definition.
+
+Composing an effective Convention Pack from Platform Convention, Organization
+Convention, and Deployment Convention (see
 [`convention-pack.md`](./convention-pack.md#composed-from-reusable-convention-dimensions))
-is a Specification Artifact concern, not a third processing stage; likewise, external
-provisioning systems and IaC that produce Provisioning Context are outside this pipeline
-(see [`context-resolution.md`](./context-resolution.md#business-to-infrastructure-boundary)).
+is a Specification Artifact authoring concern, not a third processing stage.
+
+Likewise, external provisioning systems and IaC processes that produce Provisioning Context are
+outside this pipeline (see
+[`context-resolution.md`](./context-resolution.md#business-to-infrastructure-boundary)).
 
 If a document only focuses on one part of this pipeline, it uses a simplified diagram
 showing just the concepts relevant to it. Every diagram in the Specification is expected

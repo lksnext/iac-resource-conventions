@@ -101,10 +101,11 @@ restriction rules.
 A Naming Request is transformed through the Context Resolution pipeline into a complete
 Resource Identity and Governance Context, and ultimately into a Convention Result. See
 the canonical pipeline diagram in
-[`specification/README.md`](./README.md#architecture). The pipeline has exactly two
-processing stages, Context Resolution and Convention Evaluation; the Naming Request,
-Convention Pack, and Evaluation Context are all inputs to Context Resolution, not
-sequential steps.
+[`specification/README.md`](./README.md#architecture).
+
+The pipeline has exactly two processing stages, Context Resolution and Convention
+Evaluation; the Naming Request, Convention Pack, and Evaluation Context are all inputs
+to Context Resolution, not sequential steps.
 
 - **Naming Request** — the minimal, user-supplied description of the resource.
 - **Convention Pack** — a Specification artifact, selected explicitly via the request's
@@ -148,8 +149,8 @@ from lowest to highest precedence:
    context (for example, `organization`, `business_unit`).
 3. **Shared Deployment Context** — deployment values resolved from shared context (for
    example, `platform`, `deployment_scope`).
-4. **Runtime Context** — dynamic facts associated with this execution, including
-  Provisioning Context (Runtime Context produced or enriched by provisioning or IaC).
+4. **Evaluation Context** — external facts available during this evaluation
+   (see `context-resolution.md#evaluation-context`).
 5. **Governance Profile defaults** — governance defaults declared by the selected
   Governance Profile.
 6. **Naming Request values** — values explicitly supplied by the caller in the Naming

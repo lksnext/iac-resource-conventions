@@ -111,8 +111,8 @@ Resolution produces Resource Identity and Governance Context only, and does not 
 select or resolve a Resource Definition.
 
 `deployment.location` continues to belong to Resource Identity (see
-[`resource-identity.md`](./resource-identity.md#plane-2-deployment-identity)): Resource
-Identity defines the resource's requested canonical deployment location. Placement
+[`resource-identity.md`](./resource-identity.md#plane-2-deployment-identity)): Resource 
+Identity defines the resource's canonical deployment location. Placement
 Constraints define whether that location is valid for the selected resource type — they
 never replace or duplicate it. For example, a Resource Identity with
 `deployment.location: us-east-1` satisfies an AWS ACM Certificate's Placement Constraint
