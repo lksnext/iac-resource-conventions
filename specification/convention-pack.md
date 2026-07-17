@@ -114,17 +114,20 @@ A Convention Pack must not define:
 - maximum name lengths;
 - allowed provider characters;
 - uniqueness algorithms;
+- resource placement constraints (for example, requiring a specific region for a
+  resource type; see [`resource-definition.md`](./resource-definition.md#placement-constraints));
 - provider API behaviour;
 - implementation details;
 - adapter logic.
 
 These responsibilities belong to [Resource Definition](./resource-definition.md), which
-describes the technical rules a resource type must respect, or to adapters, which
-translate a Convention Result into a tool-specific interface. A Convention Pack decides
-*how organizational policy is projected*; a Resource Definition decides *what a platform
-technically allows*. Confusing the two would let organizational policy silently depend
-on provider-specific technical limits, and would prevent the same Convention Pack from
-being reused unchanged across platforms.
+describes the technical rules and placement constraints a resource type must respect, or
+to adapters, which translate a Convention Result into a tool-specific interface. A
+Convention Pack decides *how organizational policy is projected*; a Resource Definition
+decides *what a platform technically allows and where a resource may exist*. Confusing
+the two would let organizational policy silently depend on provider-specific technical
+limits, and would prevent the same Convention Pack from being reused unchanged across
+platforms.
 
 This restriction applies equally to every reusable convention dimension a Convention Pack
 may compose — [Platform Convention](./policies/platform-convention.md),

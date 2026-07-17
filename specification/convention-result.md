@@ -25,7 +25,10 @@ Convention Result conceptually consists of:
 - **Convention Outputs** — the platform-specific outputs projected from Resource
   Identity and Governance Context. See [Convention Outputs](#convention-outputs) below.
 - **Validation** — the outcome of validating the generated outputs against the
-  constraints declared by the resource's Resource Definition and the Specification.
+  constraints declared by the resource's Resource Definition — including its technical
+  constraints, uniqueness, normalization, and Placement Constraints (see
+  [`resource-definition.md`](./resource-definition.md#placement-constraints)) — and the
+  Specification.
 - **Explanation** — a human-readable account of how the result was derived, useful for
   troubleshooting and auditing convention decisions.
 - **Warnings** — non-fatal issues detected while generating the result (for example, a
@@ -75,8 +78,10 @@ Result from a Naming Request:
    annotation conventions, as configured by the selected Convention Pack, to the
    resolved models.
 6. **Generate outputs** — produce the generated name, tags, labels, and annotations.
-7. **Validate outputs** — check the generated outputs against the constraints declared
-   by the Resource Definition and the Specification, collecting any warnings.
+7. **Validate outputs** — check the generated outputs, and the resolved Resource
+   Identity, against the constraints declared by the Resource Definition — including its
+   technical constraints, uniqueness, normalization, and Placement Constraints — and the
+   Specification, collecting any warnings.
 8. **Produce Convention Result** — assemble Resource Identity, Governance Context, the
    generated outputs, validation results, explanation, and warnings into the final
    Convention Result.

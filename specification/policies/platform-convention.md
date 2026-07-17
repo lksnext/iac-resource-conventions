@@ -44,7 +44,10 @@ responsibility of [Resource Definition](../resource-definition.md):
 - maximum name length;
 - allowed characters;
 - provider uniqueness scope;
-- resource-specific normalization requirements.
+- resource-specific normalization requirements;
+- resource-specific placement constraints (for example, requiring a specific region for
+  a resource type; see
+  [`resource-definition.md`](../resource-definition.md#placement-constraints)).
 
 A Platform Convention may reference or declare compatibility with a Resource Definition, but
 it does not replace or duplicate the Resource Definition's technical constraints.
