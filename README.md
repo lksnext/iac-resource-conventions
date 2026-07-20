@@ -144,6 +144,10 @@ npm run validate
 npm run build
 ```
 
+`npm install` also enables the repository's Husky git hooks (fast pre-commit formatting/linting
+and Conventional Commits validation) via the standard npm `prepare` script — no extra setup step
+is required. See [`CONTRIBUTING.md`](CONTRIBUTING.md#git-hooks) for details.
+
 ## Documentation
 
 - [`IMPLEMENTATION.md`](IMPLEMENTATION.md) — implementation monorepo architecture.

@@ -1,0 +1,68 @@
+name: CI
+
+# Reproducible CI: mirrors the local developer workflow documented in CONTRIBUTING.md.
+# CI is the authoritative gate; `npm run validate` is the same aggregate command
+# contributors run locally and in the Dev Container, so behavior never drifts
+# between environments.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # npm run validate chains typecheck, check (Biome format+lint), test, build,
+      # and Specification JSON validation — the same aggregate gate documented in
+      # CONTRIBUTING.md and IMPLEMENTATION.md, kept in one place to avoid
+      # duplicating its logic here.
+      - name: Validate
+        run: npm run validate
+
+  commitlint:
+    name: Validate commit messages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint pull request commits
+        run: npx commitlint --from "${{ github.event.pull_request.base.sha }}" --to "${{ github.event.pull_request.head.sha }}" --verbose

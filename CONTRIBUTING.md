@@ -77,6 +77,7 @@ their implementation.
 npm install
 npm run validate
 npm run build
+npm run clean
 npm run typecheck
 npm run generate
 npm test
@@ -93,7 +94,9 @@ Run the script relevant to the change you are making. See `package.json` for the
 list of available scripts. `lint`, `format`, and `check` run [Biome](https://biomejs.dev/) — the
 canonical formatter and linter for TypeScript, JavaScript, JSON, and JSONC in this repository
 (see [`IMPLEMENTATION.md`](IMPLEMENTATION.md#formatting-and-linting)). `fmt` remains
-Terraform-specific (`terraform fmt`); it does not overlap with Biome's scope.
+Terraform-specific (`terraform fmt`); it does not overlap with Biome's scope. `validate` is the
+same aggregate command run in CI (see [Continuous Integration](#continuous-integration) below):
+it chains `typecheck`, `check`, `test`, `build`, and Specification JSON validation.
 
 ## Project Architecture
 
@@ -163,8 +166,11 @@ are encouraged wherever they help clarify usage.
 
 ## Commit Messages
 
-We recommend using [Conventional Commits](https://www.conventionalcommits.org/) for commit
-messages. Examples:
+This repository requires [Conventional Commits](https://www.conventionalcommits.org/) for commit
+messages, enforced by [Commitlint](https://commitlint.js.org/) (`@commitlint/config-conventional`).
+Scopes are free-form — use whichever package or area the change touches (`core`, `catalog`,
+`cli`, `specification`, `monorepo`, `devcontainer`, `github`, …); no fixed scope list is
+enforced. Examples:
 
 ```
 feat(spec): add support for custom abbreviation overrides
@@ -172,6 +178,38 @@ fix(terraform): correct tag merge order in resource-conventions module
 docs(readme): clarify dev container setup steps
 test(contract): add cross-adapter naming parity tests
 ```
+
+## Git Hooks
+
+Running `npm install` (or `npm ci`) automatically installs [Husky](https://typicode.github.io/husky/)
+git hooks via the standard npm `prepare` lifecycle script — no manual setup step is required, in
+the Dev Container or natively:
+
+- **`pre-commit`** runs [lint-staged](https://github.com/lint-staged/lint-staged), which applies
+  Biome's safe formatting and lint fixes only to the files you staged. This keeps the hook fast
+  regardless of repository size — it does not run the build, typecheck, full test suite, or
+  Specification validation.
+- **`commit-msg`** runs Commitlint against your commit message (see [Commit
+  Messages](#commit-messages) above) and rejects commits that do not follow Conventional Commits.
+
+Pre-commit hooks are a fast, local convenience layer, not the authoritative gate — they can be
+skipped (`git commit --no-verify`) or may not run in every environment. **CI is the authoritative
+validation** (see [Continuous Integration](#continuous-integration) below) and re-checks
+everything regardless of what ran locally. See
+[`IMPLEMENTATION.md#git-hooks-and-commit-linting`](IMPLEMENTATION.md#git-hooks-and-commit-linting)
+for the full hook configuration.
+
+## Continuous Integration
+
+Every push to `main` and every pull request runs the [`CI` GitHub Actions
+workflow](.github/workflows/ci.yml):
+
+- A `validate` job runs `npm ci` followed by `npm run validate` on Linux, macOS, and Windows —
+  the same aggregate command described above, so CI never diverges from what you run locally.
+- A `commitlint` job (pull requests only) validates every commit message in the pull request.
+
+A pull request is expected to pass CI before it can be merged; see [Repository
+Governance](#repository-governance) below.
 
 ## Pull Requests
 
@@ -196,9 +234,18 @@ Contributors should:
 Repository protection rules may include:
 
 - Required reviews from code owners (enforced via [CODEOWNERS](CODEOWNERS))
-- Required status checks and CI validation
+- Required status checks and CI validation (see [Continuous
+  Integration](#continuous-integration) above)
 - Commit signing requirements
+- Conventional Commits, verified by Commitlint (see [Commit Messages](#commit-messages) above)
 - Other automated checks and validations
+
+At minimum, contributors should expect:
+
+- `main` is always kept stable and is protected — it only changes through merged pull requests,
+  never direct pushes.
+- Pull requests require the CI workflow's required status checks to pass before merging.
+- Commits are expected to be signed.
 
 Instead of relying on assumptions documented in CONTRIBUTING.md, contributors should verify the current GitHub
 rules configured for the repository. As the maintainer team grows, repository governance is expected to become stricter

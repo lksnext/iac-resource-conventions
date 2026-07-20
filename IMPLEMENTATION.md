@@ -24,6 +24,9 @@ This is the **implementation foundation** only. As of this writing:
 - [Biome](https://biomejs.dev/) is configured as the canonical formatter and linter for
   TypeScript, JavaScript, JSON, and JSONC across the whole repository (see
   [Formatting and linting](#formatting-and-linting)). ESLint and Prettier are not used.
+- Husky, lint-staged, and Commitlint provide pre-commit and commit-msg git hooks, and
+  a GitHub Actions workflow provides reproducible CI (see
+  [Git hooks and commit linting](#git-hooks-and-commit-linting) and [CI](#ci)).
 - No Context Resolution, Convention Evaluation, naming algorithm, metadata projection,
   Placement Constraint validation, CLI behavior, or adapter integration has been
   implemented.
@@ -307,6 +310,7 @@ repository:
 
 ```text
 npm run build          -> npm run build --workspaces --if-present
+npm run clean          -> npm run clean --workspaces --if-present
 npm run typecheck      -> npm run typecheck --workspaces --if-present
 npm test               -> npm run test --workspaces --if-present
 npm run lint           -> biome lint .
@@ -319,15 +323,54 @@ npm run validate        -> npm run typecheck && npm run check && npm run test &&
                             npm run build && npm run validate:specification
 npm run validate:specification -> node scripts/validate-json.mjs
 npm run fmt             -> terraform fmt -recursive              (unchanged)
+npm run prepare         -> husky                                  (git hook install)
 ```
 
 `--if-present` means a package that has not yet defined a given script (for example a
 future `catalog` package before it has tests) is silently skipped rather than failing the
-whole workspace run. `fmt` is unchanged because it operates outside Biome's scope
-(Terraform formatting via the Terraform CLI). `validate` is now an aggregate command
+whole workspace run — this is also why `clean` is a no-op today (no package currently
+defines a `clean` script) but is already wired at the root so a package can opt in
+without any root changes. `fmt` is unchanged because it operates outside Biome's scope
+(Terraform formatting via the Terraform CLI). `validate` is an aggregate command
 that chains type checking, Biome checks, tests, the build, and the existing
 Specification JSON validation (previously `validate` ran only the JSON validation,
-which is now available on its own as `validate:specification`).
+which is available on its own as `validate:specification`). `prepare` runs
+automatically after `npm install`/`npm ci` (the standard npm lifecycle hook) and only
+installs Husky's git hooks — see [Git hooks and commit linting](#git-hooks-and-commit-linting)
+below.
+
+## Git hooks and commit linting
+
+[Husky](https://typicode.github.io/husky/), [lint-staged](https://github.com/lint-staged/lint-staged),
+and [Commitlint](https://commitlint.js.org/) provide fast local feedback before a commit
+is created. They intentionally duplicate none of the validation logic already expressed
+as npm scripts — both hooks below simply invoke the same tooling contributors already use
+manually.
+
+- **`prepare` script** (`package.json`) — runs `husky` after `npm install`/`npm ci`, which
+  points git's `core.hooksPath` at [`.husky/`](.husky/). No global Husky installation is
+  required; the hook activation is entirely workspace-local.
+- **`.husky/pre-commit`** — runs `npx lint-staged`, which runs `biome check --write
+  --no-errors-on-unmatched` only on staged `*.{js,cjs,mjs,jsx,ts,tsx,json,jsonc}` files
+  (the `lint-staged` key in `package.json`). Safe Biome fixes are applied and re-staged
+  automatically. This hook intentionally does **not** run the build, typecheck, full test
+  suite, or Specification validation — those stay in `npm run validate` and CI, so the
+  hook stays fast regardless of repository size.
+- **`.husky/commit-msg`** — runs `npx --no -- commitlint --edit "$1"`, validating the
+  commit message against [`commitlint.config.js`](commitlint.config.js) (extending
+  `@commitlint/config-conventional`). Scopes are free-form — any package or area name
+  (`core`, `catalog`, `cli`, `specification`, `monorepo`, `devcontainer`, `github`, …) is
+  accepted; no fixed scope list is enforced. See
+  [`CONTRIBUTING.md#commit-messages`](CONTRIBUTING.md#commit-messages) for message
+  examples.
+- **`.husky/_/`** is Husky's own generated internal directory (ignored via its own
+  `.gitignore` file); it is never edited by hand.
+- Pre-commit hooks are a fast, local convenience layer, not the authoritative gate — CI
+  (see [CI](#ci) below) re-validates everything on every push and pull request
+  regardless of what ran locally, since hooks can be skipped (`git commit --no-verify`)
+  or not installed in every environment.
+- No `pre-push`, `post-commit`, or `prepare-commit-msg` hook is added — nothing in this
+  task justifies the extra friction of a slower hook beyond `pre-commit`/`commit-msg`.
 
 ## Testing and fixture strategy
 
@@ -453,12 +496,23 @@ in this task.
 
 ## CI
 
-No GitHub Actions workflows exist in this repository yet (`.github/` currently only
-contains issue templates and Copilot instructions). None are added in this task — doing
-so is out of scope until the workflow would actually run something beyond what
-`npm install && npm run validate` already demonstrates locally (which itself chains
-`typecheck`, `check` (Biome), `test`, `build`, and `validate:specification`). This is
-called out explicitly as a deferred decision below rather than left implicit.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) is the repository's GitHub Actions
+workflow (`.github/` previously only contained issue templates and Copilot
+instructions). It runs on every push to `main` and on every pull request:
+
+- **`validate` job** — matrix across `ubuntu-latest`, `macos-latest`, and
+  `windows-latest` (the same three operating systems contributors and the Dev Container
+  target). Each runs `npm ci` followed by `npm run validate` — the identical aggregate
+  command contributors run locally, so CI never drifts from the documented local
+  workflow and no validation logic is duplicated in the workflow file itself.
+- **`commitlint` job** — pull requests only; runs `npx commitlint --from <base> --to
+  <head>` across every commit in the pull request. This is the CI-side, authoritative
+  counterpart to the local `commit-msg` hook (see
+  [Git hooks and commit linting](#git-hooks-and-commit-linting)), since local hooks can
+  be bypassed or skipped.
+
+No release, tagging, or npm-publication workflow is added — publication remains out of
+scope (see [Versioning and publication](#versioning-and-publication)).
 
 ## Deferred decisions
 
@@ -467,8 +521,9 @@ The following are intentionally **not** decided in this task:
 - **Test runner** — Node's built-in test runner vs. Vitest vs. Jest.
 - **Runtime validation library** — whether `core` will eventually need AJV/Zod, and
   whether TypeScript types should be generated from the existing JSON Schemas.
-- **CI workflows** — no GitHub Actions workflow is added in this task (see [CI](#ci)
-  above).
+- **Release automation** — no release, changelog, or npm-publication workflow is added
+  (see [CI](#ci) above); Semantic Release and Changesets are intentionally not
+  introduced until publication is actually planned.
 - **Project references / `tsc -b`** — deferred until a second package depends on `core`.
 - **Binary packaging for the CLI** — deferred until the CLI package exists and a concrete
   distribution need is identified.

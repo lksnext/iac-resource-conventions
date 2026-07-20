@@ -11,6 +11,8 @@
     "packages/*"
   ],
   "scripts": {
+    "prepare": "husky",
+    "clean": "npm run clean --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "fmt": "terraform fmt -recursive",
@@ -27,8 +29,17 @@
     "docs": "echo \"Docs not implemented yet\"",
     "release:dry-run": "echo \"Release dry run not implemented yet\""
   },
+  "lint-staged": {
+    "*.{js,cjs,mjs,jsx,ts,tsx,json,jsonc}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
+  },
   "devDependencies": {
     "@biomejs/biome": "2.5.4",
+    "@commitlint/cli": "21.2.1",
+    "@commitlint/config-conventional": "21.2.0",
+    "husky": "9.1.7",
+    "lint-staged": "17.1.0",
     "typescript": "^7.0.2"
   }
 }
