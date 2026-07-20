@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint-cli2/main/schema/markdownlint-cli2-config-schema.json",
+  // The Specification is frozen at v1.0 (see specification/README.md#specification-status)
+  // and must not be edited for tooling reasons alone. resource-definition.md has one
+  // pre-existing single trailing space that MD009 (trailing-spaces) flags as neither a
+  // clean line (0 spaces) nor an intentional hard line break (2 spaces). Since the fix
+  // would require modifying frozen Specification content, MD009 is disabled only for
+  // this directory rather than repository-wide.
+  "config": {
+    "MD009": false,
+    // MD013 (line-length): unlike the hand-wrapped governance docs at the repository
+    // root (see the root .markdownlint-cli2.jsonc), Specification files pair one
+    // attribute description with one list item/paragraph line rather than wrapping at
+    // a fixed column (for example resource-identity.md's per-attribute bullets).
+    // Reflowing them to satisfy a line-length limit would mean editing frozen
+    // Specification content for a purely cosmetic reason, which this task's "Do not
+    // modify the Specification" rule and the v1.0 freeze (specification/README.md)
+    // both forbid.
+    "MD013": false
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  // Both American and British English are enabled: Specification and governance docs
+  // are frozen or intentionally mix spellings (for example "behaviour"), so accepting
+  // both locales avoids a long manual word list for legitimate alternate spellings.
+  "language": "en,en-GB",
+  // Bundled dictionaries relevant to this repository's domains (all ship inside the
+  // `cspell` package via `@cspell/cspell-bundled-dicts`, so no extra dependency is
+  // added just to enable them). Only dictionaries this repository's stack actually
+  // touches are enabled — see IMPLEMENTATION.md for the full tool list.
+  "dictionaries": [
+    "en_US",
+    "softwareTerms",
+    "node",
+    "npm",
+    "typescript",
+    "bash",
+    "git",
+    "markdown",
+    "html",
+    "css",
+    "docker",
+    "aws",
+    "k8s",
+    "terraform",
+    "filetypes",
+    "project-words"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "project-words",
+      "path": "./.cspell/project-words.txt",
+      "addWords": false
+    }
+  ],
+  "ignorePaths": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    // Auto-generated dependency-resolution data (package names and integrity hashes),
+    // not authored prose — spell-checking it would only flag hashes, never real words.
+    "package-lock.json",
+    // Standard, unmodified Apache License 2.0 boilerplate text, not authored prose.
+    "LICENSE",
+    // Serena MCP's own tool-maintained working notes, not authored project
+    // documentation; already excluded from JSON/Markdown validation for the same
+    // reason (see scripts/validate-json.mjs and .markdownlint-cli2.jsonc).
+    ".serena/**",
+    ".husky/_/**"
+  ]
+}

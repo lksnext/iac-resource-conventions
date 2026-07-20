@@ -12,7 +12,8 @@ Use Serena MCP tools for codebase exploration and edits in this repository.
 
 Prefer Serena symbol and reference tools over raw file reads when they are available.
 
-Use GitHub MCP tools for GitHub issues, pull requests, notifications, and repository metadata when those tasks come up.
+Use GitHub MCP tools for GitHub issues, pull requests, notifications, and repository
+metadata when those tasks come up.
 
 If Serena is unavailable for a task, fall back to the standard workspace tools.
 
@@ -43,9 +44,9 @@ should implement changes:
   Specification Artifact selected via a Naming Request's `convention` field, but it may compose
   reusable Platform Convention, Organization Convention, and Deployment Convention dimensions (see
   `specification/policies/` and `specification/convention-pack.md`). Never create a Convention
-  Pack per tenant or customer, never treat Control Tower as a platform or deployment convention pattern, and
-  never treat Evaluation Context (its shared organizational context, shared deployment context,
-  Runtime Context, and Provisioning Context; see
+  Pack per tenant or customer, never treat Control Tower as a platform or deployment convention
+  pattern, and never treat Evaluation Context (its shared organizational context, shared
+  deployment context, Runtime Context, and Provisioning Context; see
   `specification/context-resolution.md#evaluation-context`) as part of a Convention Pack.
 - **Generated Artifacts** — never edit generated files by hand. Changes affecting generated
   output must start in the Specification, generator, or source template, then regenerate.
@@ -151,7 +152,7 @@ method, but respect the contributor's existing valid Git signing configuration.
 Use Conventional Commits for proposed commit messages when compatible with the repository's
 existing conventions. Examples:
 
-```
+```text
 feat(terraform): add initial resource convention module
 docs(contributing): clarify repository governance
 chore(devcontainer): install GitHub CLI

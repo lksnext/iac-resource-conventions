@@ -27,6 +27,9 @@ This is the **implementation foundation** only. As of this writing:
 - Husky, lint-staged, and Commitlint provide pre-commit and commit-msg git hooks, and
   a GitHub Actions workflow provides reproducible CI (see
   [Git hooks and commit linting](#git-hooks-and-commit-linting) and [CI](#ci)).
+- markdownlint-cli2, cspell, and lychee provide documentation quality checks (Markdown
+  style, spelling, and link validation) locally and in CI (see [Documentation quality
+  tooling](#documentation-quality-tooling)).
 - No Context Resolution, Convention Evaluation, naming algorithm, metadata projection,
   Placement Constraint validation, CLI behavior, or adapter integration has been
   implemented.
@@ -319,9 +322,15 @@ npm run format          -> biome format --write .
 npm run format:check    -> biome format .
 npm run check           -> biome check .
 npm run check:fix       -> biome check --write .
-npm run validate        -> npm run typecheck && npm run check && npm run test &&
-                            npm run build && npm run validate:specification
+npm run validate        -> npm run typecheck && npm run check && npm run docs:lint &&
+                            npm run docs:spell && npm run test && npm run build &&
+                            npm run validate:specification
 npm run validate:specification -> node scripts/validate-json.mjs
+npm run docs:lint       -> markdownlint-cli2
+npm run docs:lint:fix   -> markdownlint-cli2 --fix
+npm run docs:spell      -> cspell --no-progress --dot "**/*.{md,ts,tsx,js,jsx,mjs,cjs,
+                            json,jsonc,yml,yaml}"
+npm run docs:links      -> lychee --config lychee.toml "**/*.md"
 npm run fmt             -> terraform fmt -recursive              (unchanged)
 npm run prepare         -> husky                                  (git hook install)
 ```
@@ -332,9 +341,10 @@ whole workspace run — this is also why `clean` is a no-op today (no package cu
 defines a `clean` script) but is already wired at the root so a package can opt in
 without any root changes. `fmt` is unchanged because it operates outside Biome's scope
 (Terraform formatting via the Terraform CLI). `validate` is an aggregate command
-that chains type checking, Biome checks, tests, the build, and the existing
-Specification JSON validation (previously `validate` ran only the JSON validation,
-which is available on its own as `validate:specification`). `prepare` runs
+that chains type checking, Biome checks, Markdown linting, spell checking, tests, the
+build, and the existing Specification JSON validation. `docs:links` (lychee) is
+intentionally excluded from `validate` because it makes real network requests — see
+[Documentation quality tooling](#documentation-quality-tooling). `prepare` runs
 automatically after `npm install`/`npm ci` (the standard npm lifecycle hook) and only
 installs Husky's git hooks — see [Git hooks and commit linting](#git-hooks-and-commit-linting)
 below.
@@ -351,11 +361,12 @@ manually.
   points git's `core.hooksPath` at [`.husky/`](.husky/). No global Husky installation is
   required; the hook activation is entirely workspace-local.
 - **`.husky/pre-commit`** — runs `npx lint-staged`, which runs `biome check --write
-  --no-errors-on-unmatched` only on staged `*.{js,cjs,mjs,jsx,ts,tsx,json,jsonc}` files
-  (the `lint-staged` key in `package.json`). Safe Biome fixes are applied and re-staged
-  automatically. This hook intentionally does **not** run the build, typecheck, full test
-  suite, or Specification validation — those stay in `npm run validate` and CI, so the
-  hook stays fast regardless of repository size.
+  --no-errors-on-unmatched` and `cspell` on staged `*.{js,cjs,mjs,jsx,ts,tsx,json,jsonc}`
+  files, and `markdownlint-cli2` and `cspell` on staged `*.md` files (the `lint-staged`
+  key in `package.json`). Safe Biome fixes are applied and re-staged automatically. This
+  hook intentionally does **not** run the build, typecheck, full test suite, link
+  checking, or Specification validation — those stay in `npm run validate`/`npm run
+  docs:links` and CI, so the hook stays fast regardless of repository size.
 - **`.husky/commit-msg`** — runs `npx --no -- commitlint --edit "$1"`, validating the
   commit message against [`commitlint.config.js`](commitlint.config.js) (extending
   `@commitlint/config-conventional`). Scopes are free-form — any package or area name
@@ -371,6 +382,65 @@ manually.
   or not installed in every environment.
 - No `pre-push`, `post-commit`, or `prepare-commit-msg` hook is added — nothing in this
   task justifies the extra friction of a slower hook beyond `pre-commit`/`commit-msg`.
+
+## Documentation quality tooling
+
+Three tools check documentation quality, each with a single, non-overlapping
+responsibility. None of them redefine or duplicate rules already expressed by Biome,
+and none run against the frozen Specification content in a way that would require
+editing it merely to satisfy tooling (see [`AGENTS.md`](AGENTS.md#specification-evolution)).
+
+- **[markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2)** (`npm run
+  docs:lint`, `npm run docs:lint:fix`) — Markdown style and structure. Root config
+  [`.markdownlint-cli2.jsonc`](.markdownlint-cli2.jsonc) raises `MD013` (line length) to
+  100 to match Biome's `lineWidth: 100`, excludes tables and code blocks from that rule
+  (GFM table rows are inherently single-line and can be very long; code blocks may
+  contain long URLs or shell/JSON examples unrelated to prose wrapping), and sets
+  `MD046` to `fenced` since the whole repository already uses fenced code blocks
+  exclusively. A nested
+  [`specification/.markdownlint-cli2.jsonc`](specification/.markdownlint-cli2.jsonc)
+  cascading override disables `MD009` and `MD013` only for that directory, with inline
+  comments explaining the two specific, pre-existing pieces of frozen content (a
+  trailing space, and a 201-character attribute-description line) that cannot be
+  reflowed without editing frozen Specification prose.
+- **[cspell](https://cspell.org/)** (`npm run docs:spell`) — spelling, across both
+  documentation and source code. Config [`cspell.config.jsonc`](cspell.config.jsonc)
+  enables both the `en` and `en-GB` locales (so legitimate British spellings like
+  "behaviour" in Specification/governance prose do not need individual dictionary
+  entries) plus cspell's bundled dictionaries relevant to this stack (Node, npm,
+  TypeScript, bash, git, Markdown, HTML, CSS, Docker, AWS, Kubernetes, Terraform,
+  filetypes, general software terms) — all already available transitively via
+  `@cspell/cspell-bundled-dicts`, so no extra dependency was added for them. A small
+  project dictionary, [`.cspell/project-words.txt`](.cspell/project-words.txt), lists
+  only words cspell actually flagged as unknown (organization/tool names, git config
+  keys, compound technical terms), each grouped with a short justification comment.
+- **[lychee](https://lychee.cli.rs/)** (`npm run docs:links`) — link validation for
+  Markdown files. Config [`lychee.toml`](lychee.toml) sets retry/timeout/user-agent
+  behavior and documents two categories of intentional exception, each justified
+  inline: (1) `remap` entries that rewrite the repository's GitHub-web-UI-relative
+  links (`../../discussions`, `../../issues`, `../../security/advisories/new`) to their
+  real `https://github.com/...` equivalents, so they are genuinely checked rather than
+  skipped; and (2) a single `exclude` entry for the planned-but-not-yet-created `docs/`
+  directory referenced in README.md (see [`AGENTS.md`](AGENTS.md#planned-architecture)).
+  External link validation is not disabled globally. lychee has no npm package (the
+  npm registry's `lychee` package is an unrelated, deprecated ORM); it must be
+  installed separately to run `docs:links` locally (cargo, Homebrew, or a release
+  binary), while CI installs it automatically via the official
+  [`lycheeverse/lychee-action`](https://github.com/lycheeverse/lychee-action) (see
+  [CI](#ci)).
+
+`docs:lint` and `docs:spell` run in `npm run validate` (and therefore in the `validate`
+CI job) because they are fast and offline. `docs:links` is intentionally excluded from
+`validate` because it makes real network requests, which would make local `validate`
+runs unreliable offline or on a flaky connection; it runs as its own CI job instead
+(see [CI](#ci)). `lint-staged` also runs markdownlint-cli2 and cspell against staged
+Markdown files (see [Git hooks and commit linting](#git-hooks-and-commit-linting)
+above), but never lychee, for the same network-reliability reason.
+
+No VS Code settings changes were needed: [`.vscode/extensions.json`](.vscode/extensions.json)
+already recommended `DavidAnson.vscode-markdownlint` and `streetsidesoftware.code-spell-checker`,
+and both extensions auto-discover their config files (`.markdownlint-cli2.jsonc`,
+`cspell.config.jsonc`) without additional editor settings.
 
 ## Testing and fixture strategy
 
@@ -505,11 +575,17 @@ instructions). It runs on every push to `main` and on every pull request:
   target). Each runs `npm ci` followed by `npm run validate` — the identical aggregate
   command contributors run locally, so CI never drifts from the documented local
   workflow and no validation logic is duplicated in the workflow file itself.
-- **`commitlint` job** — pull requests only; runs `npx commitlint --from <base> --to
-  <head>` across every commit in the pull request. This is the CI-side, authoritative
+- **`commitlint` job** — pull requests only; runs `npx commitlint --from <base-sha> --to <head-sha>`
+  across every commit in the pull request. This is the CI-side, authoritative
   counterpart to the local `commit-msg` hook (see
   [Git hooks and commit linting](#git-hooks-and-commit-linting)), since local hooks can
   be bypassed or skipped.
+- **`docs-links` job** — runs once on `ubuntu-latest` only (not the `validate` matrix),
+  since it makes real network requests and running it three times per push would
+  triple external traffic and the chance of transient rate-limiting. Uses the official
+  [`lycheeverse/lychee-action`](https://github.com/lycheeverse/lychee-action) with
+  [`lychee.toml`](lychee.toml) (see [Documentation quality
+  tooling](#documentation-quality-tooling)) and fails the workflow on broken links.
 
 No release, tagging, or npm-publication workflow is added — publication remains out of
 scope (see [Versioning and publication](#versioning-and-publication)).

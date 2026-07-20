@@ -88,15 +88,21 @@ npm run format:check
 npm run check
 npm run check:fix
 npm run fmt
+npm run docs:lint
+npm run docs:lint:fix
+npm run docs:spell
+npm run docs:links
 ```
 
 Run the script relevant to the change you are making. See `package.json` for the full, current
 list of available scripts. `lint`, `format`, and `check` run [Biome](https://biomejs.dev/) — the
 canonical formatter and linter for TypeScript, JavaScript, JSON, and JSONC in this repository
 (see [`IMPLEMENTATION.md`](IMPLEMENTATION.md#formatting-and-linting)). `fmt` remains
-Terraform-specific (`terraform fmt`); it does not overlap with Biome's scope. `validate` is the
-same aggregate command run in CI (see [Continuous Integration](#continuous-integration) below):
-it chains `typecheck`, `check`, `test`, `build`, and Specification JSON validation.
+Terraform-specific (`terraform fmt`); it does not overlap with Biome's scope. `docs:lint`,
+`docs:spell`, and `docs:links` check documentation quality (see [Documentation
+Quality](#documentation-quality) below). `validate` is the same aggregate command run in CI (see
+[Continuous Integration](#continuous-integration) below): it chains `typecheck`, `check`,
+`docs:lint`, `docs:spell`, `test`, `build`, and Specification JSON validation.
 
 ## Project Architecture
 
@@ -172,12 +178,39 @@ Scopes are free-form — use whichever package or area the change touches (`core
 `cli`, `specification`, `monorepo`, `devcontainer`, `github`, …); no fixed scope list is
 enforced. Examples:
 
-```
+```text
 feat(spec): add support for custom abbreviation overrides
 fix(terraform): correct tag merge order in resource-conventions module
 docs(readme): clarify dev container setup steps
 test(contract): add cross-adapter naming parity tests
 ```
+
+## Documentation Quality
+
+Markdown documentation is checked by three tools, each with a distinct responsibility:
+
+- [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2) (`npm run docs:lint`,
+  `npm run docs:lint:fix`) checks Markdown style and structure. Configuration lives in
+  [`.markdownlint-cli2.jsonc`](.markdownlint-cli2.jsonc), with a nested
+  [`specification/.markdownlint-cli2.jsonc`](specification/.markdownlint-cli2.jsonc) override for
+  the two rules that frozen Specification content cannot satisfy (see the comments in that file).
+- [cspell](https://cspell.org/) (`npm run docs:spell`) checks spelling across documentation and
+  source code. Configuration lives in [`cspell.config.jsonc`](cspell.config.jsonc); legitimate
+  project-specific words (organization names, tool names, compound technical terms) are added to
+  [`.cspell/project-words.txt`](.cspell/project-words.txt) with a short justification comment —
+  prefer enabling an existing bundled dictionary or locale over growing this list. Do not add a
+  word unless cspell actually flags it as unknown.
+- [lychee](https://lychee.cli.rs/) (`npm run docs:links`) checks that links in Markdown files
+  resolve. Configuration, including every intentionally remapped or excluded link pattern (with
+  its justification), lives in [`lychee.toml`](lychee.toml). lychee has no npm package; install it
+  locally via `cargo install lychee`, Homebrew (`brew install lychee`), or a [release
+  binary](https://github.com/lycheeverse/lychee/releases) to run `docs:links` locally — CI
+  installs it automatically via the official `lycheeverse/lychee-action`.
+
+`docs:lint` and `docs:spell` run as part of `npm run validate` (and therefore in CI). `docs:links`
+is intentionally excluded from `validate` because it makes real network requests, which would
+make local `validate` runs unreliable on flaky or offline connections; it runs in its own CI job
+instead (see [Continuous Integration](#continuous-integration) below).
 
 ## Git Hooks
 
@@ -186,9 +219,9 @@ git hooks via the standard npm `prepare` lifecycle script — no manual setup st
 the Dev Container or natively:
 
 - **`pre-commit`** runs [lint-staged](https://github.com/lint-staged/lint-staged), which applies
-  Biome's safe formatting and lint fixes only to the files you staged. This keeps the hook fast
-  regardless of repository size — it does not run the build, typecheck, full test suite, or
-  Specification validation.
+  Biome's safe formatting and lint fixes, markdownlint-cli2, and cspell only to the files you
+  staged. This keeps the hook fast regardless of repository size — it does not run the build,
+  typecheck, full test suite, link checking, or Specification validation.
 - **`commit-msg`** runs Commitlint against your commit message (see [Commit
   Messages](#commit-messages) above) and rejects commits that do not follow Conventional Commits.
 
@@ -205,8 +238,11 @@ Every push to `main` and every pull request runs the [`CI` GitHub Actions
 workflow](.github/workflows/ci.yml):
 
 - A `validate` job runs `npm ci` followed by `npm run validate` on Linux, macOS, and Windows —
-  the same aggregate command described above, so CI never diverges from what you run locally.
+  the same aggregate command described above (including markdownlint-cli2 and cspell), so CI
+  never diverges from what you run locally.
 - A `commitlint` job (pull requests only) validates every commit message in the pull request.
+- A `docs-links` job runs lychee once (not across the OS matrix, since it makes network requests)
+  to check that documentation links resolve.
 
 A pull request is expected to pass CI before it can be merged; see [Repository
 Governance](#repository-governance) below.
@@ -227,8 +263,10 @@ This repository is protected using GitHub Rulesets to ensure code quality, secur
 
 Contributors should:
 
-- Always submit changes through Pull Requests — direct commits to protected branches are not allowed.
-- Ensure pull requests satisfy the repository protection rules configured on GitHub before they can be merged.
+- Always submit changes through Pull Requests — direct commits to protected branches are not
+  allowed.
+- Ensure pull requests satisfy the repository protection rules configured on GitHub before they
+  can be merged.
 - Be aware that repository governance rules may evolve as the project and maintainer team grow.
 
 Repository protection rules may include:
@@ -247,9 +285,10 @@ At minimum, contributors should expect:
 - Pull requests require the CI workflow's required status checks to pass before merging.
 - Commits are expected to be signed.
 
-Instead of relying on assumptions documented in CONTRIBUTING.md, contributors should verify the current GitHub
-rules configured for the repository. As the maintainer team grows, repository governance is expected to become stricter
-while maintaining a transparent and supportive contribution experience.
+Instead of relying on assumptions documented in CONTRIBUTING.md, contributors should verify the
+current GitHub rules configured for the repository. As the maintainer team grows, repository
+governance is expected to become stricter while maintaining a transparent and supportive
+contribution experience.
 
 ## Reviews
 

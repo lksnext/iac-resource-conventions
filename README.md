@@ -105,7 +105,7 @@ The repository is organized around the Specification-first architecture describe
 
 ### Current Repository Structure
 
-```
+```text
 .
 ├── .devcontainer/    # Development Container configuration
 ├── .github/          # GitHub configuration
@@ -147,6 +147,10 @@ npm run build
 `npm install` also enables the repository's Husky git hooks (fast pre-commit formatting/linting
 and Conventional Commits validation) via the standard npm `prepare` script — no extra setup step
 is required. See [`CONTRIBUTING.md`](CONTRIBUTING.md#git-hooks) for details.
+
+Documentation quality (Markdown style, spelling, and link validation) is checked by
+`npm run docs:lint`, `npm run docs:spell`, and `npm run docs:links` — see
+[`CONTRIBUTING.md`](CONTRIBUTING.md#documentation-quality) for details.
 
 ## Documentation
 

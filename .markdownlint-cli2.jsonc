@@ -1,0 +1,34 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint-cli2/main/schema/markdownlint-cli2-config-schema.json",
+  // Canonical Markdown linter configuration (see CONTRIBUTING.md#markdown-linting and
+  // IMPLEMENTATION.md#documentation-quality-tooling). Starts from markdownlint's
+  // "recommended" defaults; every deviation below is justified individually rather
+  // than disabling rules broadly.
+  "config": {
+    "default": true,
+    // MD013 (line-length): this repository hand-wraps prose to roughly the same
+    // width as Biome's `lineWidth: 100` (see biome.jsonc), not markdownlint's
+    // default 80. Tables and fenced code blocks are exempted because GitHub
+    // Flavored Markdown tables are necessarily single-line per row (some rows in
+    // specification/naming-request.md exceed 400 characters) and fenced code
+    // blocks may contain long URLs, JSON, or shell examples — none of that is a
+    // real prose-wrapping problem.
+    "MD013": {
+      "line_length": 100,
+      "tables": false,
+      "code_blocks": false
+    },
+    // MD033 (no inline HTML): docs occasionally show real HTML/config snippets
+    // (for example Mermaid or comment examples) inside fenced code blocks, which
+    // MD033 already ignores; no repository Markdown relies on raw inline HTML
+    // outside of code blocks, so the default (enabled) is kept as-is.
+    // MD024 (no duplicate headings): the Specification and policy docs
+    // intentionally reuse section names (for example "## Examples") across
+    // sibling files and only need uniqueness within a single document, which is
+    // markdownlint's default behavior (`siblings_only` is not needed because each
+    // file is linted independently).
+    "MD046": { "style": "fenced" }
+  },
+  "globs": ["**/*.md"],
+  "ignores": ["**/node_modules/**", "**/dist/**", "**/.serena/**"]
+}

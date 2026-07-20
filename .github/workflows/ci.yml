@@ -38,10 +38,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # npm run validate chains typecheck, check (Biome format+lint), test, build,
-      # and Specification JSON validation — the same aggregate gate documented in
-      # CONTRIBUTING.md and IMPLEMENTATION.md, kept in one place to avoid
-      # duplicating its logic here.
+      # npm run validate chains typecheck, check (Biome format+lint), markdownlint-cli2,
+      # cspell, test, build, and Specification JSON validation — the same aggregate gate
+      # documented in CONTRIBUTING.md and IMPLEMENTATION.md, kept in one place to avoid
+      # duplicating its logic here. Link checking (lychee) is intentionally not part of
+      # `validate` — see the `docs-links` job below.
       - name: Validate
         run: npm run validate
 
@@ -66,3 +67,20 @@ jobs:
 
       - name: Lint pull request commits
         run: npx commitlint --from "${{ github.event.pull_request.base.sha }}" --to "${{ github.event.pull_request.head.sha }}" --verbose
+
+  docs-links:
+    name: Check documentation links
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Network-dependent, so it runs once (not across the OS matrix used by
+      # `validate`) to avoid tripling external requests and possible rate limiting.
+      # Configuration, including intentionally remapped/excluded links, lives in
+      # lychee.toml (see CONTRIBUTING.md#link-validation).
+      - name: Link Checker
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --config lychee.toml "**/*.md"
+          fail: true

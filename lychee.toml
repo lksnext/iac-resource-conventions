@@ -1,0 +1,55 @@
+# Lychee link-checker configuration (see CONTRIBUTING.md#link-validation and
+# IMPLEMENTATION.md#documentation-quality-tooling). Runs only via `npm run docs:links`
+# and in CI — never in the pre-commit hook, since it makes real network requests and
+# would make `git commit` unreliable/slow on flaky connections.
+#
+# External link validation is intentionally NOT disabled globally; every excluded
+# pattern below is a specific, documented, intentionally-unavailable case.
+
+# Reasonable network behavior for CI: retry transient failures before reporting a
+# broken link, and use a browser-like user agent since some hosts (for example
+# marketplace.visualstudio.com) reject default HTTP client user agents.
+max_retries = 3
+retry_wait_time = 2
+timeout = 20
+user_agent = "Mozilla/5.0 (compatible; lychee/0.24; +https://github.com/lycheeverse/lychee)"
+
+# Skip local/loopback/private-network addresses — none are expected in this
+# repository's docs, and any that appeared would be an authoring mistake, not a link
+# lychee should try to reach over the network.
+exclude_all_private = true
+
+# `../../discussions`, `../../issues`, and `../../security/advisories/new` are
+# intentional GitHub-web-UI-relative links (see README.md, CONTRIBUTING.md,
+# CODE_OF_CONDUCT.md, SECURITY.md, .github/ISSUE_TEMPLATE/*) that only resolve
+# correctly on github.com relative to the repository root — lychee resolves them as
+# local filesystem paths first, and the resulting absolute path's prefix depends on
+# how deep the repository is checked out (different between this dev container and
+# CI runners), so patterns below match only the stable path suffix rather than a full
+# path. Remapping (not excluding) them to the real GitHub URLs keeps them genuinely
+# validated instead of skipped.
+remap = [
+  "^file://.*discussions$ https://github.com/lksnext/iac-resource-conventions/discussions",
+  "^file://.*issues$ https://github.com/lksnext/iac-resource-conventions/issues",
+  "^file://.*security/advisories/new$ https://github.com/lksnext/iac-resource-conventions/security/advisories/new",
+]
+
+# Directories intentionally out of scope for link checking.
+exclude_path = [
+  "node_modules",
+  "dist",
+  "build",
+  # Serena MCP's own tool-maintained working notes, not authored project
+  # documentation (already excluded from markdownlint/cspell for the same reason).
+  ".serena",
+]
+
+# README.md's Documentation section intentionally links to `docs/` (planned
+# reference documentation, see AGENTS.md#planned-architecture and
+# IMPLEMENTATION.md#status) before that directory exists. This is forward-looking
+# documentation, not a broken link to fix — it will start resolving once `docs/` is
+# created, per the repository's incremental-evolution principle
+# (AGENTS.md#repository-evolution).
+exclude = [
+  "(^|/)docs$",
+]

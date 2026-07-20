@@ -1,0 +1,35 @@
+# Project dictionary — words that are correct but not covered by cspell's bundled
+# dictionaries or the en/en-GB locales enabled in cspell.config.jsonc. Every entry below
+# is grouped with the reason it is needed; extend this file only when a real word is
+# flagged, not speculatively (see CONTRIBUTING.md#spell-checking).
+#
+# One word per line, lowercase unless the word is always capitalized (a proper noun).
+
+# Organization / project identifiers
+lksnext
+
+# Convention Pack naming (specification/convention-packs/, README.md roadmap) — the
+# planned `aws-controltower` Convention Pack slug names the AWS service as a single
+# lowercase word, matching how it appears in package/slug identifiers.
+controltower
+
+# IaC / cloud domain terminology not in the bundled aws/k8s/terraform dictionaries
+multitenancy
+
+# General technical/software terms
+transpilable
+subcomponent
+
+# Tool and package names referenced in docs/config (not covered by npm/node/git
+# dictionaries)
+nexe
+lycheeverse
+
+# Git config keys referenced in .github/copilot-instructions.md
+signingkey
+gpgsign
+
+# VS Code extension authors/publishers referenced in .vscode/extensions.json and
+# .devcontainer/devcontainer.json
+Anson
+charliermarsh
