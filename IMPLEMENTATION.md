@@ -19,10 +19,14 @@ counterpart to those — it does not repeat their governance rules.
 
 This is the **implementation foundation** only. As of this writing:
 
-- The root [`package.json`](package.json) `engines.node` field requires **Node.js 22 LTS
-  or later** (`>=22`), reflecting the actual minimum required by Commitlint, cspell,
-  lint-staged, and dependency-cruiser — none of which run on Node 18/20. The Dev Container
-  and CI both resolve Node via a floating `lts` pointer, so they always satisfy this floor
+- **Unified Node.js version policy** — the root [`package.json`](package.json) and every
+  workspace package (for example [`packages/core/package.json`](packages/core/package.json))
+  declare the same `engines.node` floor: **Node.js 22 LTS or later** (`>=22`). The root
+  floor is a hard requirement — Commitlint, cspell, lint-staged, and dependency-cruiser
+  do not run on Node 18/20 — and every published package matches it rather than
+  declaring an independent, lower consumer-facing floor, keeping a single Node.js version
+  policy for the whole repository instead of one per package. The Dev Container and CI
+  both resolve Node via a floating `lts` pointer, so they always satisfy this floor
   without a manual version bump.
 - `packages/core` exists as a minimal, non-domain-specific placeholder that proves the
   workspace, TypeScript configuration, and build/typecheck scripts work end to end.

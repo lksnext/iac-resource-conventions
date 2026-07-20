@@ -10,6 +10,12 @@ Context Resolution, or Convention Evaluation logic have been implemented yet. Se
 [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md) at the repository root for the monorepo
 architecture, package boundaries, and deferred decisions.
 
+### Node.js requirement
+
+This package's `engines.node` (`>=22`) matches the repository's single, unified Node.js
+version policy — see [IMPLEMENTATION.md#status](../../IMPLEMENTATION.md#status) for the
+full rationale.
+
 ## Intended responsibilities
 
 Once implemented, this package will own:
