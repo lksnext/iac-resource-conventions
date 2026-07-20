@@ -136,6 +136,9 @@ dependency rules:
 
 ## Quick Start
 
+Requires [Node.js](https://nodejs.org/) 22 LTS or later (see `engines` in
+[`package.json`](package.json)); the Dev Container and CI already provide it.
+
 ```bash
 git clone https://github.com/lksnext/iac-resource-conventions.git
 cd iac-resource-conventions

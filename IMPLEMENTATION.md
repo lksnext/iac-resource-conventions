@@ -19,6 +19,11 @@ counterpart to those — it does not repeat their governance rules.
 
 This is the **implementation foundation** only. As of this writing:
 
+- The root [`package.json`](package.json) `engines.node` field requires **Node.js 22 LTS
+  or later** (`>=22`), reflecting the actual minimum required by Commitlint, cspell,
+  lint-staged, and dependency-cruiser — none of which run on Node 18/20. The Dev Container
+  and CI both resolve Node via a floating `lts` pointer, so they always satisfy this floor
+  without a manual version bump.
 - `packages/core` exists as a minimal, non-domain-specific placeholder that proves the
   workspace, TypeScript configuration, and build/typecheck scripts work end to end.
 - [Biome](https://biomejs.dev/) is configured as the canonical formatter and linter for

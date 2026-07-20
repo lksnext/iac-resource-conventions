@@ -3,7 +3,8 @@ name: CI
 # Reproducible CI: mirrors the local developer workflow documented in CONTRIBUTING.md.
 # CI is the authoritative gate; `npm run validate` is the same aggregate command
 # contributors run locally and in the Dev Container, so behavior never drifts
-# between environments.
+# between environments. `node-version: lts/*` always resolves to the current Node.js
+# LTS release, which satisfies the root package.json engines.node floor (>=22).
 
 on:
   push:

@@ -8,6 +8,8 @@
   "features": {
     "ghcr.io/devcontainers/features/git:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
+    // "lts" always resolves to the current Node.js LTS release, which satisfies the
+    // root package.json engines.node floor (>=22) without a manual version bump.
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts"
     },

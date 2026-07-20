@@ -5,7 +5,7 @@
   "description": "Infrastructure as Code Resource Conventions specification and SDKs.",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "workspaces": [
     "packages/*"

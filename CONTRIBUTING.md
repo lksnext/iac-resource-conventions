@@ -61,8 +61,11 @@ for you.
 
 If you use a native environment, you are responsible for installing the required development
 tools for the parts of the project you intend to work on (for example Terraform, Node.js, or
-Python). Refer to the [Development Container](#development-container) definition as the source
-of truth for required tool versions.
+Python). Node.js **22 LTS or later** is required — see `engines` in
+[`package.json`](package.json); several devDependencies (Commitlint, cspell, lint-staged,
+dependency-cruiser) do not run on older Node versions. Refer to the
+[Development Container](#development-container) definition as the source of truth for required
+tool versions.
 
 ## Building and Testing
 
