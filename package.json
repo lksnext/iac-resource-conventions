@@ -35,8 +35,7 @@
     "audit:production": "npm audit --omit=dev --audit-level=high",
     "licenses:check": "node scripts/check-licenses.mjs",
     "licenses:production": "node scripts/check-licenses.mjs --production",
-    "licenses:report": "node scripts/check-licenses.mjs --report",
-    "release:dry-run": "echo \"Release dry run not implemented yet\""
+    "licenses:report": "node scripts/check-licenses.mjs --report"
   },
   "lint-staged": {
     "*.{js,cjs,mjs,jsx,ts,tsx,json,jsonc}": [
