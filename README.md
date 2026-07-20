@@ -155,9 +155,11 @@ Documentation quality (Markdown style, spelling, and link validation) is checked
 `npm run docs:lint`, `npm run docs:spell`, and `npm run docs:links` — see
 [`CONTRIBUTING.md`](CONTRIBUTING.md#documentation-quality) for details.
 
-Architecture and dependency security are checked by `npm run architecture` and
-`npm run audit`/`npm run audit:production` — see
-[`CONTRIBUTING.md`](CONTRIBUTING.md#architecture-and-dependency-security) for details.
+Architecture and dependency security are checked by `npm run audit`/`npm run audit:production` —
+see [`CONTRIBUTING.md`](CONTRIBUTING.md#architecture-and-dependency-security) for details.
+Automated package dependency direction validation is intentionally deferred until the
+implementation contains multiple packages with meaningful dependency relationships — see
+[`IMPLEMENTATION.md`](IMPLEMENTATION.md#dependency-direction).
 
 ## Documentation
 

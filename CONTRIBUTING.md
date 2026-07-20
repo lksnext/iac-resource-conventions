@@ -62,8 +62,8 @@ for you.
 If you use a native environment, you are responsible for installing the required development
 tools for the parts of the project you intend to work on (for example Terraform, Node.js, or
 Python). Node.js **22 LTS or later** is required — see `engines` in
-[`package.json`](package.json); several devDependencies (Commitlint, cspell, lint-staged,
-dependency-cruiser) do not run on older Node versions. Refer to the
+[`package.json`](package.json); several devDependencies (Commitlint, cspell, lint-staged) do not
+run on older Node versions. Refer to the
 [Development Container](#development-container) definition as the source of truth for required
 tool versions.
 
@@ -90,7 +90,6 @@ npm run format
 npm run format:check
 npm run check
 npm run check:fix
-npm run architecture
 npm run fmt
 npm run docs:lint
 npm run docs:lint:fix
@@ -104,15 +103,15 @@ Run the script relevant to the change you are making. See `package.json` for the
 list of available scripts. `lint`, `format`, and `check` run [Biome](https://biomejs.dev/) — the
 canonical formatter and linter for TypeScript, JavaScript, JSON, and JSONC in this repository
 (see [`IMPLEMENTATION.md`](IMPLEMENTATION.md#formatting-and-linting)). `fmt` remains
-Terraform-specific (`terraform fmt`); it does not overlap with Biome's scope. `architecture`
-validates package dependency direction (see [Architecture and Dependency
-Security](#architecture-and-dependency-security) below). `docs:lint`, `docs:spell`, and
-`docs:links` check documentation quality (see [Documentation Quality](#documentation-quality)
-below). `audit` and `audit:production` check for dependency vulnerabilities (see [Architecture
-and Dependency Security](#architecture-and-dependency-security) below). `validate` is the same
-aggregate command run in CI (see [Continuous Integration](#continuous-integration) below): it
-chains `typecheck`, `check`, `architecture`, `docs:lint`, `docs:spell`, `test`, `build`, and
-Specification JSON validation.
+Terraform-specific (`terraform fmt`); it does not overlap with Biome's scope. `docs:lint`,
+`docs:spell`, and `docs:links` check documentation quality (see [Documentation
+Quality](#documentation-quality) below). `audit` and `audit:production` check for dependency
+vulnerabilities (see [Architecture and Dependency
+Security](#architecture-and-dependency-security) below); automated package dependency direction
+validation is intentionally deferred (see the same section). `validate` is the same aggregate
+command run in CI (see [Continuous Integration](#continuous-integration) below): it chains
+`typecheck`, `check`, `docs:lint`, `docs:spell`, `test`, `build`, and Specification JSON
+validation.
 
 ## Project Architecture
 
@@ -226,30 +225,17 @@ instead (see [Continuous Integration](#continuous-integration) below).
 
 ## Architecture and Dependency Security
 
-Two tools guard the implementation monorepo's structural integrity, each with a distinct
-responsibility:
-
-- [dependency-cruiser](https://github.com/sverweij/dependency-cruiser) (`npm run architecture`)
-  validates architecture — it enforces the package dependency direction documented in
-  [`IMPLEMENTATION.md#dependency-direction`](IMPLEMENTATION.md#dependency-direction) (`core` has
-  no internal dependencies; `catalog` may depend on `core`; `cli` may depend on `core` and
-  `catalog`; adapters may depend on `core` and, optionally, `catalog`, but never on each other or
-  on `cli`), forbids circular dependencies, and forbids deep imports into another package's
-  internal `src/` files (public package entry points must be used). Configuration lives in
-  [`.dependency-cruiser.cjs`](.dependency-cruiser.cjs); every rule is written against the
-  `packages/catalog/`, `packages/cli/`, and `packages/adapters/*` paths described as **planned** in
-  [`IMPLEMENTATION.md`](IMPLEMENTATION.md#planned-packages) — the rules are already in force, but
-  only `packages/core/` exists today, so there is nothing yet for most of them to catch a
-  violation of.
-  > **Known current limitation:** dependency-cruiser 18.1.0 (the latest release at the time this
-  > was added) does not yet support TypeScript 7.x (run `npx depcruise --info` to confirm — `.ts`
-  > extension support is disabled entirely until a compatible `typescript` package, in the
-  > `>=2.0.0 <7.0.0` range, is resolvable). This repository pins `typescript@^7.0.2`, so
-  > `npm run architecture` currently cannot analyze `.ts` source directly; dependency-cruiser
-  > prints a `missing-typescript-transpiler` warning every time it runs as a visible reminder of
-  > this gap. The rule set itself is verified correct (tested against an isolated scratch project
-  > using plain `.js`), so no rule logic needs to change — this should be revisited once
-  > dependency-cruiser publishes TypeScript 7 support.
+- **Architectural dependency validation is intentionally deferred.** The package
+  dependency direction documented in
+  [`IMPLEMENTATION.md#dependency-direction`](IMPLEMENTATION.md#dependency-direction)
+  (`core` has no internal dependencies; `catalog` may depend on `core`; `cli` may
+  depend on `core` and `catalog`; adapters may depend on `core` and, optionally,
+  `catalog`, but never on each other or on `cli`) remains the architectural contract
+  for the implementation monorepo. Automated enforcement (a dependency graph tool,
+  circular-dependency detection, deep-import checks) will be introduced once the
+  implementation contains multiple packages with meaningful dependency relationships —
+  today only `packages/core/` exists, so there is nothing yet for such a tool to
+  validate.
 - [npm audit](https://docs.npmjs.com/cli/v10/commands/npm-audit) (`npm run audit`,
   `npm run audit:production`) validates dependency security — it checks installed dependencies
   against the npm advisory database. `audit` checks every dependency (including devDependencies);
@@ -258,17 +244,15 @@ responsibility:
   advisories are common in transitive devDependencies and are rarely actionable on their own, so
   they do not fail the build; high and critical advisories do.
 
-`architecture` runs as part of `npm run validate` (and therefore in CI) because it is fast,
-local, and fully deterministic — no network access required. `audit`/`audit:production` are
-intentionally **not** part of `validate`, because `npm audit` depends on the live npm advisory
-database: its result can change over time with no code change in this repository, which would
-make local `validate` runs non-deterministic and network-dependent. Both run in their own CI job
-instead (see [Continuous Integration](#continuous-integration) below); run them locally with
-`npm run audit` / `npm run audit:production` before a release.
+`audit`/`audit:production` are intentionally **not** part of `validate`, because `npm audit`
+depends on the live npm advisory database: its result can change over time with no code change in
+this repository, which would make local `validate` runs non-deterministic and network-dependent.
+Both run in their own CI job instead (see [Continuous Integration](#continuous-integration)
+below); run them locally with `npm run audit` / `npm run audit:production` before a release.
 
-Neither tool runs from `pre-commit`/lint-staged — both operate on the whole dependency graph, not
-on individual staged files, so per-commit execution would not add meaningful signal for the extra
-cost.
+Neither architectural dependency validation nor `npm audit` run from `pre-commit`/lint-staged —
+both operate on the whole dependency graph or dependency tree, not on individual staged files, so
+per-commit execution would not add meaningful signal for the extra cost.
 
 ## Git Hooks
 
@@ -296,8 +280,8 @@ Every push to `main` and every pull request runs the [`CI` GitHub Actions
 workflow](.github/workflows/ci.yml):
 
 - A `validate` job runs `npm ci` followed by `npm run validate` on Linux, macOS, and Windows —
-  the same aggregate command described above (including architecture validation, markdownlint-cli2,
-  and cspell), so CI never diverges from what you run locally.
+  the same aggregate command described above (including markdownlint-cli2 and cspell), so CI
+  never diverges from what you run locally.
 - A `commitlint` job (pull requests only) validates every commit message in the pull request.
 - A `docs-links` job runs lychee once (not across the OS matrix, since it makes network requests)
   to check that documentation links resolve.

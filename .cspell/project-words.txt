@@ -24,7 +24,6 @@ subcomponent
 # dictionaries)
 nexe
 lycheeverse
-depcruise
 pipx
 
 # Python environment terminology used in the Dev Container Dockerfile comments

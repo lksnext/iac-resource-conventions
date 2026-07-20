@@ -39,12 +39,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # npm run validate chains typecheck, check (Biome format+lint), architecture
-      # (dependency-cruiser), markdownlint-cli2, cspell, test, build, and Specification
-      # JSON validation — the same aggregate gate documented in CONTRIBUTING.md and
-      # IMPLEMENTATION.md, kept in one place to avoid duplicating its logic here. Link
-      # checking (lychee) and npm audit are intentionally not part of `validate` — see
-      # the `docs-links` and `dependency-audit` jobs below.
+      # npm run validate chains typecheck, check (Biome format+lint), markdownlint-cli2,
+      # cspell, test, build, and Specification JSON validation — the same aggregate gate
+      # documented in CONTRIBUTING.md and IMPLEMENTATION.md, kept in one place to avoid
+      # duplicating its logic here. Link checking (lychee) and npm audit are
+      # intentionally not part of `validate` — see the `docs-links` and
+      # `dependency-audit` jobs below.
       - name: Validate
         run: npm run validate
 
