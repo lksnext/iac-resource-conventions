@@ -432,9 +432,11 @@ editing it merely to satisfy tooling (see [`AGENTS.md`](AGENTS.md#specification-
   skipped; and (2) a single `exclude` entry for the planned-but-not-yet-created `docs/`
   directory referenced in README.md (see [`AGENTS.md`](AGENTS.md#planned-architecture)).
   External link validation is not disabled globally. lychee has no npm package (the
-  npm registry's `lychee` package is an unrelated, deprecated ORM); it must be
-  installed separately to run `docs:links` locally (cargo, Homebrew, or a release
-  binary), while CI installs it automatically via the official
+  npm registry's `lychee` package is an unrelated, deprecated ORM); the Dev Container
+  installs a pinned release binary (see
+  [`.devcontainer/Dockerfile`](.devcontainer/Dockerfile)), while native environments must
+  install it separately to run `docs:links` locally (cargo, Homebrew, or a release
+  binary). CI installs it automatically via the official
   [`lycheeverse/lychee-action`](https://github.com/lycheeverse/lychee-action) (see
   [CI](#ci)).
 

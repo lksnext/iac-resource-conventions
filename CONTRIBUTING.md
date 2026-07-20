@@ -209,10 +209,12 @@ Markdown documentation is checked by three tools, each with a distinct responsib
   word unless cspell actually flags it as unknown.
 - [lychee](https://lychee.cli.rs/) (`npm run docs:links`) checks that links in Markdown files
   resolve. Configuration, including every intentionally remapped or excluded link pattern (with
-  its justification), lives in [`lychee.toml`](lychee.toml). lychee has no npm package; install it
-  locally via `cargo install lychee`, Homebrew (`brew install lychee`), or a [release
-  binary](https://github.com/lycheeverse/lychee/releases) to run `docs:links` locally — CI
-  installs it automatically via the official `lycheeverse/lychee-action`.
+  its justification), lives in [`lychee.toml`](lychee.toml). lychee has no npm package. The Dev
+  Container installs a pinned release binary (see [`.devcontainer/Dockerfile`](.devcontainer/Dockerfile));
+  outside the Dev Container, install it locally via `cargo install lychee`, Homebrew
+  (`brew install lychee`), or a [release binary](https://github.com/lycheeverse/lychee/releases) to
+  run `docs:links` locally — CI installs it automatically via the official
+  `lycheeverse/lychee-action`.
 
 `docs:lint` and `docs:spell` run as part of `npm run validate` (and therefore in CI). `docs:links`
 is intentionally excluded from `validate` because it makes real network requests, which would

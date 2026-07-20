@@ -15,17 +15,22 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-ins
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
-# yq (Go implementation) and terraform-docs: single static binaries with no
-# maintained official Feature, pinned to specific released versions.
+# yq (Go implementation), terraform-docs, and lychee: single static binaries
+# with no maintained official Feature, pinned to specific released versions.
 ARG YQ_VERSION=v4.44.3
 ARG TERRAFORM_DOCS_VERSION=v0.19.0
+ARG LYCHEE_VERSION=lychee-v0.24.2
 RUN curl -fsSL -o /usr/local/bin/yq \
     "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" \
     && chmod +x /usr/local/bin/yq \
     && curl -fsSL \
     "https://github.com/terraform-docs/terraform-docs/releases/download/${TERRAFORM_DOCS_VERSION}/terraform-docs-${TERRAFORM_DOCS_VERSION}-linux-amd64.tar.gz" \
     | tar -xz -C /usr/local/bin terraform-docs \
-    && chmod +x /usr/local/bin/terraform-docs
+    && chmod +x /usr/local/bin/terraform-docs \
+    && curl -fsSL \
+    "https://github.com/lycheeverse/lychee/releases/download/${LYCHEE_VERSION}/lychee-x86_64-unknown-linux-gnu.tar.gz" \
+    | tar -xz -C /usr/local/bin lychee \
+    && chmod +x /usr/local/bin/lychee
 
 # Python CLI tools, isolated from project virtualenvs via pipx.
 USER vscode
