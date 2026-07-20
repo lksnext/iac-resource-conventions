@@ -284,7 +284,10 @@ packages/core/
 
 No domain-model files were added beyond the placeholder `CORE_PACKAGE_NAME` constant in
 `src/index.ts`, which exists solely to give the package a real export to build, type-check,
-and import in validation.
+and import in validation. See
+[`docs/architecture/executable-domain-model.md`](docs/architecture/executable-domain-model.md)
+for the architecture that a future `packages/core/src/model/` layout is expected to follow —
+this document does not repeat that architecture.
 
 ## Formatting and linting
 
