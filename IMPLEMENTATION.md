@@ -22,12 +22,12 @@ This is the **implementation foundation** only. As of this writing:
 - **Unified Node.js version policy** — the root [`package.json`](package.json) and every
   workspace package (for example [`packages/core/package.json`](packages/core/package.json))
   declare the same `engines.node` floor: **Node.js 22 LTS or later** (`>=22`). The root
-  floor is a hard requirement — Commitlint, cspell, lint-staged, and dependency-cruiser
-  do not run on Node 18/20 — and every published package matches it rather than
-  declaring an independent, lower consumer-facing floor, keeping a single Node.js version
-  policy for the whole repository instead of one per package. The Dev Container and CI
-  both resolve Node via a floating `lts` pointer, so they always satisfy this floor
-  without a manual version bump.
+  floor is a hard requirement — Commitlint, cspell, and lint-staged do not run on Node
+  18/20 — and every published package matches it rather than declaring an independent,
+  lower consumer-facing floor, keeping a single Node.js version policy for the whole
+  repository instead of one per package. The Dev Container and CI both resolve Node via
+  a floating `lts` pointer, so they always satisfy this floor without a manual version
+  bump.
 - `packages/core` exists as a minimal, non-domain-specific placeholder that proves the
   workspace, TypeScript configuration, and build/typecheck scripts work end to end.
 - [Biome](https://biomejs.dev/) is configured as the canonical formatter and linter for
@@ -39,9 +39,12 @@ This is the **implementation foundation** only. As of this writing:
 - markdownlint-cli2, cspell, and lychee provide documentation quality checks (Markdown
   style, spelling, and link validation) locally and in CI (see [Documentation quality
   tooling](#documentation-quality-tooling)).
-- dependency-cruiser and npm audit provide architecture and dependency security
-  validation locally and in CI (see [Architecture and dependency security
-  validation](#architecture-and-dependency-security-validation)).
+- npm audit provides dependency security validation locally and in CI (see
+  [Dependency security validation](#dependency-security-validation)). Automated
+  architectural dependency validation is intentionally deferred until the
+  implementation contains multiple packages with meaningful dependency
+  relationships (see [Architectural dependency validation
+  (deferred)](#architectural-dependency-validation-deferred)).
 - No Context Resolution, Convention Evaluation, naming algorithm, metadata projection,
   Placement Constraint validation, CLI behavior, or adapter integration has been
   implemented.
@@ -185,12 +188,13 @@ catalog -> adapters
 adapter A -> adapter B
 ```
 
-[dependency-cruiser](https://github.com/sverweij/dependency-cruiser) (`npm run
-architecture`) enforces this layering — including circular-dependency detection — via
-[`.dependency-cruiser.cjs`](.dependency-cruiser.cjs). See [Architecture and dependency
-security validation](#architecture-and-dependency-security-validation) below for the
-rule set, its forward-compatibility with the not-yet-existing `catalog`/`cli`/`adapters`
-packages, and a known current TypeScript 7 compatibility limitation.
+This dependency direction is documented as the architectural contract for the
+implementation monorepo; it is not yet enforced by an automated dependency graph tool.
+Architecture enforcement will be introduced once the implementation contains multiple
+packages with meaningful dependency relationships. Until then, the documented package
+dependency direction above is the architectural contract — see [Architectural
+dependency validation (deferred)](#architectural-dependency-validation-deferred)
+below.
 
 ## Module format
 
@@ -335,10 +339,9 @@ npm run format          -> biome format --write .
 npm run format:check    -> biome format .
 npm run check           -> biome check .
 npm run check:fix       -> biome check --write .
-npm run architecture    -> depcruise --config .dependency-cruiser.cjs packages
-npm run validate        -> npm run typecheck && npm run check && npm run architecture &&
-                            npm run docs:lint && npm run docs:spell && npm run test &&
-                            npm run build && npm run validate:specification
+npm run validate        -> npm run typecheck && npm run check && npm run docs:lint &&
+                            npm run docs:spell && npm run test && npm run build &&
+                            npm run validate:specification
 npm run validate:specification -> node scripts/validate-json.mjs
 npm run docs:lint       -> markdownlint-cli2
 npm run docs:lint:fix   -> markdownlint-cli2 --fix
@@ -357,15 +360,14 @@ whole workspace run — this is also why `clean` is a no-op today (no package cu
 defines a `clean` script) but is already wired at the root so a package can opt in
 without any root changes. `fmt` is unchanged because it operates outside Biome's scope
 (Terraform formatting via the Terraform CLI). `validate` is an aggregate command
-that chains type checking, Biome checks, architecture validation, Markdown linting,
-spell checking, tests, the build, and the existing Specification JSON validation.
-`docs:links` (lychee) and `audit`/`audit:production` (npm audit) are intentionally
-excluded from `validate` because both make real network requests — see [Documentation
-quality tooling](#documentation-quality-tooling) and [Architecture and dependency
-security validation](#architecture-and-dependency-security-validation) below. `prepare`
-runs automatically after `npm install`/`npm ci` (the standard npm lifecycle hook) and
-only installs Husky's git hooks — see [Git hooks and commit
-linting](#git-hooks-and-commit-linting) below.
+that chains type checking, Biome checks, Markdown linting, spell checking, tests, the
+build, and the existing Specification JSON validation. `docs:links` (lychee) and
+`audit`/`audit:production` (npm audit) are intentionally excluded from `validate`
+because both make real network requests — see [Documentation quality
+tooling](#documentation-quality-tooling) and [Dependency security
+validation](#dependency-security-validation) below. `prepare` runs automatically after
+`npm install`/`npm ci` (the standard npm lifecycle hook) and only installs Husky's git
+hooks — see [Git hooks and commit linting](#git-hooks-and-commit-linting) below.
 
 ## Git hooks and commit linting
 
@@ -462,63 +464,39 @@ already recommended `DavidAnson.vscode-markdownlint` and `streetsidesoftware.cod
 and both extensions auto-discover their config files (`.markdownlint-cli2.jsonc`,
 `cspell.config.jsonc`) without additional editor settings.
 
-## Architecture and dependency security validation
+## Architectural dependency validation (deferred)
 
-Two tools validate concerns that formatting, linting, and type-checking do not cover,
-each with a single, non-overlapping responsibility:
+The package dependency direction documented in [Dependency
+direction](#dependency-direction) above — `core` has no internal dependencies;
+`catalog` may depend on `core`; `cli` may depend on `core` and `catalog`; adapters may
+depend on `core` and, optionally, `catalog`, but never on each other or on `cli` —
+including no circular dependencies and no deep imports into another package's internal
+`src/` files, is the architectural contract for this implementation monorepo.
 
-- **dependency-cruiser validates architecture.** `npm run architecture`
-  (`depcruise --config .dependency-cruiser.cjs packages`) enforces the package
-  dependency direction from [Dependency direction](#dependency-direction) above via
-  [`.dependency-cruiser.cjs`](.dependency-cruiser.cjs):
-  - `core` must not depend on `catalog`, `cli`, or `adapters`.
-  - `catalog` must not depend on `cli` or `adapters`.
-  - `cli` must not depend on `adapters`.
-  - Adapters must not depend on `cli` or on each other (`adapter A -> adapter B` is
-    forbidden).
-  - No circular dependencies are allowed anywhere in the workspace.
-  - Deep imports into another package's internal `src/` files are forbidden — every
-    cross-package reference must go through the target package's public entry point
-    (`src/index.ts`), enforced with dependency-cruiser's regex "group matching" so the
-    same-package case is never a false positive.
-  - Every rule is written against the `packages/catalog/`, `packages/cli/`, and
-    `packages/adapters/<name>/` paths documented as **planned** in [Planned
-    packages](#planned-packages) — only `packages/core/` exists today, so most rules
-    have nothing to violate yet; they take effect automatically, with no config change
-    needed, the moment those packages are created.
-  - **Known current limitation:** dependency-cruiser 18.1.0 (the latest release
-    available at the time this was added — confirmed via `npm view dependency-cruiser
-    dist-tags`) does not support TypeScript 7.x. Running `npx depcruise --info`
-    confirms the `.ts`/`.tsx`/`.d.ts` extensions and the `typescript` transpiler
-    (supported range `>=2.0.0 <7.0.0`) are both disabled, since this repository pins
-    `typescript@^7.0.2` (see [TypeScript configuration](#typescript-configuration)).
-    Concretely, `npm run architecture` currently cannot analyze `.ts` source at all; it
-    prints a `missing-typescript-transpiler` warning on every run as a visible signal
-    of this gap, and — on a checkout with no prior `dist/` build present — cruises zero
-    modules. The rule set itself was verified correct against an isolated scratch
-    project using plain `.js` files mirroring the planned `core`/`catalog`/`cli`/
-    `adapters` layout (every layering, adapter-to-adapter, circular, and deep-import
-    rule fired as expected), so no rule logic is in question — only TypeScript 7
-    parsing support, which is outside this repository's control. Revisit this once
-    dependency-cruiser publishes TypeScript 7 support, or if the project's TypeScript
-    version is revisited for unrelated reasons; downgrading TypeScript solely to work
-    around this is out of scope for this change.
-  - `architecture` is not run from `pre-commit`/lint-staged (see [Git hooks and commit
-    linting](#git-hooks-and-commit-linting) below) — it validates the whole dependency
-    graph, not individual staged files.
-- **npm audit validates dependency security.** `npm run audit` (`npm audit
-  --audit-level=high`) and `npm run audit:production` (`npm audit --omit=dev
-  --audit-level=high`) check installed dependencies against the npm advisory database.
-  `--audit-level=high` means low/moderate advisories (common and rarely actionable in
-  transitive devDependencies) do not fail the command; high/critical advisories do.
-  `audit:production` additionally scopes the check to production dependencies only
-  (`--omit=dev`), which matters most once a package is actually published.
-  `npm audit`'s result depends on the live npm advisory database: the same `package-lock.json`
-  can pass today and fail tomorrow (a new advisory published) with no code change in this
-  repository — a deliberate, documented exception to this repository's otherwise
-  deterministic validation. For that reason `audit`/`audit:production` are intentionally
-  **not** part of `npm run validate`; they run in their own CI job instead (see
-  [CI](#ci) below) and are not run from `pre-commit`/lint-staged.
+Automated enforcement of these rules (a dependency graph tool, circular-dependency
+detection, deep-import checks) is intentionally **not** introduced yet: only
+`packages/core/` exists today (see [Planned packages](#planned-packages)), so there is
+no meaningful multi-package dependency graph for such a tool to validate.
+Architecture enforcement will be introduced once the implementation contains multiple
+packages with meaningful dependency relationships. Until then, the documented package
+dependency direction above is the architectural contract, and code review is the
+enforcement mechanism.
+
+## Dependency security validation
+
+`npm run audit` (`npm audit --audit-level=high`) and `npm run audit:production` (`npm
+audit --omit=dev --audit-level=high`) check installed dependencies against the npm
+advisory database. `--audit-level=high` means low/moderate advisories (common and
+rarely actionable in transitive devDependencies) do not fail the command; high/critical
+advisories do. `audit:production` additionally scopes the check to production
+dependencies only (`--omit=dev`), which matters most once a package is actually
+published. `npm audit`'s result depends on the live npm advisory database: the same
+`package-lock.json` can pass today and fail tomorrow (a new advisory published) with no
+code change in this repository — a deliberate, documented exception to this
+repository's otherwise deterministic validation. For that reason `audit`/
+`audit:production` are intentionally **not** part of `npm run validate`; they run in
+their own CI job instead (see [CI](#ci) below) and are not run from
+`pre-commit`/lint-staged.
 
 ## Testing and fixture strategy
 
@@ -668,11 +646,9 @@ instructions). It runs on every push to `main` and on every pull request:
   network-dependent reason as `docs-links`: `npm audit` queries the live npm advisory
   database, so running it three times per push would triple external requests without
   additional benefit. Runs `npm run audit` and `npm run audit:production` (see
-  [Architecture and dependency security
-  validation](#architecture-and-dependency-security-validation) above for the
-  `--audit-level=high` threshold rationale). Architecture validation
-  (dependency-cruiser) is *not* a separate job — it runs inside the `validate` job via
-  `npm run validate`, since it is fast, local, and fully deterministic, unlike `npm audit`.
+  [Dependency security
+  validation](#dependency-security-validation) above for the
+  `--audit-level=high` threshold rationale).
 
 No release, tagging, or npm-publication workflow is added — publication remains out of
 scope (see [Versioning and publication](#versioning-and-publication)).
@@ -681,10 +657,12 @@ scope (see [Versioning and publication](#versioning-and-publication)).
 
 The following are intentionally **not** decided in this task:
 
-- **dependency-cruiser / TypeScript 7 compatibility** — dependency-cruiser 18.1.0 does
-  not yet support TypeScript 7.x (see [Architecture and dependency security
-  validation](#architecture-and-dependency-security-validation) above). Whether to wait
-  for upstream support, or revisit this repository's TypeScript version, is deferred.
+- **Architectural dependency validation tooling** — which tool, if any, to introduce
+  for automated enforcement of the documented package dependency direction (see
+  [Architectural dependency validation
+  (deferred)](#architectural-dependency-validation-deferred) above) is deferred until
+  the implementation contains multiple packages with meaningful dependency
+  relationships.
 
 - **Test runner** — Node's built-in test runner vs. Vitest vs. Jest.
 - **Runtime validation library** — whether `core` will eventually need AJV/Zod, and
