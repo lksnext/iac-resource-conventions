@@ -511,21 +511,25 @@ their own CI job instead (see [CI](#ci) below) and are not run from
 
 ## Dependency license validation
 
+This project itself is distributed under Apache-2.0 (see [`LICENSE`](LICENSE)); this section
+covers verifying that every *dependency's own* license is compatible with that distribution —
+a separate concern from `npm audit` (which checks dependencies for known security
+vulnerabilities, not licensing) and from [`NOTICE`](NOTICE) (which attributes copyright for this
+project itself and is not a dependency inventory).
+
 [license-checker-rseidelsohn](https://github.com/RSeidelsohn/license-checker-rseidelsohn) is a
 pinned root devDependency (not installed globally, so behavior is identical everywhere `npm ci`
-runs). [`scripts/check-licenses.mjs`](scripts/check-licenses.mjs) wraps it: a small,
-dependency-tree-agnostic Node.js script (no Bash-specific tooling) that inventories every
-installed dependency's SPDX license expression and checks it against an explicit allowlist,
-rather than assuming a generic allowlist is complete for this repository's actual dependency
-tree.
+runs) that inspects every installed dependency's license metadata.
+[`scripts/check-licenses.mjs`](scripts/check-licenses.mjs) wraps it: a small,
+platform-agnostic Node.js script (no Bash-specific tooling) that inventories every installed
+dependency's SPDX license expression and applies this repository's explicit allowlist — missing,
+unrecognized, or disallowed licenses fail the check.
 
 - `npm run licenses:check` checks every dependency (production and development); `npm run
   licenses:production` scopes the same check to production dependencies only
-  (`--production`); `npm run licenses:report` prints the full inventory without failing.
-- The allowlist and manual per-package overrides live directly in `scripts/check-licenses.mjs`,
-  each with an inline justification comment — see
-  [`CONTRIBUTING.md#dependency-license-compliance`](CONTRIBUTING.md#dependency-license-compliance)
-  for the policy this enforces and the current allowed licenses.
+  (`--production`); `npm run licenses:report` prints the full inventory to the terminal without
+  failing and without writing any generated file — no static license report is generated or
+  committed.
 - This repository's own workspace packages (`iac-resource-conventions`,
   `@lksnext/iac-conventions-core`) are excluded via `excludePrivatePackages` — they report
   `UNLICENSED` only because they are private, unpublished placeholders, not third-party
@@ -536,9 +540,46 @@ tree.
   operating system (for example Biome's per-OS `@biomejs/cli-*` binaries), so the exact set of
   licensed packages is not always identical across every OS `validate` runs on. It instead runs
   once, on Linux only, in its own CI job (see [CI](#ci) below).
-- `npm audit`, `license-checker-rseidelsohn`, the `NOTICE` file, and this project's own `LICENSE`
-  remain four separate concerns — see
-  [`CONTRIBUTING.md#dependency-license-compliance`](CONTRIBUTING.md#dependency-license-compliance).
+
+### Allowlist (as implemented in `scripts/check-licenses.mjs`)
+
+Allowed for any dependency (production or development):
+
+| SPDX identifier | Notes |
+| --- | --- |
+| `MIT`, `ISC`, `Apache-2.0`, `BSD-2-Clause`, `BSD-3-Clause`, `0BSD`, `CC0-1.0`, `BlueOak-1.0.0` | Standard permissive licenses already present in the dependency tree. |
+| `Python-2.0` | Used by `argparse`, a faithful port of Python's own `argparse` module — OSI-approved, permissive. |
+| `CC-BY-3.0` | Attribution-only content license used by `spdx-exceptions` for a bundled JSON data file (not code). |
+
+Allowed for devDependencies only (must never appear in a production dependency):
+
+| SPDX identifier | Notes |
+| --- | --- |
+| `CC-BY-SA-4.0` | Share-alike content license used only by a cspell spelling dictionary (`@cspell/dict-en-common-misspellings`); manually overridden in `scripts/check-licenses.mjs` because license-checker reports it as `Custom: <url>` rather than a clean SPDX identifier. |
+
+Do not document a license here as allowed unless `scripts/check-licenses.mjs` actually permits
+it — this table and the script's `ALLOWED_LICENSES`/`DEV_ONLY_ALLOWED_LICENSES` sets must stay in
+sync.
+
+### Passing the check is not legal advice
+
+A passing `licenses:check`/`licenses:production` run means a dependency's license metadata
+matches an entry on this allowlist — it is **not** legal advice, and it does not replace human
+review. Contributors must still verify that a new dependency's actual use and distribution model
+are compatible with this project before accepting it. Allowlist exceptions must never be added
+silently; use the process below.
+
+### Adding an exception to the allowlist
+
+1. Identify the exact package name and version.
+2. Determine whether it is a production dependency or development-only.
+3. Inspect the actual SPDX license expression reported by `npm run licenses:report`, and the
+   package's own upstream license text (not just the SPDX identifier).
+4. Assess compatibility with distributing this Apache-2.0 project, and any distribution
+   implications (for example share-alike/copyleft terms).
+5. Obtain maintainer approval for the exception.
+6. Only after approval, update `scripts/check-licenses.mjs` (the allowlist or a per-package
+   override) and this documentation together, in the same change.
 
 ## Testing and fixture strategy
 
@@ -727,7 +768,11 @@ The following are intentionally **not** decided in this task:
   whether TypeScript types should be generated from the existing JSON Schemas.
 - **Release automation** — no release, changelog, or npm-publication workflow is added
   (see [CI](#ci) above); Semantic Release and Changesets are intentionally not
-  introduced until publication is actually planned.
+  introduced until publication is actually planned. A placeholder `release:dry-run`
+  script was removed (it only echoed a message and verified nothing) rather than kept
+  speculatively — `npm pack --dry-run` inside a specific package directory remains the
+  ad hoc way to inspect tarball contents until a real, documented release process
+  exists (see [Versioning and publication](#versioning-and-publication) above).
 - **Project references / `tsc -b`** — deferred until a second package depends on `core`.
 - **Binary packaging for the CLI** — deferred until the CLI package exists and a concrete
   distribution need is identified.

@@ -162,9 +162,9 @@ implementation contains multiple packages with meaningful dependency relationshi
 [`IMPLEMENTATION.md`](IMPLEMENTATION.md#dependency-direction).
 
 Dependency license compliance is checked by `npm run licenses:check`/`npm run
-licenses:production` — see
-[`CONTRIBUTING.md`](CONTRIBUTING.md#dependency-license-compliance) for the allowlist policy and
-why it is a separate concern from `npm audit`.
+licenses:production` — see [`CONTRIBUTING.md`](CONTRIBUTING.md#dependency-license-compliance) for
+the commands and [`IMPLEMENTATION.md`](IMPLEMENTATION.md#dependency-license-validation) for the
+full allowlist policy and why it is a separate concern from `npm audit`.
 
 ## Documentation
 
