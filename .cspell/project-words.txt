@@ -25,6 +25,11 @@ subcomponent
 nexe
 lycheeverse
 depcruise
+pipx
+
+# Python environment terminology used in the Dev Container Dockerfile comments
+venv
+virtualenvs
 
 # Git config keys referenced in .github/copilot-instructions.md
 signingkey
