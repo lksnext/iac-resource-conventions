@@ -161,6 +161,11 @@ Automated package dependency direction validation is intentionally deferred unti
 implementation contains multiple packages with meaningful dependency relationships — see
 [`IMPLEMENTATION.md`](IMPLEMENTATION.md#dependency-direction).
 
+Dependency license compliance is checked by `npm run licenses:check`/`npm run
+licenses:production` — see
+[`CONTRIBUTING.md`](CONTRIBUTING.md#dependency-license-compliance) for the allowlist policy and
+why it is a separate concern from `npm audit`.
+
 ## Documentation
 
 - [`IMPLEMENTATION.md`](IMPLEMENTATION.md) — implementation monorepo architecture.
@@ -208,4 +213,5 @@ workflow, [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) for community expectations,
 
 ## License
 
-This project is licensed under the [Apache License 2.0](LICENSE).
+This project is licensed under the [Apache License 2.0](LICENSE). See [`NOTICE`](NOTICE) for
+required copyright attribution.

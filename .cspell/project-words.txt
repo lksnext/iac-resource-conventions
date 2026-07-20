@@ -26,6 +26,10 @@ nexe
 lycheeverse
 pipx
 
+# Author of the license-checker-rseidelsohn devDependency (see
+# CONTRIBUTING.md#dependency-license-compliance), referenced in its own package name
+rseidelsohn
+
 # Python environment terminology used in the Dev Container Dockerfile comments
 venv
 virtualenvs
