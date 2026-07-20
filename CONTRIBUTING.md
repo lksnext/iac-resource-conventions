@@ -97,6 +97,9 @@ npm run docs:spell
 npm run docs:links
 npm run audit
 npm run audit:production
+npm run licenses:check
+npm run licenses:production
+npm run licenses:report
 ```
 
 Run the script relevant to the change you are making. See `package.json` for the full, current
@@ -108,7 +111,9 @@ Terraform-specific (`terraform fmt`); it does not overlap with Biome's scope. `d
 Quality](#documentation-quality) below). `audit` and `audit:production` check for dependency
 vulnerabilities (see [Architecture and Dependency
 Security](#architecture-and-dependency-security) below); automated package dependency direction
-validation is intentionally deferred (see the same section). `validate` is the same aggregate
+validation is intentionally deferred (see the same section). `licenses:check`,
+`licenses:production`, and `licenses:report` check dependency license compliance (see [Dependency
+License Compliance](#dependency-license-compliance) below). `validate` is the same aggregate
 command run in CI (see [Continuous Integration](#continuous-integration) below): it chains
 `typecheck`, `check`, `docs:lint`, `docs:spell`, `test`, `build`, and Specification JSON
 validation.
@@ -254,6 +259,61 @@ Neither architectural dependency validation nor `npm audit` run from `pre-commit
 both operate on the whole dependency graph or dependency tree, not on individual staged files, so
 per-commit execution would not add meaningful signal for the extra cost.
 
+## Dependency License Compliance
+
+Dependency license checking, `npm audit`, the [`NOTICE`](NOTICE) file, and this project's own
+[`LICENSE`](LICENSE) are four separate, non-overlapping concerns:
+
+- **`LICENSE`** (Apache-2.0) is the license *this project* is distributed under.
+- **`NOTICE`** attributes copyright for this project itself (per Apache License 2.0 section 4(d));
+  update it only if the copyright holder changes — it is not modified when a dependency changes.
+- **`npm audit`** (see [Architecture and Dependency Security](#architecture-and-dependency-security)
+  above) checks dependencies for known *security vulnerabilities* — it says nothing about
+  licensing.
+- **Dependency license checking** (this section) verifies that every dependency's *own* license
+  is compatible with distributing this Apache-2.0 project — it says nothing about security.
+
+[license-checker-rseidelsohn](https://github.com/RSeidelsohn/license-checker-rseidelsohn) is a
+pinned root devDependency that inventories the SPDX license expression of every installed
+dependency. [`scripts/check-licenses.mjs`](scripts/check-licenses.mjs) wraps it with this
+repository's specific allowlist policy: it is a small, cross-platform Node.js script (no
+Bash-specific tooling) so it behaves identically on Linux, macOS, Windows, the Dev Container, and
+CI.
+
+- `npm run licenses:check` — checks every dependency (production and development) against the
+  allowlist; fails with a non-zero exit code and a list of violations if any license is missing,
+  unrecognized, or not on the allowlist.
+- `npm run licenses:production` — the same check, scoped to production dependencies only
+  (`--production`) — the check that matters most once a package is actually published.
+- `npm run licenses:report` — prints the full `package@version` → license inventory for every
+  dependency; never fails, useful for manual review.
+
+The allowlist (defined in `scripts/check-licenses.mjs`) was built by running the checker against
+this repository's actual dependency tree, not by assuming a generic list was complete. It
+currently allows the permissive licenses already present in the tree — `MIT`, `ISC`,
+`Apache-2.0`, `BSD-2-Clause`, `BSD-3-Clause`, `0BSD`, `CC0-1.0`, `BlueOak-1.0.0`, `Python-2.0` (used
+by `argparse`), and `CC-BY-3.0` (an attribution-only content license used by `spdx-exceptions` for
+a bundled data file, not code) — plus one devDependency-only exception, `CC-BY-SA-4.0` (a
+share-alike content license used only by a cspell spelling dictionary; it must never appear in a
+production dependency). This repository's own workspace packages (`iac-resource-conventions`,
+`@lksnext/iac-conventions-core`) are excluded from the check entirely — they report `UNLICENSED`
+because they are private, unpublished placeholders, not third-party dependencies.
+
+Extending the allowlist requires manually verifying the new license's terms are actually
+compatible with this project before adding it — see the comments in
+`scripts/check-licenses.mjs`. **A new dependency must not be accepted solely because the
+automated license check passes. Contributors must still verify that its use and distribution
+model are compatible with the project.**
+
+`licenses:check` is fully offline and deterministic (it only reads locally installed package
+metadata), but it is intentionally **not** part of `npm run validate` or `pre-commit`/lint-staged:
+some dependencies install different optional, platform-specific packages depending on the
+operating system (for example Biome's per-OS `@biomejs/cli-*` binaries), so the exact set of
+licensed packages is not always identical across every environment `validate` runs in. It instead
+runs once, on Linux only, in its own CI job — see [Continuous
+Integration](#continuous-integration) below — and can be run locally at any time with `npm run
+licenses:check` / `npm run licenses:production`.
+
 ## Git Hooks
 
 Running `npm install` (or `npm ci`) automatically installs [Husky](https://typicode.github.io/husky/)
@@ -288,6 +348,9 @@ workflow](.github/workflows/ci.yml):
 - A `dependency-audit` job runs `npm audit`/`npm audit:production` once (not across the OS matrix,
   for the same network-dependent reason as `docs-links`) — see [Architecture and Dependency
   Security](#architecture-and-dependency-security) above for the severity threshold rationale.
+- A `dependency-licenses` job runs `npm run licenses:check`/`npm run licenses:production` once, on
+  Linux only — see [Dependency License Compliance](#dependency-license-compliance) above for why
+  it is not part of the `validate` OS matrix.
 
 A pull request is expected to pass CI before it can be merged; see [Repository
 Governance](#repository-governance) below.

@@ -45,6 +45,9 @@ This is the **implementation foundation** only. As of this writing:
   implementation contains multiple packages with meaningful dependency
   relationships (see [Architectural dependency validation
   (deferred)](#architectural-dependency-validation-deferred)).
+- license-checker-rseidelsohn provides dependency license compliance validation locally and in
+  CI (see [Dependency license validation](#dependency-license-validation)) — a separate concern
+  from npm audit's security scanning.
 - No Context Resolution, Convention Evaluation, naming algorithm, metadata projection,
   Placement Constraint validation, CLI behavior, or adapter integration has been
   implemented.
@@ -350,6 +353,9 @@ npm run docs:spell      -> cspell --no-progress --dot "**/*.{md,ts,tsx,js,jsx,mj
 npm run docs:links      -> lychee --config lychee.toml "**/*.md"
 npm run audit           -> npm audit --audit-level=high
 npm run audit:production -> npm audit --omit=dev --audit-level=high
+npm run licenses:check  -> node scripts/check-licenses.mjs
+npm run licenses:production -> node scripts/check-licenses.mjs --production
+npm run licenses:report -> node scripts/check-licenses.mjs --report
 npm run fmt             -> terraform fmt -recursive              (unchanged)
 npm run prepare         -> husky                                  (git hook install)
 ```
@@ -365,7 +371,12 @@ build, and the existing Specification JSON validation. `docs:links` (lychee) and
 `audit`/`audit:production` (npm audit) are intentionally excluded from `validate`
 because both make real network requests — see [Documentation quality
 tooling](#documentation-quality-tooling) and [Dependency security
-validation](#dependency-security-validation) below. `prepare` runs automatically after
+validation](#dependency-security-validation) below. `licenses:check`/`licenses:production`
+are also excluded from `validate`, for a different reason: some dependencies install
+optional, platform-specific packages (for example Biome's per-OS `@biomejs/cli-*`
+binaries), so the exact set of licensed packages is not always identical across every
+OS `validate` runs on — see [Dependency license
+validation](#dependency-license-validation) below. `prepare` runs automatically after
 `npm install`/`npm ci` (the standard npm lifecycle hook) and only installs Husky's git
 hooks — see [Git hooks and commit linting](#git-hooks-and-commit-linting) below.
 
@@ -498,6 +509,37 @@ repository's otherwise deterministic validation. For that reason `audit`/
 their own CI job instead (see [CI](#ci) below) and are not run from
 `pre-commit`/lint-staged.
 
+## Dependency license validation
+
+[license-checker-rseidelsohn](https://github.com/RSeidelsohn/license-checker-rseidelsohn) is a
+pinned root devDependency (not installed globally, so behavior is identical everywhere `npm ci`
+runs). [`scripts/check-licenses.mjs`](scripts/check-licenses.mjs) wraps it: a small,
+dependency-tree-agnostic Node.js script (no Bash-specific tooling) that inventories every
+installed dependency's SPDX license expression and checks it against an explicit allowlist,
+rather than assuming a generic allowlist is complete for this repository's actual dependency
+tree.
+
+- `npm run licenses:check` checks every dependency (production and development); `npm run
+  licenses:production` scopes the same check to production dependencies only
+  (`--production`); `npm run licenses:report` prints the full inventory without failing.
+- The allowlist and manual per-package overrides live directly in `scripts/check-licenses.mjs`,
+  each with an inline justification comment — see
+  [`CONTRIBUTING.md#dependency-license-compliance`](CONTRIBUTING.md#dependency-license-compliance)
+  for the policy this enforces and the current allowed licenses.
+- This repository's own workspace packages (`iac-resource-conventions`,
+  `@lksnext/iac-conventions-core`) are excluded via `excludePrivatePackages` — they report
+  `UNLICENSED` only because they are private, unpublished placeholders, not third-party
+  dependencies.
+- Unlike `npm audit`, this check is fully offline and deterministic. It is nonetheless
+  intentionally **not** part of `npm run validate` or `pre-commit`/lint-staged: some
+  dependencies install different optional, platform-specific packages depending on the
+  operating system (for example Biome's per-OS `@biomejs/cli-*` binaries), so the exact set of
+  licensed packages is not always identical across every OS `validate` runs on. It instead runs
+  once, on Linux only, in its own CI job (see [CI](#ci) below).
+- `npm audit`, `license-checker-rseidelsohn`, the `NOTICE` file, and this project's own `LICENSE`
+  remain four separate concerns — see
+  [`CONTRIBUTING.md#dependency-license-compliance`](CONTRIBUTING.md#dependency-license-compliance).
+
 ## Testing and fixture strategy
 
 No test runner is added in this task — `core`'s `test` script is currently a placeholder
@@ -575,6 +617,15 @@ implemented.
   changes to generated names, tags, labels, annotations, abbreviations, truncation, or
   hashing are treated as potentially breaking, per
   [`AGENTS.md#compatibility-and-versioning`](AGENTS.md#compatibility-and-versioning).
+- **Published tarballs do not yet include `LICENSE`/`NOTICE`.** `npm pack --dry-run` against
+  `packages/core` (verified while adding dependency license compliance tooling, see
+  [Dependency license validation](#dependency-license-validation) above) confirms the tarball
+  currently contains only `README.md`, `package.json`, and `dist/**` — `package.json#files:
+  ["dist"]` does not implicitly include the repository root `LICENSE` or `NOTICE`, and npm does
+  not add them automatically for a scoped, non-root package. Before any package is actually
+  published, either add explicit `files` entries (for example a copied `LICENSE`/`NOTICE` per
+  package) or a prepack step that copies them from the repository root; this is not done in this
+  task because no package is published yet.
 
 ## CLI distribution (planned, not implemented)
 
@@ -649,6 +700,13 @@ instructions). It runs on every push to `main` and on every pull request:
   [Dependency security
   validation](#dependency-security-validation) above for the
   `--audit-level=high` threshold rationale).
+- **`dependency-licenses` job** — runs once on `ubuntu-latest` only. Unlike `docs-links` and
+  `dependency-audit`, this is not for network-dependency reasons — it is fully offline — but
+  because some dependencies install different optional, platform-specific packages depending on
+  the operating system (for example Biome's per-OS `@biomejs/cli-*` binaries), so running it
+  across the `validate` matrix would not add real signal. Runs `npm run licenses:check` and
+  `npm run licenses:production` (see [Dependency license
+  validation](#dependency-license-validation) above).
 
 No release, tagging, or npm-publication workflow is added — publication remains out of
 scope (see [Versioning and publication](#versioning-and-publication)).

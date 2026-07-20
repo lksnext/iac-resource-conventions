@@ -42,9 +42,9 @@ jobs:
       # npm run validate chains typecheck, check (Biome format+lint), markdownlint-cli2,
       # cspell, test, build, and Specification JSON validation — the same aggregate gate
       # documented in CONTRIBUTING.md and IMPLEMENTATION.md, kept in one place to avoid
-      # duplicating its logic here. Link checking (lychee) and npm audit are
-      # intentionally not part of `validate` — see the `docs-links` and
-      # `dependency-audit` jobs below.
+      # duplicating its logic here. Link checking (lychee), npm audit, and dependency
+      # license checking are intentionally not part of `validate` — see the
+      # `docs-links`, `dependency-audit`, and `dependency-licenses` jobs below.
       - name: Validate
         run: npm run validate
 
@@ -117,3 +117,37 @@ jobs:
 
       - name: Audit dependencies (production)
         run: npm run audit:production
+
+  dependency-licenses:
+    name: Check dependency licenses
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Unlike npm audit and docs-links, this check is fully offline and
+      # deterministic — it only reads locally installed package metadata, so it
+      # could in principle run inside the `validate` matrix. It runs once, on
+      # Linux only, instead: some optional, platform-specific dependencies (for
+      # example Biome's per-OS `@biomejs/cli-*` binaries) only install on a
+      # subset of the three `validate` runners, so the exact set of licensed
+      # packages is not identical across `ubuntu-latest`/`macos-latest`/
+      # `windows-latest`. Running it three times would not add real signal for
+      # this repository's already-permissive dependency tree, so it is kept in
+      # its own job, mirroring `commitlint` and `docs-links` above. See
+      # CONTRIBUTING.md#dependency-license-compliance for the allowlist policy
+      # this enforces.
+      - name: Check dependency licenses (all)
+        run: npm run licenses:check
+
+      - name: Check dependency licenses (production)
+        run: npm run licenses:production
