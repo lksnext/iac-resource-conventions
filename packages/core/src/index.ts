@@ -1,14 +1,51 @@
 // Public entry point for @lksnext/iac-conventions-core.
 //
-// This package will eventually host the TypeScript domain contracts for the frozen
-// Specification (Resource Identity, Governance Context, Naming Request, Context
-// Resolution, Resource Definition, Convention Pack, Convention Result) and the
-// Reference Evaluator that implements Context Resolution and Convention Evaluation.
-//
-// No domain model or evaluator logic is implemented yet — see IMPLEMENTATION.md at the
-// repository root for the current architecture and deferred decisions. This minimal
-// placeholder exists only to prove the package builds, type-checks, and exposes a valid
-// entry point.
+// Exposes the Executable Domain Model: the behavior-free TypeScript representation of
+// the frozen Specification (Resource Identity, Governance Context, Naming Request,
+// Evaluation Context, Resource Definition, Convention Pack, Convention Result — see
+// ./model/index.ts and docs/architecture/executable-domain-model.md). No Context
+// Resolution, Convention Evaluation, naming, validation, or other Reference Evaluator
+// behavior is implemented yet — see IMPLEMENTATION.md at the repository root for the
+// current architecture and deferred decisions.
+
+export type {
+  ConventionMetadata,
+  ConventionOutputs,
+  ConventionPack,
+  ConventionPackId,
+  ConventionPackIdentityDefaults,
+  ConventionPackOverridePolicy,
+  ConventionResult,
+  ConventionValidation,
+  ConventionValidationFailure,
+  ConventionWarning,
+  DeploymentIdentity,
+  DeploymentScope,
+  Environment,
+  EvaluationContext,
+  EvaluationContextSource,
+  FunctionalIdentity,
+  GovernanceContext,
+  GovernanceProfileId,
+  Location,
+  NamingRequest,
+  NamingRequestDeployment,
+  NamingRequestFunctional,
+  NamingRequestOverrides,
+  OrganizationalIdentity,
+  Platform,
+  ProviderScopeId,
+  ProvisioningContext,
+  ResourceDefinition,
+  ResourceIdentity,
+  ResourceIdentityConstraints,
+  ResourceRenderingConstraints,
+  ResourceType,
+  RuntimeContext,
+  SharedDeploymentContext,
+  SharedOrganizationalContext,
+  TenantId,
+} from "./model/index.js";
 
 /** The published name of this package, kept in sync with `package.json`. */
 export const CORE_PACKAGE_NAME = "@lksnext/iac-conventions-core";

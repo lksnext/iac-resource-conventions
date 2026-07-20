@@ -270,24 +270,76 @@ packages/core/
 ├── package.json
 ├── README.md
 ├── tsconfig.json
+├── tsconfig.test.json
 ├── src/
-│   └── index.ts
+│   ├── index.ts
+│   └── model/
+│       ├── index.ts
+│       ├── common/
+│       ├── identity/
+│       ├── governance/
+│       ├── contexts/
+│       ├── requests/
+│       ├── definitions/
+│       ├── conventions/
+│       └── results/
+├── test/
+│   ├── types/
+│   └── runtime/
 └── dist/            # generated, git-ignored
 ```
 
 - Source lives under `src/`; compiled output lives under `dist/`.
 - `dist/` is git-ignored (see [`.gitignore`](.gitignore)) and is never committed.
-- `package.json#files` restricts any future published tarball to `dist/` only.
+- `package.json#files` restricts any published tarball to `dist/` only — `test/` is
+  never published (verified with `npm pack --dry-run`).
 - `build` (`tsc -p tsconfig.json`) and `typecheck` (`tsc -p tsconfig.json --noEmit`) are
   separate scripts so CI/local runs can type-check without emitting, or build without a
   redundant separate type-check pass.
 
-No domain-model files were added beyond the placeholder `CORE_PACKAGE_NAME` constant in
-`src/index.ts`, which exists solely to give the package a real export to build, type-check,
-and import in validation. See
-[`docs/architecture/executable-domain-model.md`](docs/architecture/executable-domain-model.md)
-for the architecture that a future `packages/core/src/model/` layout is expected to follow —
-this document does not repeat that architecture.
+### Executable Domain Model contracts (implemented)
+
+The initial, behavior-free TypeScript contracts for the Executable Domain Model (see
+[`docs/architecture/executable-domain-model.md`](docs/architecture/executable-domain-model.md))
+are implemented under `packages/core/src/model/`, one subdirectory per concept, following
+that document's proposed layout:
+
+| Concept | Contract(s) | Specification source |
+| --- | --- | --- |
+| Naming Request | `NamingRequest`, `NamingRequestFunctional`, `NamingRequestDeployment`, `NamingRequestOverrides` | [`specification/naming-request.md`](specification/naming-request.md) |
+| Resource Identity | `ResourceIdentity`, `OrganizationalIdentity`, `DeploymentIdentity`, `FunctionalIdentity` | [`specification/resource-identity.md`](specification/resource-identity.md) |
+| Governance Context | `GovernanceContext` | [`specification/governance-context.md`](specification/governance-context.md) |
+| Evaluation Context | `EvaluationContext`, `SharedOrganizationalContext`, `SharedDeploymentContext`, `RuntimeContext`, `ProvisioningContext`, `EvaluationContextSource` | [`specification/context-resolution.md`](specification/context-resolution.md) |
+| Resource Definition | `ResourceDefinition`, `ResourceIdentityConstraints`, `ResourceRenderingConstraints` | [`specification/resource-definition.md`](specification/resource-definition.md) |
+| Convention Pack | `ConventionPack`, `ConventionPackIdentityDefaults`, `ConventionPackOverridePolicy` | [`specification/convention-pack.md`](specification/convention-pack.md) |
+| Convention Result | `ConventionResult`, `ConventionOutputs`, `ConventionMetadata`, `ConventionValidation`, `ConventionValidationFailure`, `ConventionWarning` | [`specification/convention-result.md`](specification/convention-result.md) |
+| Shared identifiers | `ResourceType`, `ConventionPackId`, `GovernanceProfileId`, `Platform`, `DeploymentScope`, `ProviderScopeId`, `Environment`, `Location`, `TenantId` | reused across the concepts above |
+
+All contracts are exported from the package root only — no subpath imports:
+
+```ts
+import type { NamingRequest, ConventionResult } from "@lksnext/iac-conventions-core";
+```
+
+Every contract is type-only (an `interface` or a `type` alias); the package still has no
+runtime behavior beyond the existing `CORE_PACKAGE_NAME` constant. Context Resolution,
+Convention Evaluation, naming algorithms, validation rules, and every adapter remain
+unimplemented — see
+[`docs/architecture/executable-domain-model.md#non-goals`](docs/architecture/executable-domain-model.md#non-goals).
+
+Two Specification documents — [`convention-pack.md`](specification/convention-pack.md) and
+[`resource-definition.md`](specification/resource-definition.md) — explicitly leave their
+concept without a JSON Schema or concrete syntax (see their own "Out of scope" sections).
+`ConventionPack` and `ResourceDefinition` therefore model only the named responsibility
+categories those documents describe in prose (for example, required attributes and naming
+component order as dotted attribute-path strings), and intentionally do not invent a
+concrete schema for the parts the Specification itself defers, such as normalization syntax
+or metadata key-mapping format. Field names elsewhere follow the exact snake_case used by
+the existing JSON Schemas (for example `business_unit`, `deployment_scope`,
+`custom_metadata`); for contracts with no existing schema (Evaluation Context and its
+sub-contexts, and the Resource Definition/Convention Pack fields described only in prose),
+the same snake_case convention is used for consistency across the model rather than mixing
+naming styles.
 
 ## Formatting and linting
 
@@ -586,10 +638,30 @@ silently; use the process below.
 
 ## Testing and fixture strategy
 
-No test runner is added in this task — `core`'s `test` script is currently a placeholder
-(`echo "Tests not implemented yet"`). Choosing between Node's built-in test runner and a
-third-party runner (Vitest, Jest, etc.) is deferred (see
-[Deferred decisions](#deferred-decisions)) until real evaluator logic exists to test.
+`core`'s `test` script uses Node's built-in test runner (`node:test`, via `node --test`)
+rather than a third-party runner — it requires no new dependency and is sufficient for
+the Executable Domain Model's current, behavior-free contracts (see
+[`packages/core/test/`](packages/core/test/)):
+
+- **Compile-time contract fixtures** (`test/types/contract-fixtures.ts`) — representative
+  valid compositions of every public contract, plus `@ts-expect-error` cases proving
+  invalid structures (unknown properties, wrong field types, `null` in place of omission,
+  mutation of `readonly`/`ReadonlyArray` fields) are rejected. Type-checked with its own
+  `tsconfig.test.json` (`noEmit`, so it never affects `dist/`); never executed and never
+  published (`package.json#files` restricts the tarball to `dist/`).
+- **Build-artifact runtime checks** (`test/runtime/build-artifact.test.mjs`) — since the
+  model is entirely type-only, "public export availability" is a compile-time concern,
+  not a runtime one; what these checks instead verify against the actual built `dist/`
+  output is that no unexpected runtime export leaks from the type-only model, that a
+  declaration file is generated, and that no production dependency was introduced.
+
+Whether Node's built-in test runner remains the choice once the Reference Evaluator
+introduces real runtime logic (assertions, fixtures-as-data, mocking needs) is still open
+(see [Deferred decisions](#deferred-decisions)).
+
+The compile-time fixtures above are distinct from, and not a substitute for, the planned
+root-level, language-neutral `fixtures/` directory described below — that remains
+deferred until the Reference Evaluator exists to evaluate them.
 
 The planned strategy, once implementation begins:
 
@@ -766,7 +838,10 @@ The following are intentionally **not** decided in this task:
   the implementation contains multiple packages with meaningful dependency
   relationships.
 
-- **Test runner** — Node's built-in test runner vs. Vitest vs. Jest.
+- **Test runner for the Reference Evaluator** — `core`'s current contract tests use
+  Node's built-in test runner (see [Testing and fixture strategy](#testing-and-fixture-strategy)
+  above); whether this remains the choice once real evaluator behavior (and its more
+  complex fixture/assertion needs) exists is still open.
 - **Runtime validation library** — whether `core` will eventually need AJV/Zod, and
   whether TypeScript types should be generated from the existing JSON Schemas.
 - **Release automation** — no release, changelog, or npm-publication workflow is added
