@@ -12,11 +12,9 @@ architecture, package boundaries, and deferred decisions.
 
 ### Node.js requirement
 
-This package's `engines.node` (`>=18`) states the minimum Node.js runtime its published,
-compiled output supports for consumers — it is intentionally lower than the monorepo's
-own `>=22` development-environment requirement, since nothing in this package's compiled
-ES2022 ESM output depends on the root's devDependencies. See
-[IMPLEMENTATION.md#status](../../IMPLEMENTATION.md#status) for the full rationale.
+This package's `engines.node` (`>=22`) matches the repository's single, unified Node.js
+version policy — see [IMPLEMENTATION.md#status](../../IMPLEMENTATION.md#status) for the
+full rationale.
 
 ## Intended responsibilities
 

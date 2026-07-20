@@ -19,18 +19,15 @@ counterpart to those — it does not repeat their governance rules.
 
 This is the **implementation foundation** only. As of this writing:
 
-- **Two-tier Node.js version policy** — the root [`package.json`](package.json)
-  `engines.node` field requires **Node.js 22 LTS or later** (`>=22`), reflecting the
-  actual minimum required by Commitlint, cspell, lint-staged, and dependency-cruiser —
-  none of which run on Node 18/20. The Dev Container and CI both resolve Node via a
-  floating `lts` pointer, so they always satisfy this floor without a manual version
-  bump. This is a **development-environment** requirement only. Each workspace package's
-  own `engines.node` field (for example [`packages/core/package.json`](packages/core/package.json)'s
-  `>=18`) instead states the minimum Node.js runtime that package's *published, compiled
-  output* supports for consumers — an independent, intentionally lower floor, because
-  nothing in the compiled ES2022 ESM output depends on the root's devDependencies. Do not
-  raise a package's `engines.node` to match the root's `>=22` unless its own runtime code
-  actually requires it.
+- **Unified Node.js version policy** — the root [`package.json`](package.json) and every
+  workspace package (for example [`packages/core/package.json`](packages/core/package.json))
+  declare the same `engines.node` floor: **Node.js 22 LTS or later** (`>=22`). The root
+  floor is a hard requirement — Commitlint, cspell, lint-staged, and dependency-cruiser
+  do not run on Node 18/20 — and every published package matches it rather than
+  declaring an independent, lower consumer-facing floor, keeping a single Node.js version
+  policy for the whole repository instead of one per package. The Dev Container and CI
+  both resolve Node via a floating `lts` pointer, so they always satisfy this floor
+  without a manual version bump.
 - `packages/core` exists as a minimal, non-domain-specific placeholder that proves the
   workspace, TypeScript configuration, and build/typecheck scripts work end to end.
 - [Biome](https://biomejs.dev/) is configured as the canonical formatter and linter for
