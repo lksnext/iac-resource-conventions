@@ -1,0 +1,5 @@
+# Ensure all text files are checked out with LF line endings on every platform,
+# matching Biome's configured "lineEnding": "lf" (see biome.jsonc). Without this,
+# Git's default core.autocrlf=true on Windows runners/checkouts converts LF to
+# CRLF, causing Biome's formatter check to fail only on Windows.
+* text=auto eol=lf
