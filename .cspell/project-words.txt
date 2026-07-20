@@ -24,6 +24,7 @@ subcomponent
 # dictionaries)
 nexe
 lycheeverse
+depcruise
 
 # Git config keys referenced in .github/copilot-instructions.md
 signingkey

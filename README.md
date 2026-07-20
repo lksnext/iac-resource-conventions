@@ -152,6 +152,10 @@ Documentation quality (Markdown style, spelling, and link validation) is checked
 `npm run docs:lint`, `npm run docs:spell`, and `npm run docs:links` — see
 [`CONTRIBUTING.md`](CONTRIBUTING.md#documentation-quality) for details.
 
+Architecture and dependency security are checked by `npm run architecture` and
+`npm run audit`/`npm run audit:production` — see
+[`CONTRIBUTING.md`](CONTRIBUTING.md#architecture-and-dependency-security) for details.
+
 ## Documentation
 
 - [`IMPLEMENTATION.md`](IMPLEMENTATION.md) — implementation monorepo architecture.

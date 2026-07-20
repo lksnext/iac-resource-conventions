@@ -22,7 +22,8 @@
     "lint:fix": "biome lint --write .",
     "check": "biome check .",
     "check:fix": "biome check --write .",
-    "validate": "npm run typecheck && npm run check && npm run docs:lint && npm run docs:spell && npm run test && npm run build && npm run validate:specification",
+    "architecture": "depcruise --config .dependency-cruiser.cjs packages",
+    "validate": "npm run typecheck && npm run check && npm run architecture && npm run docs:lint && npm run docs:spell && npm run test && npm run build && npm run validate:specification",
     "validate:specification": "node scripts/validate-json.mjs",
     "generate": "echo \"Generation not implemented yet\"",
     "test": "npm run test --workspaces --if-present",
@@ -31,6 +32,8 @@
     "docs:lint:fix": "markdownlint-cli2 --fix",
     "docs:spell": "cspell --no-progress --dot \"**/*.{md,ts,tsx,js,jsx,mjs,cjs,json,jsonc,yml,yaml}\"",
     "docs:links": "lychee --config lychee.toml \"**/*.md\"",
+    "audit": "npm audit --audit-level=high",
+    "audit:production": "npm audit --omit=dev --audit-level=high",
     "release:dry-run": "echo \"Release dry run not implemented yet\""
   },
   "lint-staged": {
@@ -48,6 +51,7 @@
     "@commitlint/cli": "21.2.1",
     "@commitlint/config-conventional": "21.2.0",
     "cspell": "10.0.1",
+    "dependency-cruiser": "18.1.0",
     "husky": "9.1.7",
     "lint-staged": "17.1.0",
     "markdownlint-cli2": "0.23.1",

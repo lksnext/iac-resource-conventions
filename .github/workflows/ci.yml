@@ -38,11 +38,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # npm run validate chains typecheck, check (Biome format+lint), markdownlint-cli2,
-      # cspell, test, build, and Specification JSON validation — the same aggregate gate
-      # documented in CONTRIBUTING.md and IMPLEMENTATION.md, kept in one place to avoid
-      # duplicating its logic here. Link checking (lychee) is intentionally not part of
-      # `validate` — see the `docs-links` job below.
+      # npm run validate chains typecheck, check (Biome format+lint), architecture
+      # (dependency-cruiser), markdownlint-cli2, cspell, test, build, and Specification
+      # JSON validation — the same aggregate gate documented in CONTRIBUTING.md and
+      # IMPLEMENTATION.md, kept in one place to avoid duplicating its logic here. Link
+      # checking (lychee) and npm audit are intentionally not part of `validate` — see
+      # the `docs-links` and `dependency-audit` jobs below.
       - name: Validate
         run: npm run validate
 
@@ -84,3 +85,34 @@ jobs:
         with:
           args: --config lychee.toml "**/*.md"
           fail: true
+
+  dependency-audit:
+    name: Audit dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # npm audit queries the live npm advisory database, so its result can change
+      # over time with no code change in this repository — unlike the rest of `validate`,
+      # this job is not fully deterministic. It runs once (not across the `validate`
+      # matrix) for the same reason as `docs-links`: it is network-dependent, and running
+      # it three times per push would triple external requests for no additional benefit.
+      # The `--audit-level=high` threshold (baked into the `audit`/`audit:production` npm
+      # scripts, see CONTRIBUTING.md#dependency-security-auditing) intentionally does not
+      # fail CI on every low/moderate advisory, most of which are unactionable noise in
+      # transitive devDependencies; high/critical severities gate the build.
+      - name: Audit dependencies (all)
+        run: npm run audit
+
+      - name: Audit dependencies (production)
+        run: npm run audit:production
