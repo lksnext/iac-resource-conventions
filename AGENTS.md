@@ -305,6 +305,12 @@ inconsistency in the current model — never speculatively.
   development, the Dev Container, and CI/CD.
 - Inspect existing scripts before inventing new commands or duplicating a command's
   implementation elsewhere (VS Code tasks, documentation, CI/CD).
+- **Git hooks and CI** — Husky installs `pre-commit` (lint-staged/Biome) and `commit-msg`
+  (Commitlint, Conventional Commits) hooks via the `prepare` npm script; hooks are fast, local
+  feedback only. `.github/workflows/ci.yml` is the authoritative validation on every push and
+  pull request. See
+  [`IMPLEMENTATION.md#git-hooks-and-commit-linting`](IMPLEMENTATION.md#git-hooks-and-commit-linting)
+  and [`CONTRIBUTING.md#continuous-integration`](CONTRIBUTING.md#continuous-integration) for detail.
 
 ## Repository Infrastructure
 

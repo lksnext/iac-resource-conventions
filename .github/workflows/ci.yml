@@ -1,0 +1,119 @@
+name: CI
+
+# Reproducible CI: mirrors the local developer workflow documented in CONTRIBUTING.md.
+# CI is the authoritative gate; `npm run validate` is the same aggregate command
+# contributors run locally and in the Dev Container, so behavior never drifts
+# between environments. `node-version: lts/*` always resolves to the current Node.js
+# LTS release, which satisfies the root package.json engines.node floor (>=22).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # npm run validate chains typecheck, check (Biome format+lint), architecture
+      # (dependency-cruiser), markdownlint-cli2, cspell, test, build, and Specification
+      # JSON validation — the same aggregate gate documented in CONTRIBUTING.md and
+      # IMPLEMENTATION.md, kept in one place to avoid duplicating its logic here. Link
+      # checking (lychee) and npm audit are intentionally not part of `validate` — see
+      # the `docs-links` and `dependency-audit` jobs below.
+      - name: Validate
+        run: npm run validate
+
+  commitlint:
+    name: Validate commit messages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint pull request commits
+        run: npx commitlint --from "${{ github.event.pull_request.base.sha }}" --to "${{ github.event.pull_request.head.sha }}" --verbose
+
+  docs-links:
+    name: Check documentation links
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Network-dependent, so it runs once (not across the OS matrix used by
+      # `validate`) to avoid tripling external requests and possible rate limiting.
+      # Configuration, including intentionally remapped/excluded links, lives in
+      # lychee.toml (see CONTRIBUTING.md#link-validation).
+      - name: Link Checker
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --config lychee.toml "**/*.md"
+          fail: true
+
+  dependency-audit:
+    name: Audit dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # npm audit queries the live npm advisory database, so its result can change
+      # over time with no code change in this repository — unlike the rest of `validate`,
+      # this job is not fully deterministic. It runs once (not across the `validate`
+      # matrix) for the same reason as `docs-links`: it is network-dependent, and running
+      # it three times per push would triple external requests for no additional benefit.
+      # The `--audit-level=high` threshold (baked into the `audit`/`audit:production` npm
+      # scripts, see CONTRIBUTING.md#dependency-security-auditing) intentionally does not
+      # fail CI on every low/moderate advisory, most of which are unactionable noise in
+      # transitive devDependencies; high/critical severities gate the build.
+      - name: Audit dependencies (all)
+        run: npm run audit
+
+      - name: Audit dependencies (production)
+        run: npm run audit:production

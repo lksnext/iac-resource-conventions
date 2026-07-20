@@ -61,8 +61,11 @@ for you.
 
 If you use a native environment, you are responsible for installing the required development
 tools for the parts of the project you intend to work on (for example Terraform, Node.js, or
-Python). Refer to the [Development Container](#development-container) definition as the source
-of truth for required tool versions.
+Python). Node.js **22 LTS or later** is required — see `engines` in
+[`package.json`](package.json); several devDependencies (Commitlint, cspell, lint-staged,
+dependency-cruiser) do not run on older Node versions. Refer to the
+[Development Container](#development-container) definition as the source of truth for required
+tool versions.
 
 ## Building and Testing
 
@@ -77,15 +80,39 @@ their implementation.
 npm install
 npm run validate
 npm run build
+npm run clean
 npm run typecheck
 npm run generate
 npm test
 npm run lint
+npm run lint:fix
+npm run format
+npm run format:check
+npm run check
+npm run check:fix
+npm run architecture
 npm run fmt
+npm run docs:lint
+npm run docs:lint:fix
+npm run docs:spell
+npm run docs:links
+npm run audit
+npm run audit:production
 ```
 
 Run the script relevant to the change you are making. See `package.json` for the full, current
-list of available scripts.
+list of available scripts. `lint`, `format`, and `check` run [Biome](https://biomejs.dev/) — the
+canonical formatter and linter for TypeScript, JavaScript, JSON, and JSONC in this repository
+(see [`IMPLEMENTATION.md`](IMPLEMENTATION.md#formatting-and-linting)). `fmt` remains
+Terraform-specific (`terraform fmt`); it does not overlap with Biome's scope. `architecture`
+validates package dependency direction (see [Architecture and Dependency
+Security](#architecture-and-dependency-security) below). `docs:lint`, `docs:spell`, and
+`docs:links` check documentation quality (see [Documentation Quality](#documentation-quality)
+below). `audit` and `audit:production` check for dependency vulnerabilities (see [Architecture
+and Dependency Security](#architecture-and-dependency-security) below). `validate` is the same
+aggregate command run in CI (see [Continuous Integration](#continuous-integration) below): it
+chains `typecheck`, `check`, `architecture`, `docs:lint`, `docs:spell`, `test`, `build`, and
+Specification JSON validation.
 
 ## Project Architecture
 
@@ -155,15 +182,131 @@ are encouraged wherever they help clarify usage.
 
 ## Commit Messages
 
-We recommend using [Conventional Commits](https://www.conventionalcommits.org/) for commit
-messages. Examples:
+This repository requires [Conventional Commits](https://www.conventionalcommits.org/) for commit
+messages, enforced by [Commitlint](https://commitlint.js.org/) (`@commitlint/config-conventional`).
+Scopes are free-form — use whichever package or area the change touches (`core`, `catalog`,
+`cli`, `specification`, `monorepo`, `devcontainer`, `github`, …); no fixed scope list is
+enforced. Examples:
 
-```
+```text
 feat(spec): add support for custom abbreviation overrides
 fix(terraform): correct tag merge order in resource-conventions module
 docs(readme): clarify dev container setup steps
 test(contract): add cross-adapter naming parity tests
 ```
+
+## Documentation Quality
+
+Markdown documentation is checked by three tools, each with a distinct responsibility:
+
+- [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2) (`npm run docs:lint`,
+  `npm run docs:lint:fix`) checks Markdown style and structure. Configuration lives in
+  [`.markdownlint-cli2.jsonc`](.markdownlint-cli2.jsonc), with a nested
+  [`specification/.markdownlint-cli2.jsonc`](specification/.markdownlint-cli2.jsonc) override for
+  the two rules that frozen Specification content cannot satisfy (see the comments in that file).
+- [cspell](https://cspell.org/) (`npm run docs:spell`) checks spelling across documentation and
+  source code. Configuration lives in [`cspell.config.jsonc`](cspell.config.jsonc); legitimate
+  project-specific words (organization names, tool names, compound technical terms) are added to
+  [`.cspell/project-words.txt`](.cspell/project-words.txt) with a short justification comment —
+  prefer enabling an existing bundled dictionary or locale over growing this list. Do not add a
+  word unless cspell actually flags it as unknown.
+- [lychee](https://lychee.cli.rs/) (`npm run docs:links`) checks that links in Markdown files
+  resolve. Configuration, including every intentionally remapped or excluded link pattern (with
+  its justification), lives in [`lychee.toml`](lychee.toml). lychee has no npm package. The Dev
+  Container installs a pinned release binary (see [`.devcontainer/Dockerfile`](.devcontainer/Dockerfile));
+  outside the Dev Container, install it locally via `cargo install lychee`, Homebrew
+  (`brew install lychee`), or a [release binary](https://github.com/lycheeverse/lychee/releases) to
+  run `docs:links` locally — CI installs it automatically via the official
+  `lycheeverse/lychee-action`.
+
+`docs:lint` and `docs:spell` run as part of `npm run validate` (and therefore in CI). `docs:links`
+is intentionally excluded from `validate` because it makes real network requests, which would
+make local `validate` runs unreliable on flaky or offline connections; it runs in its own CI job
+instead (see [Continuous Integration](#continuous-integration) below).
+
+## Architecture and Dependency Security
+
+Two tools guard the implementation monorepo's structural integrity, each with a distinct
+responsibility:
+
+- [dependency-cruiser](https://github.com/sverweij/dependency-cruiser) (`npm run architecture`)
+  validates architecture — it enforces the package dependency direction documented in
+  [`IMPLEMENTATION.md#dependency-direction`](IMPLEMENTATION.md#dependency-direction) (`core` has
+  no internal dependencies; `catalog` may depend on `core`; `cli` may depend on `core` and
+  `catalog`; adapters may depend on `core` and, optionally, `catalog`, but never on each other or
+  on `cli`), forbids circular dependencies, and forbids deep imports into another package's
+  internal `src/` files (public package entry points must be used). Configuration lives in
+  [`.dependency-cruiser.cjs`](.dependency-cruiser.cjs); every rule is written against the
+  `packages/catalog/`, `packages/cli/`, and `packages/adapters/*` paths described as **planned** in
+  [`IMPLEMENTATION.md`](IMPLEMENTATION.md#planned-packages) — the rules are already in force, but
+  only `packages/core/` exists today, so there is nothing yet for most of them to catch a
+  violation of.
+  > **Known current limitation:** dependency-cruiser 18.1.0 (the latest release at the time this
+  > was added) does not yet support TypeScript 7.x (run `npx depcruise --info` to confirm — `.ts`
+  > extension support is disabled entirely until a compatible `typescript` package, in the
+  > `>=2.0.0 <7.0.0` range, is resolvable). This repository pins `typescript@^7.0.2`, so
+  > `npm run architecture` currently cannot analyze `.ts` source directly; dependency-cruiser
+  > prints a `missing-typescript-transpiler` warning every time it runs as a visible reminder of
+  > this gap. The rule set itself is verified correct (tested against an isolated scratch project
+  > using plain `.js`), so no rule logic needs to change — this should be revisited once
+  > dependency-cruiser publishes TypeScript 7 support.
+- [npm audit](https://docs.npmjs.com/cli/v10/commands/npm-audit) (`npm run audit`,
+  `npm run audit:production`) validates dependency security — it checks installed dependencies
+  against the npm advisory database. `audit` checks every dependency (including devDependencies);
+  `audit:production` checks only production (`--omit=dev`) dependencies, which matters most for
+  anything eventually published. Both scripts use `--audit-level=high`: low and moderate
+  advisories are common in transitive devDependencies and are rarely actionable on their own, so
+  they do not fail the build; high and critical advisories do.
+
+`architecture` runs as part of `npm run validate` (and therefore in CI) because it is fast,
+local, and fully deterministic — no network access required. `audit`/`audit:production` are
+intentionally **not** part of `validate`, because `npm audit` depends on the live npm advisory
+database: its result can change over time with no code change in this repository, which would
+make local `validate` runs non-deterministic and network-dependent. Both run in their own CI job
+instead (see [Continuous Integration](#continuous-integration) below); run them locally with
+`npm run audit` / `npm run audit:production` before a release.
+
+Neither tool runs from `pre-commit`/lint-staged — both operate on the whole dependency graph, not
+on individual staged files, so per-commit execution would not add meaningful signal for the extra
+cost.
+
+## Git Hooks
+
+Running `npm install` (or `npm ci`) automatically installs [Husky](https://typicode.github.io/husky/)
+git hooks via the standard npm `prepare` lifecycle script — no manual setup step is required, in
+the Dev Container or natively:
+
+- **`pre-commit`** runs [lint-staged](https://github.com/lint-staged/lint-staged), which applies
+  Biome's safe formatting and lint fixes, markdownlint-cli2, and cspell only to the files you
+  staged. This keeps the hook fast regardless of repository size — it does not run the build,
+  typecheck, full test suite, link checking, or Specification validation.
+- **`commit-msg`** runs Commitlint against your commit message (see [Commit
+  Messages](#commit-messages) above) and rejects commits that do not follow Conventional Commits.
+
+Pre-commit hooks are a fast, local convenience layer, not the authoritative gate — they can be
+skipped (`git commit --no-verify`) or may not run in every environment. **CI is the authoritative
+validation** (see [Continuous Integration](#continuous-integration) below) and re-checks
+everything regardless of what ran locally. See
+[`IMPLEMENTATION.md#git-hooks-and-commit-linting`](IMPLEMENTATION.md#git-hooks-and-commit-linting)
+for the full hook configuration.
+
+## Continuous Integration
+
+Every push to `main` and every pull request runs the [`CI` GitHub Actions
+workflow](.github/workflows/ci.yml):
+
+- A `validate` job runs `npm ci` followed by `npm run validate` on Linux, macOS, and Windows —
+  the same aggregate command described above (including architecture validation, markdownlint-cli2,
+  and cspell), so CI never diverges from what you run locally.
+- A `commitlint` job (pull requests only) validates every commit message in the pull request.
+- A `docs-links` job runs lychee once (not across the OS matrix, since it makes network requests)
+  to check that documentation links resolve.
+- A `dependency-audit` job runs `npm audit`/`npm audit:production` once (not across the OS matrix,
+  for the same network-dependent reason as `docs-links`) — see [Architecture and Dependency
+  Security](#architecture-and-dependency-security) above for the severity threshold rationale.
+
+A pull request is expected to pass CI before it can be merged; see [Repository
+Governance](#repository-governance) below.
 
 ## Pull Requests
 
@@ -181,20 +324,32 @@ This repository is protected using GitHub Rulesets to ensure code quality, secur
 
 Contributors should:
 
-- Always submit changes through Pull Requests — direct commits to protected branches are not allowed.
-- Ensure pull requests satisfy the repository protection rules configured on GitHub before they can be merged.
+- Always submit changes through Pull Requests — direct commits to protected branches are not
+  allowed.
+- Ensure pull requests satisfy the repository protection rules configured on GitHub before they
+  can be merged.
 - Be aware that repository governance rules may evolve as the project and maintainer team grow.
 
 Repository protection rules may include:
 
 - Required reviews from code owners (enforced via [CODEOWNERS](CODEOWNERS))
-- Required status checks and CI validation
+- Required status checks and CI validation (see [Continuous
+  Integration](#continuous-integration) above)
 - Commit signing requirements
+- Conventional Commits, verified by Commitlint (see [Commit Messages](#commit-messages) above)
 - Other automated checks and validations
 
-Instead of relying on assumptions documented in CONTRIBUTING.md, contributors should verify the current GitHub
-rules configured for the repository. As the maintainer team grows, repository governance is expected to become stricter
-while maintaining a transparent and supportive contribution experience.
+At minimum, contributors should expect:
+
+- `main` is always kept stable and is protected — it only changes through merged pull requests,
+  never direct pushes.
+- Pull requests require the CI workflow's required status checks to pass before merging.
+- Commits are expected to be signed.
+
+Instead of relying on assumptions documented in CONTRIBUTING.md, contributors should verify the
+current GitHub rules configured for the repository. As the maintainer team grows, repository
+governance is expected to become stricter while maintaining a transparent and supportive
+contribution experience.
 
 ## Reviews
 

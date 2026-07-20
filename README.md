@@ -105,7 +105,7 @@ The repository is organized around the Specification-first architecture describe
 
 ### Current Repository Structure
 
-```
+```text
 .
 ├── .devcontainer/    # Development Container configuration
 ├── .github/          # GitHub configuration
@@ -136,6 +136,9 @@ dependency rules:
 
 ## Quick Start
 
+Requires [Node.js](https://nodejs.org/) 22 LTS or later (see `engines` in
+[`package.json`](package.json)); the Dev Container and CI already provide it.
+
 ```bash
 git clone https://github.com/lksnext/iac-resource-conventions.git
 cd iac-resource-conventions
@@ -143,6 +146,18 @@ npm install
 npm run validate
 npm run build
 ```
+
+`npm install` also enables the repository's Husky git hooks (fast pre-commit formatting/linting
+and Conventional Commits validation) via the standard npm `prepare` script — no extra setup step
+is required. See [`CONTRIBUTING.md`](CONTRIBUTING.md#git-hooks) for details.
+
+Documentation quality (Markdown style, spelling, and link validation) is checked by
+`npm run docs:lint`, `npm run docs:spell`, and `npm run docs:links` — see
+[`CONTRIBUTING.md`](CONTRIBUTING.md#documentation-quality) for details.
+
+Architecture and dependency security are checked by `npm run architecture` and
+`npm run audit`/`npm run audit:production` — see
+[`CONTRIBUTING.md`](CONTRIBUTING.md#architecture-and-dependency-security) for details.
 
 ## Documentation
 
