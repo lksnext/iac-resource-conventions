@@ -70,9 +70,15 @@ This is the **implementation foundation** only. As of this writing:
 - **Milestone 2 — Reference Evaluator: In progress.** The deterministic, platform-independent
   implementation of Context Resolution and Convention Evaluation. Architecture defined in
   [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md).
-  - Current increment: **2.1 — Evaluator architecture and public contract** (architecture and
-    module boundary only; no behavior).
-  - Next increment: **2.2 — Context Resolution** (Resource Identity and Governance Context).
+  - Completed increment: **2.1 — Evaluator architecture and public contract** (architecture,
+    module boundary, and the behavior-free internal pipeline contracts
+    `ContextResolutionInput`, `ContextResolutionResult`, and `ConventionEvaluationInput`
+    under
+    [`packages/core/src/evaluator/contracts/`](packages/core/src/evaluator/contracts/); no
+    evaluation behavior). See
+    [`docs/architecture/reference-evaluator.md#pipeline-contracts-implemented`](docs/architecture/reference-evaluator.md#pipeline-contracts-implemented).
+  - Current increment: **2.2 — Context Resolution** (Resource Identity and Governance
+    Context) — not yet started.
   - Planned: **2.3 — Resource Definition selection**, **2.4 — Convention Evaluation:
     projection and output generation**, **2.5 — Convention Evaluation: validation and
     Convention Result production**.
@@ -680,6 +686,17 @@ the Executable Domain Model's current, behavior-free contracts (see
   not a runtime one; what these checks instead verify against the actual built `dist/`
   output is that no unexpected runtime export leaks from the type-only model, that a
   declaration file is generated, and that no production dependency was introduced.
+- **Evaluator pipeline contract fixtures** (`test/types/evaluator-contract-fixtures.ts`) —
+  added in Milestone 2.1, mirroring the compile-time fixtures above for
+  `packages/core/src/evaluator/contracts/`: valid compositions (reusing existing domain
+  fixtures to prove composition rather than duplication), `@ts-expect-error` cases for
+  missing required fields and `readonly` mutation, and an `@ts-expect-error`-guarded import
+  attempt proving these contracts are not importable from the package root.
+- **Model-independence check** (`test/runtime/model-independence.test.mjs`) — added in
+  Milestone 2.1, a static scan of every `packages/core/src/model/` source file's import
+  specifiers asserting none reference the evaluator, since no project-references or
+  dependency-cycle-detection tooling exists yet to enforce this at build time (see
+  [Deferred decisions](#deferred-decisions)).
 
 Whether Node's built-in test runner remains the choice once the Reference Evaluator
 introduces real runtime logic (assertions, fixtures-as-data, mocking needs) is still open
