@@ -84,12 +84,20 @@ This is the **implementation foundation** only. As of this writing:
     protection, and required-attribute diagnostics, reusing `ContextResolutionInput`
     unchanged; no Governance Context resolution). See
     [`docs/architecture/reference-evaluator.md#context-resolution-resource-identity-implemented`](docs/architecture/reference-evaluator.md#context-resolution-resource-identity-implemented).
-  - Current increment: **2.3 — Context Resolution: Governance Context** — not yet started.
-    Requires first deciding how a Convention Pack's Governance Profile defaults are
-    represented in the domain model (no such type exists yet).
-  - Planned: **2.4 — Resource Definition selection**, **2.5 — Convention Evaluation:
-    projection and output generation**, **2.6 — Convention Evaluation: validation and
-    Convention Result production**.
+  - Completed increment: **2.3 — Context Resolution: Governance Context** (`resolveGovernanceContext`
+    under
+    [`packages/core/src/evaluator/context-resolution/`](packages/core/src/evaluator/context-resolution/):
+    deterministic resolution of Convention Pack `governance_defaults`, Naming Request
+    `governance`, and `overrides.governance`, reusing the same `resolveAttribute` primitive
+    and `ContextResolutionInput` contract as 2.2. Two Specification-named sources —
+    Evaluation Context and Governance Profile defaults — remain unimplemented, since the
+    domain model has neither a governance-bearing Evaluation Context field nor a
+    defaults-bearing type for a selected Governance Profile; both are documented
+    limitations, not silent omissions). See
+    [`docs/architecture/reference-evaluator.md#context-resolution-governance-context-implemented`](docs/architecture/reference-evaluator.md#context-resolution-governance-context-implemented).
+  - Current increment: **2.4 — Resource Definition selection** — not yet started.
+  - Planned: **2.5 — Convention Evaluation: projection and output generation**, **2.6 —
+    Convention Evaluation: validation and Convention Result production**.
   - Deferred: see
     [`docs/architecture/reference-evaluator.md#deferred-decisions`](docs/architecture/reference-evaluator.md#deferred-decisions).
 
