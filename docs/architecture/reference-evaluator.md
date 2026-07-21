@@ -313,10 +313,14 @@ of one Context Resolution process, not two sequential resolutions (see [Evaluati
 pipeline](#evaluation-pipeline) above). "Resource projection" is likewise renamed to match the
 Specification's own terms ("Evaluate Convention" / "Generate outputs").
 
-- **2.1 — Evaluator architecture and public contract** (this document). Defines
-  responsibility, inputs/outputs, determinism, dependency boundaries, and error philosophy at a
-  conceptual level. No behavior. **Definition of done:** this document exists, is linked from
-  `IMPLEMENTATION.md`, and no evaluation behavior has been implemented.
+- **2.1 — Evaluator architecture and public contract** (this document, plus the pipeline
+  contracts below). Defines responsibility, inputs/outputs, determinism, dependency
+  boundaries, and error philosophy at a conceptual level, and implements the behavior-free
+  internal contracts between evaluator stages (see [Pipeline contracts
+  (implemented)](#pipeline-contracts-implemented)). No behavior. **Definition of done:** this
+  document exists, is linked from `IMPLEMENTATION.md`, `packages/core/src/evaluator/contracts/`
+  defines `ContextResolutionInput`, `ContextResolutionResult`, and `ConventionEvaluationInput`,
+  and no evaluation behavior has been implemented. **Status: complete.**
 - **2.2 — Context Resolution (Resource Identity and Governance Context)**. Implements the
   normative resolution of Resource Identity and Governance Context from a Naming Request,
   Convention Pack, and Evaluation Context: source precedence, attribute authority, protection,
@@ -341,25 +345,79 @@ Specification's own terms ("Evaluate Convention" / "Generate outputs").
   done:** the evaluator returns a complete `ConventionResult` whose `validation.valid` correctly
   reflects constraint violations, for both valid and invalid inputs.
 
+## Pipeline contracts (implemented)
+
+Milestone 2.1 implements the behavior-free internal contracts that make the stage
+boundaries described in [Evaluation pipeline](#evaluation-pipeline) explicit in code, under
+[`packages/core/src/evaluator/contracts/`](../../packages/core/src/evaluator/contracts/). No
+Context Resolution, Resource Definition selection, or Convention Evaluation behavior exists —
+these are types only.
+
+| Contract | Composes | Produced by | Consumed by | Visibility |
+| --- | --- | --- | --- | --- |
+| `ContextResolutionInput` | `NamingRequest`, `ConventionPack`, `EvaluationContext` | The caller of Context Resolution (increment 2.2) | Context Resolution (increment 2.2) | Internal |
+| `ContextResolutionResult` | `ResourceIdentity`, `GovernanceContext` | Context Resolution (increment 2.2) | Resource Definition selection (2.3); Convention Evaluation (2.4–2.5), via `ConventionEvaluationInput` | Internal |
+| `ConventionEvaluationInput` | `ContextResolutionResult`, `ResourceDefinition`, `ConventionPack` | The caller of Convention Evaluation, once Resource Definition selection (2.3) has run | Convention Evaluation (increments 2.4–2.5) | Internal |
+
+Each is required-field-only (unlike the domain contracts it composes, whose own attributes stay
+optional to mirror their permissive JSON Schemas): a stage-boundary contract represents "this
+stage has everything it needs," which is a stronger, evaluator-specific invariant the domain
+model does not itself express. All three remain internal — none are re-exported from the
+package root (`packages/core/src/index.ts`) — because the public `evaluate()` signature is
+still an open decision (see [Deferred decisions](#deferred-decisions)), and no consumer outside
+the evaluator's own orchestration needs to inspect them yet (see [Public API
+principles](#public-api-principles)). They are exported only from
+[`packages/core/src/evaluator/index.ts`](../../packages/core/src/evaluator/index.ts), the
+evaluator's own internal module boundary.
+
+### Contracts considered and rejected
+
+- **A separate "resolved governance" contract, sequential to a "resolved identity" contract** —
+  rejected. The Specification states Context Resolution produces Resource Identity and
+  Governance Context together, as the two outputs of one process, not as two independent or
+  sequential resolutions (see
+  [`specification/context-resolution.md#what-context-resolution-produces`](../../specification/context-resolution.md#what-context-resolution-produces)).
+  Splitting them into two contracts would invent a sequencing the Specification does not
+  describe; `ContextResolutionResult` represents both together instead.
+- **A "resolved convention set" wrapping the selected Resource Definition and Convention Pack
+  alone** — rejected. Resource Definition selection is "a lookup, not a resolution" (see
+  [`specification/context-resolution.md#what-context-resolution-produces`](../../specification/context-resolution.md#what-context-resolution-produces)),
+  and a Convention Pack is not itself resolved into a new shape — it is selected upfront and
+  used as-is. Bundling only these two, without the resolved identity and governance Convention
+  Evaluation also needs, would not represent the actual stage-2 boundary; `ConventionEvaluationInput`
+  bundles all three together instead.
+- **A "projected resource" contract for generated-but-unvalidated outputs** — rejected. The
+  existing `ConventionOutputs` domain contract (see
+  [`ConventionResult`](../../packages/core/src/model/results/convention-result.ts)) already
+  represents exactly this value — it is already used as an independent field, separate from
+  `ConventionValidation`, inside `ConventionResult`. A new type here would duplicate an existing
+  domain contract rather than compose it.
+- **An "evaluated convention" contract for the fully-validated result, distinct from
+  `ConventionResult`** — rejected for the same reason: `ConventionResult` already is the
+  Specification's own name for this final artifact (see
+  [`specification/convention-result.md`](../../specification/convention-result.md)); introducing
+  a second name for the same shape would duplicate an existing domain contract.
+- **A single contract bundling the entire pipeline end to end** (an `EvaluationInput`-style
+  aggregate matching a possible public `evaluate()` signature) — rejected for this increment.
+  This is exactly the still-open public function signature question recorded in [Inputs and
+  outputs](#inputs-and-outputs); inventing it now would fabricate a public contract this
+  document cannot yet honor truthfully.
+
 ## Code scaffold
 
-No evaluator code is added by this document. `packages/core/src/evaluator/` does not exist yet.
-
-The Executable Domain Model already provides every input and output type Convention Evaluation
-needs (`NamingRequest`, `EvaluationContext`, `ConventionPack`, `ResourceDefinition`,
-`ResourceIdentity`, `GovernanceContext`, `ConventionResult`); no new aggregate type is
-introduced here because the evaluator's own function signature is a genuinely open question
-(see [Inputs and outputs](#inputs-and-outputs)), not one this document can answer truthfully.
-Adding a placeholder module, a fake `evaluate(): never` export, or an invented aggregate input
-type now would expose an API the evaluator cannot yet honor — a documentation-only Milestone 2
-foundation is preferred instead. The first evaluator code is added in increment 2.2, once the
-input contract question is settled.
+`packages/core/src/evaluator/` now exists, containing only the pipeline contracts above — no
+stage implementation, resolver function, or the public `evaluate()` function. Only
+`contracts/` was created under `evaluator/`; no empty folders were created for the
+`context-resolution/`, `resource-definition/`, or `convention-evaluation/` stages illustrated
+in [Dependency boundaries](#dependency-boundaries) — those are created only when the increment
+that implements them begins.
 
 ## Deferred decisions
 
 - **Final evaluator function signature** — aggregate input object versus explicit arguments
-  (see [Inputs and outputs](#inputs-and-outputs)); to be decided in increment 2.1's first code
-  change or in 2.2, whichever needs it first.
+  (see [Inputs and outputs](#inputs-and-outputs)). The 2.1 pipeline contracts fix the internal
+  stage boundaries but deliberately do not answer this question — none of them are exported
+  from the package root. To be decided in increment 2.2 or later, whichever needs it first.
 - **Internal error representation** — no exception hierarchy is designed yet; only the working
   assumption that expected evaluation outcomes belong in `ConventionResult` (see [Validation
   and diagnostics](#validation-and-diagnostics)).
