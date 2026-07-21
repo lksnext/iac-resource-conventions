@@ -4,6 +4,9 @@
 >
 > 🚧 This project is currently under active development.
 > APIs, convention packs, and adapters may change until the first stable release (v1.0.0).
+>
+> The Executable Domain Model is complete. Work is now beginning on the platform-independent
+> Reference Evaluator (see [Roadmap](#roadmap) below).
 
 ## Overview
 
@@ -173,6 +176,8 @@ full allowlist policy and why it is a separate concern from `npm audit`.
   — architecture bridging the Specification and the future Reference Evaluator.
 - [`docs/architecture/executable-domain-model-traceability.md`](docs/architecture/executable-domain-model-traceability.md)
   — Specification-concept-to-public-contract traceability matrix.
+- [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md) —
+  architecture for the Reference Evaluator (Milestone 2).
 - [`docs/`](docs/) — further reference documentation (planned).
 - Convention Packs — planned.
 - Reference Documentation — planned.
@@ -188,7 +193,10 @@ full allowlist policy and why it is a separate concern from `npm audit`.
 ### Phase 2
 
 - ✓ Implementation monorepo architecture (see [`IMPLEMENTATION.md`](IMPLEMENTATION.md)).
-- Reference Evaluator
+- ✓ Executable Domain Model (Milestone 1 — complete; see
+  [`IMPLEMENTATION.md`](IMPLEMENTATION.md#milestones)).
+- Reference Evaluator (Milestone 2 — in progress; see
+  [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md)).
 - Resource Definition catalog
 - Executable Convention Packs
 - Contract Tests
