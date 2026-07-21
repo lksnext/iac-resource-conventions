@@ -23,6 +23,6 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:contracts": "tsc -p tsconfig.test.json",
-    "test": "npm run build && npm run typecheck:contracts && node --test test/runtime/build-artifact.test.mjs test/runtime/model-independence.test.mjs"
+    "test": "npm run build && npm run typecheck:contracts && node --test test/runtime/build-artifact.test.mjs test/runtime/model-independence.test.mjs test/runtime/context-resolution.test.mjs"
   }
 }

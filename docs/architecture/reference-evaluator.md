@@ -157,8 +157,18 @@ sequential sub-stages — the Specification describes them as the two outputs of
 several precedence-order entries (for example Governance Profile defaults) interleave with
 identity-related sources in the same ordered list (see
 [`specification/context-resolution.md#resolution-precedence`](../../specification/context-resolution.md#resolution-precedence)).
-This document intentionally does not describe algorithm-level detail (for example, exactly how
-each precedence rule is implemented) — that belongs to the increment that implements it.
+This remains the conceptual model. The implementation, however, delivers the two outputs as two
+separate increments (see [Increment plan](#increment-plan)): Governance Context resolution
+depends on a "Governance Profile defaults" resolution source that has no corresponding
+defaults-bearing type anywhere in the domain model yet — `GovernanceContext.profile` is only an
+identifier reference (see
+[`packages/core/src/model/governance/governance-context.ts`](../../packages/core/src/model/governance/governance-context.ts))
+— so implementing it now would require inventing a domain concept the Specification has not yet
+been shown to need. Splitting the implementation into two increments is a build-order decision;
+it does not change the conceptual pipeline, which still has exactly two stages, Context
+Resolution and Convention Evaluation. This document intentionally does not describe
+algorithm-level detail (for example, exactly how each precedence rule is implemented) — that
+belongs to the increment that implements it.
 
 ## Dependency boundaries
 
@@ -305,13 +315,12 @@ These tests are not implemented by this document — see [Code scaffold](#code-s
 
 ## Increment plan
 
-Milestone 2 is delivered as a sequence of small increments. The recommended structure in this
-task's prompt proposed splitting "Context resolution" and "Governance and convention
-resolution" into separate increments; this document merges them into a single increment 2.2,
-because the Specification defines Resource Identity and Governance Context as the two outputs
-of one Context Resolution process, not two sequential resolutions (see [Evaluation
-pipeline](#evaluation-pipeline) above). "Resource projection" is likewise renamed to match the
-Specification's own terms ("Evaluate Convention" / "Generate outputs").
+Milestone 2 is delivered as a sequence of small increments. Increments 2.2 and 2.3 below
+implement, in two separate steps, the two canonical models one conceptual Context Resolution
+process produces (see [Evaluation pipeline](#evaluation-pipeline)); the split is a build-order
+decision driven by a genuine domain-model gap for Governance Profile defaults, not a
+reinterpretation of the Specification's pipeline shape. "Resource projection" is likewise
+renamed to match the Specification's own terms ("Evaluate Convention" / "Generate outputs").
 
 - **2.1 — Evaluator architecture and public contract** (this document, plus the pipeline
   contracts below). Defines responsibility, inputs/outputs, determinism, dependency
@@ -321,25 +330,36 @@ Specification's own terms ("Evaluate Convention" / "Generate outputs").
   document exists, is linked from `IMPLEMENTATION.md`, `packages/core/src/evaluator/contracts/`
   defines `ContextResolutionInput`, `ContextResolutionResult`, and `ConventionEvaluationInput`,
   and no evaluation behavior has been implemented. **Status: complete.**
-- **2.2 — Context Resolution (Resource Identity and Governance Context)**. Implements the
-  normative resolution of Resource Identity and Governance Context from a Naming Request,
-  Convention Pack, and Evaluation Context: source precedence, attribute authority, protection,
-  and derived-attribute (fallback) handling. No naming projection. **Definition of done:**
-  given a Naming Request, Convention Pack, and Evaluation Context, the evaluator produces a
-  complete, correctly-ordered `ResourceIdentity` and `GovernanceContext`, verified by
-  table-driven precedence tests.
-- **2.3 — Resource Definition selection**. Establishes the boundary where `core` accepts an
+- **2.2 — Context Resolution: Resource Identity**. Implements the normative, deterministic
+  resolution of Resource Identity from a Naming Request, Convention Pack, and Evaluation
+  Context: source precedence, Convention-Pack-declared context authority, protection of
+  authoritative values, and required-attribute detection (see [Context Resolution: Resource
+  Identity (implemented)](#context-resolution-resource-identity-implemented)). No Governance
+  Context resolution, no naming projection. **Definition of done:** given a Naming Request,
+  Convention Pack, and Evaluation Context, `resolveResourceIdentity` produces a correctly
+  precedence-ordered `ResourceIdentity` plus diagnostics for protected-value conflicts and
+  unresolved required attributes, verified by table-driven tests. **Status: complete.**
+- **2.3 — Context Resolution: Governance Context**. Implements the normative resolution of
+  Governance Context, including how a Convention Pack's Governance Profile defaults (see
+  [`specification/context-resolution.md#resolution-sources`](../../specification/context-resolution.md#resolution-sources))
+  are represented and applied — a domain-model addition this increment must make first, since
+  none exists yet (see [Evaluation pipeline](#evaluation-pipeline) above). Composes with 2.2's
+  result into the full `ContextResolutionResult` contract from Milestone 2.1. **Definition of
+  done:** given the same three inputs, the evaluator produces a complete `GovernanceContext`
+  and a combined `ContextResolutionResult`, verified by table-driven tests. **Status: not
+  started.**
+- **2.4 — Resource Definition selection**. Establishes the boundary where `core` accepts an
   already-selected `ResourceDefinition` (matching the resolved `resource_type`) as an
   evaluator input, without loading it itself. **Definition of done:** the evaluator's input
   contract accepts a `ResourceDefinition`; no file, registry, or catalog access exists in
   `core`.
-- **2.4 — Convention Evaluation: projection and output generation**. Applies the selected
+- **2.5 — Convention Evaluation: projection and output generation**. Applies the selected
   Convention Pack's naming component order, abbreviations, and metadata projection to the
   resolved Resource Identity and Governance Context, producing `ConventionOutputs`.
   **Definition of done:** given a resolved identity, governance context, and Convention Pack,
   the evaluator produces a name and metadata consistent with the Convention Pack's declared
   ordering and abbreviations.
-- **2.5 — Convention Evaluation: validation and Convention Result production**. Validates the
+- **2.6 — Convention Evaluation: validation and Convention Result production**. Validates the
   generated outputs and resolved identity against the Resource Definition's constraints and the
   Specification, collects warnings, and assembles the final `ConventionResult`. **Definition of
   done:** the evaluator returns a complete `ConventionResult` whose `validation.valid` correctly
@@ -403,34 +423,111 @@ evaluator's own internal module boundary.
   outputs](#inputs-and-outputs); inventing it now would fabricate a public contract this
   document cannot yet honor truthfully.
 
+## Context Resolution: Resource Identity (implemented)
+
+Milestone 2.2 implements `resolveResourceIdentity`, under
+[`packages/core/src/evaluator/context-resolution/`](../../packages/core/src/evaluator/context-resolution/):
+a pure function `(input: ContextResolutionInput) => ResourceIdentityResolution` that resolves
+only the Resource Identity half of Context Resolution. It reuses the Milestone 2.1
+`ContextResolutionInput` contract unchanged as its input.
+
+**Output.** `ResourceIdentityResolution` is a new internal type — `{ resource_identity:
+ResourceIdentity; diagnostics: ReadonlyArray<ContextResolutionDiagnostic> }` — distinct from the
+Milestone 2.1 `ContextResolutionResult`, which additionally requires a `governance_context` this
+increment does not produce (see [Increment plan](#increment-plan)). A later increment composes
+both halves into `ContextResolutionResult`.
+
+**Failure representation.** Resource Identity is always produced, even when it is incomplete:
+an unresolved required attribute or a rejected protected-value conflict is recorded as a
+`ContextResolutionDiagnostic` (`{ kind: "unresolved-required-attribute" |
+"protected-value-conflict"; attribute: string; message: string }`), never thrown. This is a
+distinct type from `ConventionValidation`/`ConventionValidationFailure` (see [Validation and
+diagnostics](#validation-and-diagnostics)): those describe validation against a Resource
+Definition and the Specification, which has not run yet at this stage. This resolves the
+previous "required-but-unresolvable attribute handling" deferred decision for the identity
+slice: Context Resolution reports the condition; refusing to proceed is Convention Evaluation's
+decision, not this stage's.
+
+**Algorithm.** For each Resource Identity attribute, the resolver: (1) determines a
+context-tier value from Convention Pack defaults, the applicable shared context, and Runtime
+Context, honoring a Convention-Pack-declared `context_authority_rules` entry when one applies
+and falling back to plain precedence otherwise; (2) determines a request-tier value from the
+Naming Request and its `overrides` block, overrides outranking the Naming Request; (3) applies
+the request-tier value unless the attribute is Convention-Pack-protected and a context-tier value
+exists, in which case the context-tier value wins and a conflict is recorded only when the two
+values actually differ; (4) records an unresolved-required-attribute diagnostic when the result
+is still absent and the attribute is Convention-Pack-required. See
+[`specification/context-resolution.md#precedence-authority-and-protection`](../../specification/context-resolution.md#precedence-authority-and-protection)
+and
+[`specification/convention-pack.md#context-authority-rules`](../../specification/convention-pack.md#context-authority-rules).
+
+**Invariants.** Pure and deterministic (same input, same output); never mutates its input;
+never produces a diagnostic for a source that simply does not supply a value (only for an actual
+conflict or an actual unresolved requirement); never derives `deployment.platform` from a
+Resource Definition (Resource Definition selection is a later, sequentially-dependent stage —
+see increment 2.4) — `platform` is resolved like any other attribute, with no special derivation
+logic in this stage.
+
+**Recorded interpretive decision.** `EvaluationContextSource` has four values, but
+`EvaluationContext` exposes only one `runtime_context` field for both Runtime Context and
+Provisioning Context data (see
+[`packages/core/src/model/contexts/evaluation-context.ts`](../../packages/core/src/model/contexts/evaluation-context.ts)).
+The domain model has no structural way to tell them apart. `resolveResourceIdentity` therefore
+treats a `context_authority_rules` entry of either `"runtime-context"` or `"provisioning-context"`
+as referring to the same `evaluation_context.runtime_context` field. This is a recorded
+ambiguity, not a resolved one — a future increment may need to revisit it if the domain model
+ever gains a structural distinction between the two.
+
+**Public API.** `resolveResourceIdentity`, `ResourceIdentityResolution`, and
+`ContextResolutionDiagnostic` are exported only from
+[`packages/core/src/evaluator/index.ts`](../../packages/core/src/evaluator/index.ts) (the
+evaluator's internal module boundary), never from the package root — proven at compile time by
+[`packages/core/test/types/context-resolution-fixtures.ts`](../../packages/core/test/types/context-resolution-fixtures.ts).
+Internal helpers (`resolveAttribute`, per-plane resolvers, `policyFor`) are not exported at all.
+
 ## Code scaffold
 
-`packages/core/src/evaluator/` now exists, containing only the pipeline contracts above — no
-stage implementation, resolver function, or the public `evaluate()` function. Only
-`contracts/` was created under `evaluator/`; no empty folders were created for the
-`context-resolution/`, `resource-definition/`, or `convention-evaluation/` stages illustrated
-in [Dependency boundaries](#dependency-boundaries) — those are created only when the increment
-that implements them begins.
+`packages/core/src/evaluator/` contains the Milestone 2.1 pipeline contracts (`contracts/`) and
+the Milestone 2.2 Resource Identity resolver (`context-resolution/`) — no Governance Context
+resolution, Resource Definition selection, Convention Evaluation, or the public `evaluate()`
+function. No empty folders were created for the `resource-definition/` or
+`convention-evaluation/` stages illustrated in [Dependency boundaries](#dependency-boundaries) —
+those are created only when the increment that implements them begins.
 
 ## Deferred decisions
 
 - **Final evaluator function signature** — aggregate input object versus explicit arguments
   (see [Inputs and outputs](#inputs-and-outputs)). The 2.1 pipeline contracts fix the internal
   stage boundaries but deliberately do not answer this question — none of them are exported
-  from the package root. To be decided in increment 2.2 or later, whichever needs it first.
+  from the package root. `resolveResourceIdentity` (2.2) resolves a narrower question — it
+  reuses `ContextResolutionInput` as-is — without deciding the eventual public `evaluate()`
+  signature. To be decided once a public API is actually needed.
 - **Internal error representation** — no exception hierarchy is designed yet; only the working
   assumption that expected evaluation outcomes belong in `ConventionResult` (see [Validation
-  and diagnostics](#validation-and-diagnostics)).
-- **Required-but-unresolvable attribute handling** — the Specification requires a Convention
-  Pack's `required_attributes` to be available "before Convention Evaluation can proceed" (see
-  [`specification/convention-pack.md#required-attributes`](../../specification/convention-pack.md#required-attributes)),
-  but does not state whether that condition failing should surface as a `ConventionResult`
-  with `validation.valid: false`, or should prevent Convention Evaluation — and therefore a
-  `ConventionResult` — from being produced at all. Deferred to increment 2.2.
+  and diagnostics](#validation-and-diagnostics)). Increment 2.2 applies the same assumption at
+  the Context Resolution stage via `ContextResolutionDiagnostic` (see [Context Resolution:
+  Resource Identity (implemented)](#context-resolution-resource-identity-implemented)).
+- **Required-but-unresolvable attribute handling** — resolved for the identity slice by
+  increment 2.2: an unresolved required attribute is recorded as a
+  `ContextResolutionDiagnostic`, and Resource Identity is still produced (see [Context
+  Resolution: Resource Identity (implemented)](#context-resolution-resource-identity-implemented)).
+  Whether the equivalent condition should prevent a `ConventionResult` from being produced at
+  all remains open for Convention Evaluation (increment 2.6).
+- **Governance Profile defaults representation** — the Specification names "Governance Profile
+  defaults" as a resolution source (see
+  [`specification/context-resolution.md#resolution-sources`](../../specification/context-resolution.md#resolution-sources)),
+  but no defaults-bearing type exists in the domain model yet. Increment 2.3 must decide this
+  before Governance Context resolution can be implemented.
+- **Runtime Context versus Provisioning Context authority disambiguation** — `EvaluationContextSource`
+  has distinct `"runtime-context"` and `"provisioning-context"` values, but `EvaluationContext`
+  exposes only one field for both. Increment 2.2 treats both labels as referring to the same
+  field (see [Context Resolution: Resource Identity
+  (implemented)](#context-resolution-resource-identity-implemented)); revisit only if the domain
+  model ever gains a structural distinction between the two.
 - **Whether input runtime validation belongs in `core` or at an integration boundary** — no
   runtime schema library is selected (already tracked in
   [`IMPLEMENTATION.md#deferred-decisions`](../../IMPLEMENTATION.md#deferred-decisions)).
 - **Exact stage boundaries within Convention Evaluation** — the Specification permits more than
   one faithful split between "generate outputs" and "validate outputs" (for example, whether
-  normalization happens before or interleaved with generation); increments 2.4 and 2.5 above
+  normalization happens before or interleaved with generation); increments 2.5 and 2.6 above
   reflect one faithful reading, not the only one.
