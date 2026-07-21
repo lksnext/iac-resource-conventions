@@ -56,6 +56,29 @@ This is the **implementation foundation** only. As of this writing:
   a concrete task needs them, per the repository's incremental-evolution principle (see
   [`AGENTS.md`](AGENTS.md#repository-evolution)).
 
+## Milestones
+
+- **Milestone 1 — Executable Domain Model: Complete.** Every central Specification concept
+  (Naming Request, Resource Identity, Governance Context, Evaluation Context, Resource
+  Definition, Convention Pack, Convention Result) has a behavior-free, platform-independent
+  public TypeScript contract, exported from the package root only, with no production
+  dependencies and no circular internal dependencies. Traceability against the Specification
+  is recorded in
+  [`docs/architecture/executable-domain-model-traceability.md`](docs/architecture/executable-domain-model-traceability.md).
+  Compile-time contract tests and package-level build/runtime tests pass (see [Testing and
+  fixture strategy](#testing-and-fixture-strategy)). No Reference Evaluator behavior exists.
+- **Milestone 2 — Reference Evaluator: In progress.** The deterministic, platform-independent
+  implementation of Context Resolution and Convention Evaluation. Architecture defined in
+  [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md).
+  - Current increment: **2.1 — Evaluator architecture and public contract** (architecture and
+    module boundary only; no behavior).
+  - Next increment: **2.2 — Context Resolution** (Resource Identity and Governance Context).
+  - Planned: **2.3 — Resource Definition selection**, **2.4 — Convention Evaluation:
+    projection and output generation**, **2.5 — Convention Evaluation: validation and
+    Convention Result production**.
+  - Deferred: see
+    [`docs/architecture/reference-evaluator.md#deferred-decisions`](docs/architecture/reference-evaluator.md#deferred-decisions).
+
 ## Package Naming Policy
 
 The GitHub repository name, npm scope, package family, and package suffix are four
