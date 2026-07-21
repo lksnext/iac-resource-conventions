@@ -21,6 +21,10 @@ the *shape* of the concepts the Specification defines, not how they are evaluate
 Behavior is the responsibility of the Reference Evaluator, described in
 [Relationship with the Specification](#relationship-with-the-specification) below.
 
+The mapping between normative Specification concepts and public TypeScript contracts is
+maintained in the [Executable Domain Model Traceability](executable-domain-model-traceability.md)
+document.
+
 ## Design Goals
 
 - **Specification-driven development** — every type in the model traces back to a concept

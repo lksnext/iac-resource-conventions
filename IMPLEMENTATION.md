@@ -302,7 +302,10 @@ packages/core/
 The initial, behavior-free TypeScript contracts for the Executable Domain Model (see
 [`docs/architecture/executable-domain-model.md`](docs/architecture/executable-domain-model.md))
 are implemented under `packages/core/src/model/`, one subdirectory per concept, following
-that document's proposed layout:
+that document's proposed layout. See
+[`docs/architecture/executable-domain-model-traceability.md`](docs/architecture/executable-domain-model-traceability.md)
+for the full Specification-concept-to-contract mapping; the summary table below is a quick
+overview only.
 
 | Concept | Contract(s) | Specification source |
 | --- | --- | --- |
