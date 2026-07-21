@@ -77,10 +77,18 @@ This is the **implementation foundation** only. As of this writing:
     [`packages/core/src/evaluator/contracts/`](packages/core/src/evaluator/contracts/); no
     evaluation behavior). See
     [`docs/architecture/reference-evaluator.md#pipeline-contracts-implemented`](docs/architecture/reference-evaluator.md#pipeline-contracts-implemented).
-  - Current increment: **2.2 — Context Resolution** (Resource Identity and Governance
-    Context) — not yet started.
-  - Planned: **2.3 — Resource Definition selection**, **2.4 — Convention Evaluation:
-    projection and output generation**, **2.5 — Convention Evaluation: validation and
+  - Completed increment: **2.2 — Context Resolution: Resource Identity** (`resolveResourceIdentity`
+    under
+    [`packages/core/src/evaluator/context-resolution/`](packages/core/src/evaluator/context-resolution/):
+    deterministic resolution precedence, Convention-Pack-declared context authority and
+    protection, and required-attribute diagnostics, reusing `ContextResolutionInput`
+    unchanged; no Governance Context resolution). See
+    [`docs/architecture/reference-evaluator.md#context-resolution-resource-identity-implemented`](docs/architecture/reference-evaluator.md#context-resolution-resource-identity-implemented).
+  - Current increment: **2.3 — Context Resolution: Governance Context** — not yet started.
+    Requires first deciding how a Convention Pack's Governance Profile defaults are
+    represented in the domain model (no such type exists yet).
+  - Planned: **2.4 — Resource Definition selection**, **2.5 — Convention Evaluation:
+    projection and output generation**, **2.6 — Convention Evaluation: validation and
     Convention Result production**.
   - Deferred: see
     [`docs/architecture/reference-evaluator.md#deferred-decisions`](docs/architecture/reference-evaluator.md#deferred-decisions).

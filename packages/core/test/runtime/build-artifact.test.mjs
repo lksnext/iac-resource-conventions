@@ -17,14 +17,17 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const packageRoot = path.dirname(path.dirname(path.dirname(fileURLToPath(import.meta.url))));
 const distIndex = path.join(packageRoot, "dist", "index.js");
 const distDeclaration = path.join(packageRoot, "dist", "index.d.ts");
 
 test("the built package exposes only its intentional runtime surface", async () => {
-  const builtModule = await import(distIndex);
+  // `import()` requires a file:// URL for absolute paths on Windows (a raw
+  // "D:\..." path is misread as a URL with scheme "d"), so convert explicitly
+  // rather than relying on a platform-specific behavior of dynamic import.
+  const builtModule = await import(pathToFileURL(distIndex).href);
 
   assert.deepEqual(
     Object.keys(builtModule).sort(),
