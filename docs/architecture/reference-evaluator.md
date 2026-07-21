@@ -157,18 +157,21 @@ sequential sub-stages — the Specification describes them as the two outputs of
 several precedence-order entries (for example Governance Profile defaults) interleave with
 identity-related sources in the same ordered list (see
 [`specification/context-resolution.md#resolution-precedence`](../../specification/context-resolution.md#resolution-precedence)).
-This remains the conceptual model. The implementation, however, delivers the two outputs as two
-separate increments (see [Increment plan](#increment-plan)): Governance Context resolution
-depends on a "Governance Profile defaults" resolution source that has no corresponding
-defaults-bearing type anywhere in the domain model yet — `GovernanceContext.profile` is only an
-identifier reference (see
+This remains the conceptual model. The implementation, however, delivered the two outputs as two
+separate increments (see [Increment plan](#increment-plan)): increment 2.2 resolved Resource
+Identity, and increment 2.3 resolved Governance Context reusing the same input contract and the
+same `resolveAttribute` primitive. One Specification-named precedence source, "Governance
+Profile defaults," has no corresponding defaults-bearing type anywhere in the domain model —
+`GovernanceContext.profile` is only an identifier reference (see
 [`packages/core/src/model/governance/governance-context.ts`](../../packages/core/src/model/governance/governance-context.ts))
-— so implementing it now would require inventing a domain concept the Specification has not yet
-been shown to need. Splitting the implementation into two increments is a build-order decision;
-it does not change the conceptual pipeline, which still has exactly two stages, Context
-Resolution and Convention Evaluation. This document intentionally does not describe
-algorithm-level detail (for example, exactly how each precedence rule is implemented) — that
-belongs to the increment that implements it.
+— so increment 2.3 deliberately did not implement that one source rather than inventing a domain
+concept the Specification has not yet been shown to need (see [Context Resolution: Governance
+Context (implemented)](#context-resolution-governance-context-implemented) and [Deferred
+decisions](#deferred-decisions)). Splitting the implementation into two increments is a
+build-order decision; it does not change the conceptual pipeline, which still has exactly two
+stages, Context Resolution and Convention Evaluation. This document intentionally does not
+describe algorithm-level detail (for example, exactly how each precedence rule is implemented)
+— that belongs to the increment that implements it.
 
 ## Dependency boundaries
 
@@ -180,9 +183,9 @@ An illustrative internal structure, mirroring the Executable Domain Model's pack
 packages/core/src/
     model/
     evaluator/
-        context-resolution/        # Resource Identity + Governance Context (increment 2.2)
-        resource-definition/       # selection boundary (increment 2.3)
-        convention-evaluation/     # projection, output generation, validation (2.4, 2.5)
+        context-resolution/        # Resource Identity (2.2) + Governance Context (2.3)
+        resource-definition/       # selection boundary (increment 2.4)
+        convention-evaluation/     # projection, output generation, validation (2.5, 2.6)
         index.ts
 ```
 
@@ -339,15 +342,19 @@ renamed to match the Specification's own terms ("Evaluate Convention" / "Generat
   Convention Pack, and Evaluation Context, `resolveResourceIdentity` produces a correctly
   precedence-ordered `ResourceIdentity` plus diagnostics for protected-value conflicts and
   unresolved required attributes, verified by table-driven tests. **Status: complete.**
-- **2.3 — Context Resolution: Governance Context**. Implements the normative resolution of
-  Governance Context, including how a Convention Pack's Governance Profile defaults (see
-  [`specification/context-resolution.md#resolution-sources`](../../specification/context-resolution.md#resolution-sources))
-  are represented and applied — a domain-model addition this increment must make first, since
-  none exists yet (see [Evaluation pipeline](#evaluation-pipeline) above). Composes with 2.2's
-  result into the full `ContextResolutionResult` contract from Milestone 2.1. **Definition of
-  done:** given the same three inputs, the evaluator produces a complete `GovernanceContext`
-  and a combined `ContextResolutionResult`, verified by table-driven tests. **Status: not
-  started.**
+- **2.3 — Context Resolution: Governance Context**. Implements the normative, deterministic
+  resolution of Governance Context from a Naming Request and Convention Pack, reusing the same
+  `ContextResolutionInput` contract `resolveResourceIdentity` consumes (see [Context Resolution:
+  Governance Context (implemented)](#context-resolution-governance-context-implemented)). Two
+  Specification-named resolution sources — Evaluation Context and Governance Profile defaults —
+  are not implemented, since the domain model has no governance-bearing Evaluation Context
+  field and no defaults-bearing type for a selected Governance Profile; inventing either was out
+  of scope (see [Deferred decisions](#deferred-decisions)). **Definition of done:** given a
+  Naming Request and Convention Pack, `resolveGovernanceContext` produces a correctly
+  precedence-ordered `GovernanceContext` plus diagnostics for protected-value conflicts and
+  unresolved required attributes, verified by table-driven tests; the two Milestone 2.2/2.3
+  outputs compose into the full `ContextResolutionResult` contract from Milestone 2.1. **Status:
+  complete.**
 - **2.4 — Resource Definition selection**. Establishes the boundary where `core` accepts an
   already-selected `ResourceDefinition` (matching the resolved `resource_type`) as an
   evaluator input, without loading it itself. **Definition of done:** the evaluator's input
@@ -485,12 +492,93 @@ evaluator's internal module boundary), never from the package root — proven at
 [`packages/core/test/types/context-resolution-fixtures.ts`](../../packages/core/test/types/context-resolution-fixtures.ts).
 Internal helpers (`resolveAttribute`, per-plane resolvers, `policyFor`) are not exported at all.
 
+## Context Resolution: Governance Context (implemented)
+
+Milestone 2.3 implements `resolveGovernanceContext`, alongside `resolveResourceIdentity` under
+[`packages/core/src/evaluator/context-resolution/`](../../packages/core/src/evaluator/context-resolution/):
+a pure function `(input: ContextResolutionInput) => GovernanceContextResolution` that resolves
+the Governance Context half of Context Resolution. It reuses the same Milestone 2.1
+`ContextResolutionInput` contract unchanged, and the same `resolveAttribute` primitive
+`resolveResourceIdentity` uses, applied to Governance Context's four attributes (`owner`,
+`managed_by`, `cost_center`, `profile`).
+
+**Output.** `GovernanceContextResolution` is a new internal type — `{ governance_context:
+GovernanceContext; diagnostics: ReadonlyArray<ContextResolutionDiagnostic> }` — distinct from
+the Milestone 2.1 `ContextResolutionResult`, which additionally requires a `resource_identity`
+produced independently by `resolveResourceIdentity`. A caller composes both halves into
+`ContextResolutionResult` at the call site; no new orchestration function is introduced by this
+increment (see [Public API principles](#public-api-principles) — internal evaluator stages
+remain implementation details until a concrete consumer need justifies more).
+
+**Candidate sources implemented.** Convention Pack `governance_defaults` (lowest precedence,
+including a default `profile`), the Naming Request's `governance` block, and its
+`overrides.governance` block (highest precedence) — see
+[`specification/context-resolution.md#resolution-sources`](../../specification/context-resolution.md#resolution-sources).
+
+**Candidate sources not implemented, and why.** Two Specification-named sources are
+deliberately absent rather than silently ignored:
+
+- **Evaluation Context.** `EvaluationContext`, `RuntimeContext`, `SharedOrganizationalContext`,
+  and `SharedDeploymentContext` model only organizational and deployment attributes (see
+  [`packages/core/src/model/contexts/`](../../packages/core/src/model/contexts/)); none carries
+  a governance-bearing field. Governance therefore has only one context-tier candidate —
+  Convention Pack defaults — in the current domain model. A `context_authority_rules` entry
+  declared for a governance attribute cannot match any Evaluation Context candidate and falls
+  back to plain precedence, exactly as if no authority rule had been declared; this degrades
+  safely rather than throwing (verified by a dedicated test).
+- **Governance Profile defaults.** The Specification names this as a distinct precedence-5
+  source — defaults declared by the *selected* Governance Profile itself, not by the Convention
+  Pack (see
+  [`specification/context-resolution.md#resolution-sources`](../../specification/context-resolution.md#resolution-sources)).
+  No defaults-bearing type exists for it: `GovernanceProfileId` is a bare identifier alias (see
+  [`packages/core/src/model/common/identifiers.ts`](../../packages/core/src/model/common/identifiers.ts)).
+  Inventing one was out of scope for this increment (see [Deferred decisions](#deferred-decisions));
+  only the selected profile identifier itself is resolved, the same as any other attribute.
+
+**Failure representation.** Governance Context is always produced, even when it is incomplete or
+empty: an unresolved required attribute or a rejected protected-value conflict is recorded as a
+`ContextResolutionDiagnostic` — the same type `resolveResourceIdentity` uses — never thrown.
+
+**Relationship with Resource Identity.** `resolveGovernanceContext` reads no Resource Identity
+attribute and produces none: it consumes only `naming_request.governance`,
+`naming_request.overrides.governance`, and `convention_pack.governance_defaults`. This matches
+the Specification's statement that the two models "evolve independently" (see
+[`specification/governance-context.md#relationship-with-resource-identity`](../../specification/governance-context.md#relationship-with-resource-identity)).
+A dedicated integration test proves the two resolvers compose into `ContextResolutionResult` and
+neither reads the other's request fields.
+
+**Relationship with Convention Pack selection.** The same selected Convention Pack supplies both
+identity defaults and governance defaults; `governance.profile` remains an independent selector
+from `convention` (see
+[`specification/naming-request.md`](../../specification/naming-request.md)) — selecting a
+Convention Pack does not select a Governance Profile, and this resolver does not conflate the
+two. `required_attributes`, `override_policy.protected_attributes`, and `context_authority_rules`
+are all attribute-generic, dotted-path-keyed policies already defined by `ConventionPack` (see
+[`packages/core/src/model/conventions/convention-pack.ts`](../../packages/core/src/model/conventions/convention-pack.ts));
+no governance-specific policy shape was added. A dedicated test proves an unrelated (non-
+governance) attribute path in any of these three policies does not affect governance resolution.
+
+**Invariants.** Pure and deterministic (same input, same output); never mutates its input;
+never produces a diagnostic for a source that simply does not supply a value; never invents a
+governance default not supplied by some source; never infers a Governance Profile from a
+resource or provider name.
+
+**Governance inheritance.** The Specification does not define a governance inheritance model
+(distinct from ordinary precedence over Convention Pack defaults, Naming Request values, and
+overrides); none is implemented here, consistent with not inventing behavior the Specification
+does not define.
+
+**Public API.** `resolveGovernanceContext` and `GovernanceContextResolution` are exported only
+from [`packages/core/src/evaluator/index.ts`](../../packages/core/src/evaluator/index.ts), never
+from the package root — proven at compile time by
+[`packages/core/test/types/governance-resolution-fixtures.ts`](../../packages/core/test/types/governance-resolution-fixtures.ts).
+
 ## Code scaffold
 
 `packages/core/src/evaluator/` contains the Milestone 2.1 pipeline contracts (`contracts/`) and
-the Milestone 2.2 Resource Identity resolver (`context-resolution/`) — no Governance Context
-resolution, Resource Definition selection, Convention Evaluation, or the public `evaluate()`
-function. No empty folders were created for the `resource-definition/` or
+the Milestone 2.2/2.3 Context Resolution resolvers (`context-resolution/`: `resolveResourceIdentity`
+and `resolveGovernanceContext`) — no Resource Definition selection, Convention Evaluation, or the
+public `evaluate()` function. No empty folders were created for the `resource-definition/` or
 `convention-evaluation/` stages illustrated in [Dependency boundaries](#dependency-boundaries) —
 those are created only when the increment that implements them begins.
 
@@ -508,16 +596,27 @@ those are created only when the increment that implements them begins.
   the Context Resolution stage via `ContextResolutionDiagnostic` (see [Context Resolution:
   Resource Identity (implemented)](#context-resolution-resource-identity-implemented)).
 - **Required-but-unresolvable attribute handling** — resolved for the identity slice by
-  increment 2.2: an unresolved required attribute is recorded as a
-  `ContextResolutionDiagnostic`, and Resource Identity is still produced (see [Context
-  Resolution: Resource Identity (implemented)](#context-resolution-resource-identity-implemented)).
+  increment 2.2, and applied identically to governance attributes by increment 2.3: an
+  unresolved required attribute is recorded as a `ContextResolutionDiagnostic`, and the
+  corresponding canonical model (`ResourceIdentity` or `GovernanceContext`) is still produced
+  (see [Context Resolution: Resource Identity (implemented)](#context-resolution-resource-identity-implemented)
+  and [Context Resolution: Governance Context (implemented)](#context-resolution-governance-context-implemented)).
   Whether the equivalent condition should prevent a `ConventionResult` from being produced at
   all remains open for Convention Evaluation (increment 2.6).
 - **Governance Profile defaults representation** — the Specification names "Governance Profile
   defaults" as a resolution source (see
   [`specification/context-resolution.md#resolution-sources`](../../specification/context-resolution.md#resolution-sources)),
-  but no defaults-bearing type exists in the domain model yet. Increment 2.3 must decide this
-  before Governance Context resolution can be implemented.
+  but no defaults-bearing type exists in the domain model yet — `GovernanceProfileId` remains a
+  bare identifier alias. Increment 2.3 deliberately did not invent one; only the selected
+  profile identifier itself is resolved, the same as any other Convention-Pack-defaulted
+  attribute. Introducing this type remains open for a future increment, once a concrete need
+  demonstrates what a Governance Profile's own defaults should contain.
+- **Evaluation Context has no governance-bearing field** — a second, related domain-model gap
+  recorded by increment 2.3: `EvaluationContext` and its constituent types carry only
+  organizational and deployment attributes, never governance ones (see [Context Resolution:
+  Governance Context (implemented)](#context-resolution-governance-context-implemented)). Adding
+  one remains open for a future increment, alongside the Governance Profile defaults question
+  above, since both would need to be considered together.
 - **Runtime Context versus Provisioning Context authority disambiguation** — `EvaluationContextSource`
   has distinct `"runtime-context"` and `"provisioning-context"` values, but `EvaluationContext`
   exposes only one field for both. Increment 2.2 treats both labels as referring to the same
