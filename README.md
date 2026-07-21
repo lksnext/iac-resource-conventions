@@ -171,6 +171,8 @@ full allowlist policy and why it is a separate concern from `npm audit`.
 - [`IMPLEMENTATION.md`](IMPLEMENTATION.md) — implementation monorepo architecture.
 - [`docs/architecture/executable-domain-model.md`](docs/architecture/executable-domain-model.md)
   — architecture bridging the Specification and the future Reference Evaluator.
+- [`docs/architecture/executable-domain-model-traceability.md`](docs/architecture/executable-domain-model-traceability.md)
+  — Specification-concept-to-public-contract traceability matrix.
 - [`docs/`](docs/) — further reference documentation (planned).
 - Convention Packs — planned.
 - Reference Documentation — planned.
