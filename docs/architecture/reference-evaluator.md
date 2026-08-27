@@ -184,10 +184,15 @@ packages/core/src/
     model/
     evaluator/
         context-resolution/        # Resource Identity (2.2) + Governance Context (2.3)
-        resource-definition/       # selection boundary (increment 2.4)
         convention-evaluation/     # projection, output generation, validation (2.5, 2.6)
         index.ts
 ```
+
+No `resource-definition/` folder is illustrated: increment 2.4 introduced no code (see
+[Increment plan](#increment-plan)) — the Resource Definition selection boundary is already fully
+expressed by the `resource_definition` field on the Milestone 2.1 `ConventionEvaluationInput`
+contract, and `core` never loads a Resource Definition itself (see
+[Non-responsibilities](#non-responsibilities)).
 
 This is illustrative, not a commitment: folders are created only when the increment that needs
 them begins (see [Code scaffold](#code-scaffold) below — none exist yet).
@@ -355,11 +360,26 @@ renamed to match the Specification's own terms ("Evaluate Convention" / "Generat
   unresolved required attributes, verified by table-driven tests; the two Milestone 2.2/2.3
   outputs compose into the full `ContextResolutionResult` contract from Milestone 2.1. **Status:
   complete.**
-- **2.4 — Resource Definition selection**. Establishes the boundary where `core` accepts an
-  already-selected `ResourceDefinition` (matching the resolved `resource_type`) as an
-  evaluator input, without loading it itself. **Definition of done:** the evaluator's input
-  contract accepts a `ResourceDefinition`; no file, registry, or catalog access exists in
-  `core`.
+- **2.4 — Resource Convention Preparation**. Before this increment began, a mandatory design
+  gate asked whether a dedicated preparation step — bundling the resolved `ContextResolutionResult`
+  with the selected `ResourceDefinition` and `ConventionPack` ahead of Resource Projection, or
+  deriving a resource-specific subset of Convention Pack policy (for example, which
+  `naming_component_order` entries apply to a given Resource Identity) — would establish a
+  genuine, Specification-backed invariant not already represented by the existing domain and
+  contract types. The answer is **no**: the Milestone 2.1 `ConventionEvaluationInput` contract
+  already bundles `ContextResolutionResult`, `ResourceDefinition`, and `ConventionPack` for
+  Convention Evaluation, and every Convention Pack field a projection step needs
+  (`naming_component_order`, `abbreviations`, `override_policy`, and so on) is already a flat,
+  directly-readable field — determining which apply to a specific resource is projection
+  behavior belonging to increment 2.5, not a separate resolution step (see [Contracts
+  considered and rejected](#contracts-considered-and-rejected)). This increment therefore
+  introduces no new module, function, or contract. It also closes out Resource Definition
+  selection — establishing the boundary where `core` accepts an already-selected
+  `ResourceDefinition` (matching the resolved `resource_type`) as an evaluator input, without
+  loading it itself — whose definition of done (the evaluator's input contract accepts a
+  `ResourceDefinition`; no file, registry, or catalog access exists in `core`) was already
+  satisfied when increment 2.1 introduced `ConventionEvaluationInput`. **Status: complete —
+  no code introduced; the design gate is the deliverable.**
 - **2.5 — Convention Evaluation: projection and output generation**. Applies the selected
   Convention Pack's naming component order, abbreviations, and metadata projection to the
   resolved Resource Identity and Governance Context, producing `ConventionOutputs`.
@@ -383,8 +403,8 @@ these are types only.
 | Contract | Composes | Produced by | Consumed by | Visibility |
 | --- | --- | --- | --- | --- |
 | `ContextResolutionInput` | `NamingRequest`, `ConventionPack`, `EvaluationContext` | The caller of Context Resolution (increment 2.2) | Context Resolution (increment 2.2) | Internal |
-| `ContextResolutionResult` | `ResourceIdentity`, `GovernanceContext` | Context Resolution (increment 2.2) | Resource Definition selection (2.3); Convention Evaluation (2.4–2.5), via `ConventionEvaluationInput` | Internal |
-| `ConventionEvaluationInput` | `ContextResolutionResult`, `ResourceDefinition`, `ConventionPack` | The caller of Convention Evaluation, once Resource Definition selection (2.3) has run | Convention Evaluation (increments 2.4–2.5) | Internal |
+| `ContextResolutionResult` | `ResourceIdentity`, `GovernanceContext` | Context Resolution (increment 2.2) | Resource Definition selection (2.4); Convention Evaluation (2.5–2.6), via `ConventionEvaluationInput` | Internal |
+| `ConventionEvaluationInput` | `ContextResolutionResult`, `ResourceDefinition`, `ConventionPack` | The caller of Convention Evaluation, once Resource Definition selection (2.4) has run | Convention Evaluation (increments 2.5–2.6) | Internal |
 
 Each is required-field-only (unlike the domain contracts it composes, whose own attributes stay
 optional to mirror their permissive JSON Schemas): a stage-boundary contract represents "this
@@ -429,6 +449,16 @@ evaluator's own internal module boundary.
   This is exactly the still-open public function signature question recorded in [Inputs and
   outputs](#inputs-and-outputs); inventing it now would fabricate a public contract this
   document cannot yet honor truthfully.
+- **A dedicated "Resource Convention Preparation" contract** (variously named
+  `ResourceConventionData` or similar), produced by a new increment 2.4 step between Context
+  Resolution and Resource Projection (2.5) — rejected, per the increment 2.4 design gate (see
+  [Increment plan](#increment-plan)). It would either duplicate `ConventionEvaluationInput`
+  (already bundling `ContextResolutionResult`, `ResourceDefinition`, and `ConventionPack`
+  since increment 2.1) or attempt to precompute which Convention Pack rules apply to a specific
+  resource — a projection concern that belongs to increment 2.5, not a Context-Resolution-like
+  resolution step the Specification does not describe. This is the same reasoning already
+  recorded above for "a 'resolved convention set' wrapping the selected Resource Definition and
+  Convention Pack alone."
 
 ## Context Resolution: Resource Identity (implemented)
 
@@ -577,10 +607,11 @@ from the package root — proven at compile time by
 
 `packages/core/src/evaluator/` contains the Milestone 2.1 pipeline contracts (`contracts/`) and
 the Milestone 2.2/2.3 Context Resolution resolvers (`context-resolution/`: `resolveResourceIdentity`
-and `resolveGovernanceContext`) — no Resource Definition selection, Convention Evaluation, or the
-public `evaluate()` function. No empty folders were created for the `resource-definition/` or
-`convention-evaluation/` stages illustrated in [Dependency boundaries](#dependency-boundaries) —
-those are created only when the increment that implements them begins.
+and `resolveGovernanceContext`) — no Convention Evaluation or the public `evaluate()` function.
+Increment 2.4 (Resource Convention Preparation / Resource Definition selection) added no folder
+or code at all, per its design gate (see [Increment plan](#increment-plan)). No empty folder was
+created for the `convention-evaluation/` stage illustrated in [Dependency
+boundaries](#dependency-boundaries) — it is created only when increment 2.5 begins.
 
 ## Deferred decisions
 

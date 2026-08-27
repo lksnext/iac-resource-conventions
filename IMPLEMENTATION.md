@@ -95,9 +95,19 @@ This is the **implementation foundation** only. As of this writing:
     defaults-bearing type for a selected Governance Profile; both are documented
     limitations, not silent omissions). See
     [`docs/architecture/reference-evaluator.md#context-resolution-governance-context-implemented`](docs/architecture/reference-evaluator.md#context-resolution-governance-context-implemented).
-  - Current increment: **2.4 — Resource Definition selection** — not yet started.
-  - Planned: **2.5 — Convention Evaluation: projection and output generation**, **2.6 —
-    Convention Evaluation: validation and Convention Result production**.
+  - Completed increment: **2.4 — Resource Convention Preparation** (design gate only: concluded
+    that no dedicated preparation contract or module is justified, since the Milestone 2.1
+    `ConventionEvaluationInput` contract already bundles `ContextResolutionResult`,
+    `ResourceDefinition`, and `ConventionPack`, and any resource-specific filtering of Convention
+    Pack policy — for example, which `naming_component_order` entries apply — is Resource
+    Projection behavior for increment 2.5, not a separate resolution step. This closes out
+    Resource Definition selection too: its definition of done was already satisfied when
+    increment 2.1 introduced `ConventionEvaluationInput`. No new code, folder, or contract was
+    introduced). See
+    [`docs/architecture/reference-evaluator.md#increment-plan`](docs/architecture/reference-evaluator.md#increment-plan).
+  - Current increment: **2.5 — Convention Evaluation: projection and output generation** — not
+    yet started.
+  - Planned: **2.6 — Convention Evaluation: validation and Convention Result production**.
   - Deferred: see
     [`docs/architecture/reference-evaluator.md#deferred-decisions`](docs/architecture/reference-evaluator.md#deferred-decisions).
 
