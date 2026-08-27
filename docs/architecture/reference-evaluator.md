@@ -766,6 +766,13 @@ genuine, cited, blocking gap in the Specification or Executable Domain Model, no
 each is also documented as a "deliberately not implemented" case directly in
 [`evaluate-convention.ts`](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts).
 
+Milestone 2.6.1 formalizes this same boundary — every capability named in this document,
+classified consistently as Executable, Modelled but not executable, Conceptual only, External,
+or Deferred, with full repository citations — in
+[`docs/architecture/convention-evaluation-executability.md`](convention-evaluation-executability.md).
+That document is the authoritative, detailed status reference; this section is not repeated or
+superseded by it.
+
 **What the implemented rule checks.** For every dotted attribute path in the selected
 Convention Pack's `required_attributes`, `evaluateConvention` resolves its value against the
 `ContextResolutionResult` — spanning `ResourceIdentity`'s three planes (organizational,
@@ -894,3 +901,10 @@ folder or code at all, per its design gate (see [Increment plan](#increment-plan
   diagnostics — and, later, Convention Evaluation's own — into `ConventionResult.explanation` and
   `ConventionResult.warnings` remains open for a future increment, once naming rendering,
   abbreviation application, and normalization exist to produce warning-worthy conditions.
+- **Full executability status** — the deferred items above are restated, alongside every other
+  Convention Evaluation capability the Specification names, with full citations and an explicit
+  prioritization and recommendation, in
+  [`docs/architecture/convention-evaluation-executability.md`](convention-evaluation-executability.md)
+  (Milestone 2.6.1). Consult that document for the authoritative, capability-by-capability status;
+  this list remains the narrower, increment-scoped record of decisions made while implementing
+  2.2–2.6.
