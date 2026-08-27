@@ -121,22 +121,6 @@ test("an absent, required component is still included, with value undefined, not
   ]);
 });
 
-test("an unrecognized naming_component_order entry is omitted, regardless of required_attributes", () => {
-  const resourceIdentity = deepFreeze({ functional: { service: "ingestion" } });
-  const conventionPack = deepFreeze({
-    id: "test-pack",
-    naming_component_order: ["functional.service", "governance.owner"],
-    required_attributes: ["governance.owner"],
-  });
-
-  const { components } = projectResource(resourceIdentity, conventionPack);
-
-  assert.deepEqual(
-    components.map((component) => component.attribute),
-    ["functional.service"],
-  );
-});
-
 test("no naming_component_order declared projects no components", () => {
   const resourceIdentity = deepFreeze({ functional: { service: "ingestion" } });
   const conventionPack = deepFreeze({ id: "test-pack" });
@@ -153,7 +137,7 @@ test("projection does not apply an abbreviation, even when one is declared for a
   const conventionPack = deepFreeze({
     id: "test-pack",
     naming_component_order: ["deployment.environment"],
-    abbreviations: { "deployment.environment": "env" },
+    abbreviations: { "deployment.environment": { production: "env" } },
   });
 
   const { components } = projectResource(resourceIdentity, conventionPack);

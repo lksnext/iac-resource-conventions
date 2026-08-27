@@ -11,10 +11,12 @@
 // algorithm, assert a generated name, or imply any Reference Evaluator behavior.
 
 import type {
+  CanonicalResourceIdentityAttribute,
   ConventionPack,
   ConventionResult,
   EvaluationContext,
   GovernanceContext,
+  NamingCasing,
   NamingRequest,
   ProvisioningContext,
   ResourceDefinition,
@@ -137,9 +139,18 @@ export const conventionPack: ConventionPack = {
     "deployment.environment",
     "functional.resource_type",
   ],
-  naming_component_order: ["organizational.system", "functional.service", "deployment.environment"],
+  naming_component_order: [
+    "organizational.system",
+    "functional.service",
+    "deployment.environment",
+    "functional.resource_type",
+  ],
+  separator: "-",
+  casing: "lower",
   abbreviations: {
-    environment: "env",
+    "deployment.environment": {
+      production: "prod",
+    },
   },
   context_authority_rules: {
     "deployment.deployment_scope": "provisioning-context",
@@ -153,7 +164,7 @@ export const conventionResult: ConventionResult = {
   resource_identity: resolvedIdentity,
   governance_context: resolvedGovernance,
   outputs: {
-    name: "telemetry-platform-ingestion-production-storage-s3",
+    name: "telemetry-platform-ingestion-prod-aws_s3_bucket",
     metadata: {
       tags: {
         system: "telemetry-platform",
@@ -193,3 +204,10 @@ resolvedIdentity.organizational = { system: "different-system" };
 // @ts-expect-error -- `required_attributes` is a ReadonlyArray; consumers must not
 // mutate a Convention Pack's declared attribute list.
 conventionPack.required_attributes?.push("organizational.business_unit");
+
+// @ts-expect-error -- canonical naming references are a closed v1.1 vocabulary;
+// governance attributes are not valid naming references.
+export const invalidNamingReference: CanonicalResourceIdentityAttribute = "governance.owner";
+
+// @ts-expect-error -- the casing vocabulary is closed to preserve/lower/upper.
+export const invalidNamingCasing: NamingCasing = "camel";

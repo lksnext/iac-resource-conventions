@@ -752,19 +752,20 @@ named concept:
 | Candidate rule | Specification source | Executable today? |
 | --- | --- | --- |
 | Required-attribute completeness | [`specification/convention-pack.md#required-attributes`](../../specification/convention-pack.md#required-attributes) | **Yes** — implemented |
-| Naming rendering (joining projected components into a name) | [`specification/convention-result.md#convention-evaluation-pipeline`](../../specification/convention-result.md#convention-evaluation-pipeline) | No — no separator or casing rule is defined anywhere |
-| Abbreviation application | [`ConventionPack.abbreviations`](../../packages/core/src/model/conventions/convention-pack.ts) | No — the Specification never defines what text an abbreviation replaces |
+| Naming rendering (joining projected components into a name) | [`specification/convention-result.md#convention-evaluation-pipeline`](../../specification/convention-result.md#convention-evaluation-pipeline) | **Yes** — implemented by `evaluateName` |
+| Abbreviation application | [`specification/convention-pack.md#abbreviations`](../../specification/convention-pack.md#abbreviations) | **Yes** — implemented by `applyAbbreviation` |
 | Normalization | [`ResourceDefinition.rendering_constraints.normalization`](../../packages/core/src/model/definitions/resource-definition.ts) | No — documented as free text, not a machine-executable rule |
-| Separators, casing, truncation, hashing | *(none — not named as structured data anywhere)* | No — no field or normative rule defines any of these |
+| Separators and casing | [`specification/convention-pack.md#separator`](../../specification/convention-pack.md#separator), [`specification/convention-pack.md#casing`](../../specification/convention-pack.md#casing) | **Yes** — implemented by `evaluateName` via `separator` and `applyCasing` |
+| Truncation and hashing | *(none — not named as structured data anywhere)* | No — no field or normative rule defines any of these |
 | Metadata projection (Tags, Labels, Annotations) | [`specification/convention-result.md#conceptual-contents`](../../specification/convention-result.md#conceptual-contents) | No — `ConventionPack` has no metadata projection mapping field at all |
 | Resource Definition technical-constraint validation (`max_length`, `allowed_characters`) | [`ResourceDefinition.rendering_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | No — validating these requires a rendered name, which naming rendering above cannot yet produce |
 | Placement Constraint validation | [`ResourceDefinition.placement_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | No — documented as free-form prose with no formal grammar |
 | Collision / uniqueness handling | [`ResourceDefinition.identity_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | No — proving uniqueness needs an external registry, which the evaluator must not consult |
 
-Required-attribute completeness is the only row this increment implements; every other row is a
-genuine, cited, blocking gap in the Specification or Executable Domain Model, not an oversight —
-each is also documented as a "deliberately not implemented" case directly in
-[`evaluate-convention.ts`](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts).
+Required-attribute completeness and executable naming are now implemented; truncation, hashing,
+metadata projection, Resource Definition constraint validation, Placement Constraints, and
+collision handling remain the cited blocking gaps. Each is also documented as a "deliberately not
+implemented" case directly in [`evaluate-convention.ts`](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts).
 
 Milestone 2.6.1 formalizes this same boundary — every capability named in this document,
 classified consistently as Executable, Modelled but not executable, Conceptual only, External,
@@ -798,14 +799,14 @@ fails (see [Validation and diagnostics](#validation-and-diagnostics)). `validati
 `false` and `validation.failures` contains one `ConventionValidationFailure` per unresolved
 required attribute; `evaluateConvention` never throws for this condition.
 
-**Output shape.** `outputs` is always `{}` in this increment: no `name` and no `metadata` are
-generated, since every rule that would produce either (see the rule inventory above) remains
-blocked. `warnings` is never populated, since every currently-implementable warning-worthy
-transformation (for example, normalization) is itself unimplemented. `resource_identity` and
-`governance_context` are copied through from the `ContextResolutionResult` unchanged.
-`resource_definition` is accepted on the input but deliberately not read anywhere in this
-increment's logic, since every `ResourceDefinition`-based rule is currently blocked (see the rule
-inventory above); this is a documented, temporary limitation, not an oversight.
+**Output shape.** `outputs.name` is now populated when the selected Convention Pack declares
+naming components and all declared required naming components resolve. `outputs.metadata` remains
+unpopulated in this increment. `warnings` is never populated, since every currently-implementable
+warning-worthy transformation other than naming itself (for example, normalization or truncation)
+remains unimplemented. `resource_identity` and `governance_context` are copied through from the
+`ContextResolutionResult` unchanged. `resource_definition` is accepted on the input but is only
+consulted for any validation this increment can actually execute; `max_length` validation remains
+deferred until the Specification defines the length unit unambiguously.
 
 **Invariants.** Pure and deterministic (same input, same output); never mutates `resolved_context`,
 `resource_definition`, or `convention_pack`; never throws for an unresolved required attribute;
@@ -822,14 +823,12 @@ the package root — proven at compile time by
 `packages/core/src/evaluator/` contains the Milestone 2.1 pipeline contracts (`contracts/`), the
 Milestone 2.2/2.3 Context Resolution resolvers (`context-resolution/`: `resolveResourceIdentity`
 and `resolveGovernanceContext`), the Milestone 2.5 Resource Projection function
-(`resource-projection/`: `projectResource`), and the Milestone 2.6 Convention Evaluation Rules
-function (`convention-evaluation/`: `evaluateConvention`, implementing required-attribute
-completeness validation only — abbreviation application, normalization, separators, casing,
-truncation, hashing, metadata projection, and Resource Definition constraint validation remain
-unimplemented, see [Convention Evaluation Rules
-(implemented)](#convention-evaluation-rules-implemented)). No public `evaluate()` function exists
-yet. Increment 2.4 (Resource Convention Preparation / Resource Definition selection) added no
-folder or code at all, per its design gate (see [Increment plan](#increment-plan)).
+(`resource-projection/`: `projectResource` and the canonical Resource Identity attribute
+accessor helper it uses), and the Milestone 2.6 Convention Evaluation Rules function
+(`convention-evaluation/`: `evaluateConvention`, with `convention-evaluation/naming/`
+implementing naming rendering). No public `evaluate()` function exists yet. Increment 2.4
+(Resource Convention Preparation / Resource Definition selection) added no folder or code at all,
+per its design gate (see [Increment plan](#increment-plan)).
 
 ## Deferred decisions
 
@@ -880,14 +879,16 @@ folder or code at all, per its design gate (see [Increment plan](#increment-plan
 - **Exact stage boundaries within Convention Evaluation Rules, beyond required-attribute
   validation** — the Specification permits more than one faithful split within "generate
   outputs" and "validate outputs" (for example, whether normalization happens before or
-  interleaved with generation, or how abbreviation application, metadata projection, and
-  validation are internally sequenced); increment 2.5's boundary (Resource Projection: component
-  selection and ordering only, no rendering) is fixed by this document, and increment 2.6 adds
-  required-attribute completeness validation as its own independent check (see [Convention
-  Evaluation Rules (implemented)](#convention-evaluation-rules-implemented)), but the internal
-  structure of every other Convention Evaluation rule (naming rendering, abbreviation,
-  normalization, metadata projection) remains undecided until the Specification defines the
-  missing mechanisms each one needs (see the rule inventory in [Convention Evaluation Rules
+  interleaved with generation, or how metadata projection and validation are internally
+  sequenced); increment 2.5's boundary (Resource Projection: component selection and ordering
+  only, no rendering) is fixed by this document, increment 2.6 adds required-attribute
+  completeness validation as its own independent check, and increment 2.6.2 fixes naming
+  rendering's own internal order — project, then abbreviate, then case, then join with the
+  separator (see [Convention Evaluation Rules
+  (implemented)](#convention-evaluation-rules-implemented)) — but the internal structure of
+  every other remaining Convention Evaluation rule (normalization, metadata projection)
+  remains undecided until the Specification defines the missing mechanisms each one needs (see
+  the rule inventory in [Convention Evaluation Rules
   (implemented)](#convention-evaluation-rules-implemented)).
 - **Diagnostics aggregation across Context Resolution's two halves** — `resolveResourceIdentity`
   and `resolveGovernanceContext` each return their own `diagnostics` array (see [Context
@@ -899,8 +900,9 @@ folder or code at all, per its design gate (see [Increment plan](#increment-plan
   itself, not derived from these diagnostics (see [Convention Evaluation Rules
   (implemented)](#convention-evaluation-rules-implemented)). Combining Context Resolution's
   diagnostics — and, later, Convention Evaluation's own — into `ConventionResult.explanation` and
-  `ConventionResult.warnings` remains open for a future increment, once naming rendering,
-  abbreviation application, and normalization exist to produce warning-worthy conditions.
+  `ConventionResult.warnings` remains open for a future increment. Naming rendering and
+  abbreviation application (increment 2.6.2) do not themselves produce any warning-worthy
+  condition; normalization remains the rule most likely to need one once it exists.
 - **Full executability status** — the deferred items above are restated, alongside every other
   Convention Evaluation capability the Specification names, with full citations and an explicit
   prioritization and recommendation, in

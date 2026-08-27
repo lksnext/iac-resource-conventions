@@ -1,4 +1,13 @@
-import type { ConventionPack, ResourceIdentity } from "../../model/index.js";
+import type {
+  CanonicalResourceIdentityAttribute,
+  ConventionPack,
+  ResourceIdentity,
+} from "../../model/index.js";
+
+import {
+  planeOfCanonicalResourceIdentityAttribute,
+  resolveCanonicalResourceIdentityAttribute,
+} from "./canonical-resource-identity-attribute.js";
 
 /**
  * Which Resource Identity plane a projected naming component was resolved from (see
@@ -29,7 +38,7 @@ export interface ProjectedNamingComponent {
    * used by `ConventionPack.naming_component_order`, `required_attributes`, and
    * `override_policy` (see `../../model/conventions/convention-pack.ts`).
    */
-  readonly attribute: string;
+  readonly attribute: CanonicalResourceIdentityAttribute;
 
   /** The Resource Identity plane `attribute` was resolved from. */
   readonly plane: ProjectedNamingComponentPlane;
@@ -79,47 +88,6 @@ export interface ProjectedResource {
   readonly components: ReadonlyArray<ProjectedNamingComponent>;
 }
 
-type ComponentAccessor = (resourceIdentity: ResourceIdentity) => string | undefined;
-
-/**
- * Every Resource Identity attribute Resource Projection knows how to resolve, keyed by
- * the same dotted attribute path convention `ConventionPack.naming_component_order`
- * uses. A `naming_component_order` entry outside this table refers to no known Resource
- * Identity attribute, so neither its value nor its plane can be resolved faithfully; it
- * is omitted from a projected resource's `components` regardless of whether it is
- * declared required (see {@link projectResource}) — the Specification defines no other
- * kind of naming component (for example, a literal, constant-text component) for
- * Resource Projection to represent (see
- * `specification/convention-pack.md#naming-projections`).
- */
-const COMPONENT_ACCESSORS: Readonly<Record<string, ComponentAccessor>> = {
-  "organizational.organization": (ri) => ri.organizational?.organization,
-  "organizational.business_unit": (ri) => ri.organizational?.business_unit,
-  "organizational.system": (ri) => ri.organizational?.system,
-  "organizational.tenant": (ri) => ri.organizational?.tenant,
-  "deployment.platform": (ri) => ri.deployment?.platform,
-  "deployment.deployment_scope": (ri) => ri.deployment?.deployment_scope,
-  "deployment.environment": (ri) => ri.deployment?.environment,
-  "deployment.location": (ri) => ri.deployment?.location,
-  "deployment.instance": (ri) => ri.deployment?.instance,
-  "functional.service": (ri) => ri.functional?.service,
-  "functional.component": (ri) => ri.functional?.component,
-  "functional.resource_type": (ri) => ri.functional?.resource_type,
-};
-
-function planeOf(attribute: string): ProjectedNamingComponentPlane | undefined {
-  if (attribute.startsWith("organizational.")) {
-    return "organizational";
-  }
-  if (attribute.startsWith("deployment.")) {
-    return "deployment";
-  }
-  if (attribute.startsWith("functional.")) {
-    return "functional";
-  }
-  return undefined;
-}
-
 /**
  * Projects the resource-specific naming component sequence for a resolved Resource
  * Identity, as configured by the selected Convention Pack's `naming_component_order`
@@ -147,17 +115,8 @@ export function projectResource(
   const components: ProjectedNamingComponent[] = [];
 
   for (const attribute of order) {
-    const plane = planeOf(attribute);
-    const accessor = COMPONENT_ACCESSORS[attribute];
-    if (plane === undefined || accessor === undefined) {
-      // An unrecognized `naming_component_order` entry refers to no known Resource
-      // Identity attribute; it cannot be resolved and its plane cannot be determined
-      // faithfully, so it is omitted rather than represented with a fabricated plane
-      // (see the {@link COMPONENT_ACCESSORS} documentation above).
-      continue;
-    }
-
-    const value = accessor(resourceIdentity);
+    const plane = planeOfCanonicalResourceIdentityAttribute(attribute);
+    const value = resolveCanonicalResourceIdentityAttribute(resourceIdentity, attribute);
     const required = conventionPack.required_attributes?.includes(attribute) ?? false;
 
     if (value === undefined && !required) {

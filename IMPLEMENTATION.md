@@ -154,19 +154,19 @@ This is the **implementation foundation** only. As of this writing:
     additively over the frozen `specification-v1.0` baseline. See
     [`specification/README.md#specification-v11-executable-naming`](specification/README.md#specification-v11-executable-naming)
     for the full scope, delta, and non-goals. It changes no evaluator behavior by itself.
-  - Next planned increment: **2.6.2 — Executable Naming Rules** — implement Specification
-    v1.1's naming rule execution order in `packages/core/src/evaluator/` (component
-    resolution, abbreviation, casing, separator join, and the resulting `outputs.name`), and
-    update `ConventionPack`'s TypeScript contract to add `separator` and `casing` and to
-    reshape `abbreviations`, together with corresponding tests. Not yet started.
-  - Not yet started: naming rendering, abbreviation application, normalization, metadata
-    projection, and Resource Definition constraint validation (blocked pending Specification
-    definitions for separators, casing, abbreviation semantics, and a metadata projection
-    mapping — see [Deferred decisions](docs/architecture/reference-evaluator.md#deferred-decisions)),
-    and the public Reference Evaluator `evaluate()` API (increment 2.7, not yet started — its
-    final signature and whether it can proceed ahead of the rules above remain open). Naming
-    rendering, abbreviation application, and casing are now specified (see 2.6.2 above); only
-    their implementation remains not yet started.
+  - In progress: **2.6.2 — Executable Naming Rules** — implements Specification v1.1's
+    canonical Resource Identity naming vocabulary, component ordering, optional-component
+    omission, required-component failure handling, abbreviation application, casing, separator
+    joining, and deterministic `outputs.name` generation in `packages/core/src/evaluator/`.
+    `ConventionPack` now exposes `separator`, `casing`, `naming_component_order`, and the
+    reshaped `abbreviations`, with corresponding tests. Not yet complete: validation against
+    `ResourceRenderingConstraints.max_length` remains deferred because the Specification does not
+    define the length unit unambiguously.
+  - Not yet started: metadata projection, general normalization, `allowed_characters` grammar,
+    Placement Constraint validation, Governance Profile defaults, truncation, hashing, global
+    uniqueness, and the public Reference Evaluator `evaluate()` API (increment 2.7, not yet
+    started — its final signature and whether it can proceed ahead of the rules above remain
+    open).
   - Deferred: see
     [`docs/architecture/reference-evaluator.md#deferred-decisions`](docs/architecture/reference-evaluator.md#deferred-decisions).
 

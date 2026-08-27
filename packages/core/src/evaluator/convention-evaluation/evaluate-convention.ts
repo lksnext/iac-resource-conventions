@@ -7,6 +7,8 @@ import type {
 } from "../../model/index.js";
 import type { ContextResolutionResult } from "../contracts/context-resolution-result.js";
 import type { ConventionEvaluationInput } from "../contracts/convention-evaluation-input.js";
+import { projectResource } from "../resource-projection/index.js";
+import { evaluateName } from "./naming/index.js";
 
 type RequiredAttributeAccessor = (context: ContextResolutionResult) => string | undefined;
 
@@ -90,27 +92,27 @@ function explain(
  * unresolvable attribute handling"): a `ConventionResult` is still produced, with
  * `validation.valid: false`.
  *
- * **Deliberately not implemented, all for the same reason — the current frozen
- * Specification and Executable Domain Model do not yet define the concrete rule, only
- * its concept in prose (see
+ * **Implemented rule: executable naming (Specification v1.1).** `projectResource` (see
+ * `../resource-projection/index.js`) orders and resolves naming components, then
+ * `evaluateName` (see `./naming/index.js`) applies abbreviation, casing, and separator
+ * joining to produce `outputs.name`, per
+ * `specification/convention-pack.md#naming-projections`. `outputs.name` is left
+ * `undefined` when the Convention Pack declares no naming components, or when a
+ * declared required naming component has no resolved value.
+ *
+ * **Deliberately not implemented — the current frozen Specification and Executable
+ * Domain Model do not yet define the concrete rule, only its concept in prose (see
  * `docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented`
  * for the full inventory and Specification citations):**
- * - naming rendering (component ordering is already projected by `projectResource`, see
- *   `../resource-projection/index.js`, but joining components into a final name needs a
- *   separator, casing rule, and abbreviation-substitution semantics that no Convention
- *   Pack field or Specification document defines);
- * - abbreviation application (`ConventionPack.abbreviations` exists, but the
- *   Specification never defines what text an abbreviation replaces — a component's
- *   resolved value, a positional label, or something else);
  * - normalization (`ResourceDefinition.rendering_constraints.normalization` is free
  *   text, not a machine-executable rule);
- * - separators, casing, truncation, and hashing (no field or normative rule defines any
- *   of these anywhere in the Specification or domain model);
+ * - truncation and hashing (no field or normative rule defines either anywhere in the
+ *   Specification or domain model);
  * - metadata projection — Tags, Labels, Annotations (`ConventionPack` has no metadata
  *   projection mapping field at all; see `../../model/conventions/convention-pack.ts`);
  * - Resource Definition technical-constraint validation (`max_length`,
- *   `allowed_characters`) — these constrain a generated name, which this increment
- *   cannot produce;
+ *   `allowed_characters`) — `max_length` remains deferred because the Specification
+ *   does not define its length unit unambiguously;
  * - Placement Constraint validation — `ResourceDefinition.placement_constraints` is a
  *   `ReadonlyArray<string>` of free-form descriptive statements, since the
  *   Specification defines no formal grammar for them yet;
@@ -118,9 +120,9 @@ function explain(
  *   uniqueness is required, but proving it requires knowledge external to the
  *   evaluator (a registry), which this function must not consult.
  *
- * Consequently `outputs` is always `{}` in this increment: no `name` and no `metadata`
- * are generated. `warnings` is never populated, since every currently-implementable
- * warning-worthy transformation (truncation, normalization) is itself unimplemented.
+ * Consequently `outputs.metadata` is always absent in this increment. `warnings` is
+ * never populated, since every currently-implementable warning-worthy transformation
+ * (truncation, normalization) is itself unimplemented.
  *
  * Pure and deterministic: the same `input` always produces a structurally equivalent
  * `ConventionResult`; `input` (and everything it references) is never mutated.
@@ -128,6 +130,8 @@ function explain(
 export function evaluateConvention(input: ConventionEvaluationInput): ConventionResult {
   const { resolved_context: resolvedContext, convention_pack: conventionPack } = input;
   const requiredAttributes = conventionPack.required_attributes ?? [];
+  const projectedResource = projectResource(resolvedContext.resource_identity, conventionPack);
+  const name = evaluateName(projectedResource, conventionPack);
 
   const missing = requiredAttributes.filter(
     (attribute) => resolveRequiredAttributeValue(resolvedContext, attribute) === undefined,
@@ -145,7 +149,7 @@ export function evaluateConvention(input: ConventionEvaluationInput): Convention
           ),
         };
 
-  const outputs: ConventionOutputs = {};
+  const outputs: ConventionOutputs = name === undefined ? {} : { name };
 
   return {
     resource_identity: resolvedContext.resource_identity,

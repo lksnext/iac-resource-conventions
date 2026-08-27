@@ -10,6 +10,28 @@
  */
 
 /**
+ * The closed set of canonical Resource Identity attribute references that naming
+ * rules may address in Specification v1.1.
+ *
+ * This is intentionally a literal union, not a generic dotted-path string: naming
+ * semantics only ever resolve against the Resource Identity attributes the frozen
+ * Specification explicitly defines.
+ */
+export type CanonicalResourceIdentityAttribute =
+  | "organizational.organization"
+  | "organizational.business_unit"
+  | "organizational.system"
+  | "organizational.tenant"
+  | "deployment.platform"
+  | "deployment.deployment_scope"
+  | "deployment.environment"
+  | "deployment.location"
+  | "deployment.instance"
+  | "functional.service"
+  | "functional.component"
+  | "functional.resource_type";
+
+/**
  * The canonical technical resource kind used to select a resource's
  * `ResourceDefinition` (see `../definitions/resource-definition.ts`).
  *
