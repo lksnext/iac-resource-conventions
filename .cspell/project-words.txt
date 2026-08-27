@@ -19,6 +19,7 @@ multitenancy
 # General technical/software terms
 transpilable
 subcomponent
+executability
 
 # Tool and package names referenced in docs/config (not covered by npm/node/git
 # dictionaries)

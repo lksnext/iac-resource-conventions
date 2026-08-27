@@ -136,6 +136,15 @@ This is the **implementation foundation** only. As of this writing:
     mapping — see [Deferred decisions](docs/architecture/reference-evaluator.md#deferred-decisions)),
     and the public Reference Evaluator `evaluate()` API (increment 2.7, not yet started — its
     final signature and whether it can proceed ahead of the rules above remain open).
+  - Completed increment: **2.6.1 — Executability Gap Analysis** — a pure documentation and
+    analysis increment (no production code, tests, or Specification changes) that formalizes,
+    capability by capability with full repository citations, which Specification concepts are
+    currently Executable, Modelled but not executable, Conceptual only, External, or Deferred.
+    See
+    [`docs/architecture/convention-evaluation-executability.md`](docs/architecture/convention-evaluation-executability.md).
+    Its explicit recommendation is to pursue Specification v1.1 work for naming-rendering
+    semantics (separator, casing, abbreviation) before increment 2.7 begins; 2.7 remains **not
+    yet started** and is not implied active by this entry.
   - Deferred: see
     [`docs/architecture/reference-evaluator.md#deferred-decisions`](docs/architecture/reference-evaluator.md#deferred-decisions).
 
