@@ -44,7 +44,11 @@ Convention Result carries. In this iteration of the Specification, Convention Ou
 conceptually include:
 
 - **Names** — the canonical name produced for the resource, following the naming
-  conventions defined by the Specification and the selected Convention Pack.
+  conventions defined by the Specification and the selected Convention Pack. As of
+  Specification v1.1, generating this output is deterministic: the same resolved
+  Resource Identity and Convention Pack naming rules always produce the same name,
+  following the normative naming rule execution order in
+  [`convention-pack.md#naming-projections`](./convention-pack.md#naming-projections).
 - **Metadata** — platform-specific metadata projected from Resource Identity and
   Governance Context:
   - **Tags** — platform-specific tags (for example, AWS or Azure tags).
@@ -77,7 +81,12 @@ Result from a Naming Request:
 5. **Evaluate Convention** — apply the Specification's naming, tagging, labeling, and
    annotation conventions, as configured by the selected Convention Pack, to the
    resolved models.
-6. **Generate outputs** — produce the generated name, tags, labels, and annotations.
+6. **Generate outputs** — produce the generated name, tags, labels, and annotations. As
+   of Specification v1.1, generating the name follows the normative naming rule
+   execution order defined in
+   [`convention-pack.md#naming-projections`](./convention-pack.md#naming-projections);
+   generating tags, labels, and annotations remains conceptual (see [Specification v1.1
+   Non-Goals](./README.md#specification-v11-non-goals)).
 7. **Validate outputs** — check the generated outputs, and the resolved Resource
    Identity, against the constraints declared by the Resource Definition — including its
    technical constraints, uniqueness, normalization, and Placement Constraints — and the
