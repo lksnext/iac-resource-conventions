@@ -116,10 +116,26 @@ This is the **implementation foundation** only. As of this writing:
     Evaluation, not an independent Specification processing stage; it renders no final name and
     applies no abbreviation, normalization, or metadata rule — those remain increment 2.6). See
     [`docs/architecture/reference-evaluator.md#resource-projection-implemented`](docs/architecture/reference-evaluator.md#resource-projection-implemented).
-  - Current increment: **2.6 — Convention Evaluation Rules** — not yet started (abbreviation,
-    normalization, separator, and metadata projection rules; output generation; validation
-    against Resource Definition constraints and the Specification; and Convention Result
-    production).
+  - Completed increment (for currently executable rules): **2.6 — Convention Evaluation Rules**
+    (`evaluateConvention` under
+    [`packages/core/src/evaluator/convention-evaluation/`](packages/core/src/evaluator/convention-evaluation/):
+    a mandatory rule inventory and scope gate found required-attribute completeness the only
+    Convention Evaluation behavior the frozen Specification and current Executable Domain Model
+    make genuinely executable today — every other candidate rule (naming rendering, abbreviation
+    application, normalization, separators, casing, truncation, hashing, metadata projection,
+    Resource Definition technical-constraint validation, Placement Constraint validation, and
+    collision handling) remains blocked on a documented Specification or domain-model gap, cited
+    in full in the architecture document below. `evaluateConvention` therefore checks every
+    declared `required_attributes` entry against the resolved `ContextResolutionResult` and
+    produces a `ConventionResult` whose `validation.valid` reflects completeness, with
+    `outputs: {}` and no `warnings` in this increment). See
+    [`docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented`](docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented).
+  - Not yet started: naming rendering, abbreviation application, normalization, metadata
+    projection, and Resource Definition constraint validation (blocked pending Specification
+    definitions for separators, casing, abbreviation semantics, and a metadata projection
+    mapping — see [Deferred decisions](docs/architecture/reference-evaluator.md#deferred-decisions)),
+    and the public Reference Evaluator `evaluate()` API (increment 2.7, not yet started — its
+    final signature and whether it can proceed ahead of the rules above remain open).
   - Deferred: see
     [`docs/architecture/reference-evaluator.md#deferred-decisions`](docs/architecture/reference-evaluator.md#deferred-decisions).
 
