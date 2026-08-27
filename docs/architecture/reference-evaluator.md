@@ -630,3 +630,12 @@ those are created only when the increment that implements them begins.
   one faithful split between "generate outputs" and "validate outputs" (for example, whether
   normalization happens before or interleaved with generation); increments 2.5 and 2.6 above
   reflect one faithful reading, not the only one.
+- **Diagnostics aggregation across Context Resolution's two halves** — `resolveResourceIdentity`
+  and `resolveGovernanceContext` each return their own `diagnostics` array (see [Context
+  Resolution: Resource Identity (implemented)](#context-resolution-resource-identity-implemented)
+  and [Context Resolution: Governance Context
+  (implemented)](#context-resolution-governance-context-implemented)); `ContextResolutionResult`
+  does not aggregate them, and no type does today. Combining diagnostics from both halves — and,
+  later, from Convention Evaluation itself — into `ConventionResult.explanation` and
+  `ConventionResult.warnings` is deferred to the increment that assembles the final
+  `ConventionResult` (increment 2.6, see [Increment plan](#increment-plan)).
