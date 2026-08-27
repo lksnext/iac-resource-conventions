@@ -1,8 +1,10 @@
 // Internal entry point for the Reference Evaluator (Milestone 2.1: Reference
 // Evaluator Pipeline Contracts; Milestone 2.2: Context Resolution — Resource
-// Identity; Milestone 2.3: Context Resolution — Governance Context).
+// Identity; Milestone 2.3: Context Resolution — Governance Context; Milestone 2.5:
+// Resource Projection).
 //
-// Resource Definition selection, Convention Evaluation, and a public `evaluate()`
+// Convention Evaluation's remaining rules (normalization, abbreviation application,
+// metadata projection, output rendering, and validation) and a public `evaluate()`
 // function do not exist yet — see docs/architecture/reference-evaluator.md for the
 // full architecture and increment plan.
 //
@@ -24,3 +26,9 @@ export type {
   ContextResolutionResult,
   ConventionEvaluationInput,
 } from "./contracts/index.js";
+export type {
+  ProjectedNamingComponent,
+  ProjectedNamingComponentPlane,
+  ProjectedResource,
+} from "./resource-projection/index.js";
+export { projectResource } from "./resource-projection/index.js";

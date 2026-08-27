@@ -184,7 +184,8 @@ packages/core/src/
     model/
     evaluator/
         context-resolution/        # Resource Identity (2.2) + Governance Context (2.3)
-        convention-evaluation/     # projection, output generation, validation (2.5, 2.6)
+        resource-projection/       # Resource Projection (2.5)
+        convention-evaluation/     # abbreviation, normalization, metadata, output generation, validation (2.6)
         index.ts
 ```
 
@@ -194,8 +195,9 @@ expressed by the `resource_definition` field on the Milestone 2.1 `ConventionEva
 contract, and `core` never loads a Resource Definition itself (see
 [Non-responsibilities](#non-responsibilities)).
 
-This is illustrative, not a commitment: folders are created only when the increment that needs
-them begins (see [Code scaffold](#code-scaffold) below — none exist yet).
+This is illustrative, not a commitment beyond what has already been built: `context-resolution/`
+and `resource-projection/` exist today (see [Code scaffold](#code-scaffold) below);
+`convention-evaluation/` does not exist yet and is created only when increment 2.6 begins.
 
 Dependency direction:
 
@@ -292,9 +294,9 @@ the Executable Domain Model (see [Public API in
 - no provider-specific parameters;
 - no IO side effects;
 - stable public types, evolved additively wherever possible;
-- internal evaluator stages (Context Resolution, Resource Definition selection, Convention
-  Evaluation) are implementation details, not public API surface, unless a concrete consumer
-  need justifies exposing one independently.
+- internal evaluator stages (Context Resolution, Resource Definition selection, Resource
+  Projection, Convention Evaluation Rules) are implementation details, not public API surface,
+  unless a concrete consumer need justifies exposing one independently.
 
 ## Testing strategy
 
@@ -380,15 +382,33 @@ renamed to match the Specification's own terms ("Evaluate Convention" / "Generat
   `ResourceDefinition`; no file, registry, or catalog access exists in `core`) was already
   satisfied when increment 2.1 introduced `ConventionEvaluationInput`. **Status: complete —
   no code introduced; the design gate is the deliverable.**
-- **2.5 — Convention Evaluation: projection and output generation**. Applies the selected
-  Convention Pack's naming component order, abbreviations, and metadata projection to the
-  resolved Resource Identity and Governance Context, producing `ConventionOutputs`.
-  **Definition of done:** given a resolved identity, governance context, and Convention Pack,
-  the evaluator produces a name and metadata consistent with the Convention Pack's declared
-  ordering and abbreviations.
-- **2.6 — Convention Evaluation: validation and Convention Result production**. Validates the
-  generated outputs and resolved identity against the Resource Definition's constraints and the
-  Specification, collects warnings, and assembles the final `ConventionResult`. **Definition of
+- **2.5 — Resource Projection**. Before this increment began, a mandatory design gate asked
+  whether determining which resolved Resource Identity attributes participate in a resource's
+  generated name — and in what order, per the selected Convention Pack's
+  `naming_component_order` and `required_attributes` — establishes a genuine, Specification-
+  backed invariant not already represented by an existing contract, or whether it would merely
+  copy fields already available from `ResourceIdentity` and `ConventionPack`. The answer is
+  **yes, it establishes a genuine invariant**: no existing contract combines a Convention Pack's
+  resource-agnostic `naming_component_order` declaration with a *specific* resolved
+  `ResourceIdentity` to determine, for that resource, which components are present, which are
+  absent-and-omitted, which are absent-but-required (and therefore must not silently disappear),
+  and which Resource Identity plane each retained component came from. This increment therefore
+  introduces `projectResource`, under
+  [`packages/core/src/evaluator/resource-projection/`](../../packages/core/src/evaluator/resource-projection/)
+  (see [Resource Projection (implemented)](#resource-projection-implemented)). Resource Projection
+  is an internal implementation increment within Convention Evaluation, corresponding to the
+  Specification's "Evaluate Convention" pipeline step (see
+  [`specification/convention-result.md#convention-evaluation-pipeline`](../../specification/convention-result.md#convention-evaluation-pipeline));
+  it is not an independent Specification processing stage, and it does not render a final name,
+  apply an abbreviation or normalization rule, or generate metadata. **Definition of done:** given
+  a resolved Resource Identity and the selected Convention Pack, `projectResource` produces an
+  ordered, resource-specific naming component sequence consistent with the Convention Pack's
+  declared `naming_component_order` and `required_attributes`, verified by table-driven tests.
+- **2.6 — Convention Evaluation Rules**. Applies the selected Convention Pack's abbreviation,
+  normalization, separator, and metadata projection rules to the Resource Projection output (and,
+  independently, to Governance Context) to generate `ConventionOutputs`; validates the generated
+  outputs and resolved identity against the Resource Definition's constraints and the
+  Specification; collects warnings; and assembles the final `ConventionResult`. **Definition of
   done:** the evaluator returns a complete `ConventionResult` whose `validation.valid` correctly
   reflects constraint violations, for both valid and invalid inputs.
 
@@ -404,7 +424,7 @@ these are types only.
 | --- | --- | --- | --- | --- |
 | `ContextResolutionInput` | `NamingRequest`, `ConventionPack`, `EvaluationContext` | The caller of Context Resolution (increment 2.2) | Context Resolution (increment 2.2) | Internal |
 | `ContextResolutionResult` | `ResourceIdentity`, `GovernanceContext` | Context Resolution (increment 2.2) | Resource Definition selection (2.4); Convention Evaluation (2.5–2.6), via `ConventionEvaluationInput` | Internal |
-| `ConventionEvaluationInput` | `ContextResolutionResult`, `ResourceDefinition`, `ConventionPack` | The caller of Convention Evaluation, once Resource Definition selection (2.4) has run | Convention Evaluation (increments 2.5–2.6) | Internal |
+| `ConventionEvaluationInput` | `ContextResolutionResult`, `ResourceDefinition`, `ConventionPack` | The caller of Convention Evaluation, once Resource Definition selection (2.4) has run | Convention Evaluation Rules (increment 2.6) | Internal |
 
 Each is required-field-only (unlike the domain contracts it composes, whose own attributes stay
 optional to mirror their permissive JSON Schemas): a stage-boundary contract represents "this
@@ -603,15 +623,94 @@ from [`packages/core/src/evaluator/index.ts`](../../packages/core/src/evaluator/
 from the package root — proven at compile time by
 [`packages/core/test/types/governance-resolution-fixtures.ts`](../../packages/core/test/types/governance-resolution-fixtures.ts).
 
+## Resource Projection (implemented)
+
+Milestone 2.5 implements `projectResource`, under
+[`packages/core/src/evaluator/resource-projection/`](../../packages/core/src/evaluator/resource-projection/):
+a pure function `(resourceIdentity: ResourceIdentity, conventionPack: ConventionPack) =>
+ProjectedResource` that determines which resolved Resource Identity attributes participate in a
+generated name, and in what order, without rendering one.
+
+**What Resource Projection is, and is not.** Resource Projection is **not** an independent
+processing stage of the Specification — the Specification defines exactly two stages, Context
+Resolution and Convention Evaluation (see
+[Evaluation pipeline](#evaluation-pipeline)). It is an internal implementation increment *within*
+Convention Evaluation, corresponding to the Specification's "Evaluate Convention" pipeline step,
+which the Specification distinguishes from the following "Generate outputs" step (see
+[`specification/convention-result.md#convention-evaluation-pipeline`](../../specification/convention-result.md#convention-evaluation-pipeline)).
+Resource Projection therefore does **not**: render a final name; apply an abbreviation,
+normalization, casing, or separator rule; truncate, hash, or resolve a collision; or generate
+metadata (tags, labels, or annotations). Those remain later Convention Evaluation
+responsibilities (increment 2.6), applied to Resource Projection's output.
+
+**Why Governance Context does not participate.** The Specification ties
+`naming_component_order` to "resolved identity components" only (see
+[`specification/convention-pack.md#naming-projections`](../../specification/convention-pack.md#naming-projections));
+no Convention Pack field ties a Governance Context attribute into naming component order, and no
+metadata projection mapping exists anywhere in the current domain model (see
+[`packages/core/src/model/conventions/convention-pack.ts`](../../packages/core/src/model/conventions/convention-pack.ts)'s
+documented deferral of normalization and metadata projection shapes). Resource Projection
+therefore consumes only a resolved `ResourceIdentity` and the selected `ConventionPack` — not
+`GovernanceContext` and not `ResourceDefinition`, neither of which currently influences which
+naming components a resource projects (see [Increment plan](#increment-plan)).
+
+**Output.** `ProjectedResource` is a new internal type — `{ components:
+ReadonlyArray<ProjectedNamingComponent> }` — where each `ProjectedNamingComponent` carries the
+dotted `attribute` path, the Resource Identity `plane` it was resolved from, its resolved `value`
+(copied verbatim, never normalized or abbreviated), and whether the selected Convention Pack's
+`required_attributes` declares it `required`. No `order` field is included: array position alone
+represents ordering, matching how `naming_component_order` itself is expressed as an ordered
+list, and avoiding a redundant, independently-mutable duplicate of that same fact. No
+`abbreviation` field is included either: any consumer that already has the selected
+`ConventionPack` can look one up via `conventionPack.abbreviations?.[component.attribute]`
+directly, so copying it onto every component would duplicate existing data without establishing
+a new invariant.
+
+**Component inclusion and omission.** For each dotted path in the selected Convention Pack's
+`naming_component_order`, in order: an unrecognized path — one matching no known Resource
+Identity attribute — is omitted entirely, regardless of whether it is declared required, since
+neither its value nor its originating plane can be resolved faithfully. A recognized path whose
+value is absent and not required is an **absent optional component** and is omitted entirely,
+consistent with the Specification's statement that a Convention Pack determines "which components
+may be omitted for a given resource." A recognized path whose value is absent but *is* required
+is still included, with `value: undefined`, so a missing required component is never silently
+converted into an omitted optional one — detecting and reporting that condition is deferred to
+Convention Evaluation's validation increment (2.6), not decided here.
+
+**Failure representation.** `projectResource` never throws and returns no diagnostics array: its
+only expected-but-incomplete condition — a required component with no resolved value — is
+represented structurally, as `required: true` paired with `value: undefined` on the affected
+component, not as a separate diagnostic. A dedicated diagnostic was deliberately not introduced:
+the same underlying condition (a Convention-Pack-required attribute unresolved) is already
+diagnosed once, generically, by `resolveResourceIdentity` and `resolveGovernanceContext`'s
+`unresolved-required-attribute` `ContextResolutionDiagnostic` (see [Context Resolution: Resource
+Identity (implemented)](#context-resolution-resource-identity-implemented)); re-diagnosing the
+same fact through a second, projection-specific diagnostic type would duplicate that existing
+diagnostic rather than represent new information.
+
+**Invariants.** Pure and deterministic (same inputs, same output); never mutates `resourceIdentity`
+or `conventionPack`; every retained component's `value` is copied verbatim from the resolved
+Resource Identity, never defaulted, normalized, or transformed; component order always matches
+`naming_component_order`'s own order; `ProjectedResource` carries no rendered name and no
+metadata.
+
+**Public API.** `projectResource`, `ProjectedResource`, `ProjectedNamingComponent`, and
+`ProjectedNamingComponentPlane` are exported only from
+[`packages/core/src/evaluator/index.ts`](../../packages/core/src/evaluator/index.ts), never from
+the package root — proven at compile time by
+[`packages/core/test/types/resource-projection-fixtures.ts`](../../packages/core/test/types/resource-projection-fixtures.ts).
+
 ## Code scaffold
 
-`packages/core/src/evaluator/` contains the Milestone 2.1 pipeline contracts (`contracts/`) and
-the Milestone 2.2/2.3 Context Resolution resolvers (`context-resolution/`: `resolveResourceIdentity`
-and `resolveGovernanceContext`) — no Convention Evaluation or the public `evaluate()` function.
-Increment 2.4 (Resource Convention Preparation / Resource Definition selection) added no folder
-or code at all, per its design gate (see [Increment plan](#increment-plan)). No empty folder was
-created for the `convention-evaluation/` stage illustrated in [Dependency
-boundaries](#dependency-boundaries) — it is created only when increment 2.5 begins.
+`packages/core/src/evaluator/` contains the Milestone 2.1 pipeline contracts (`contracts/`), the
+Milestone 2.2/2.3 Context Resolution resolvers (`context-resolution/`: `resolveResourceIdentity`
+and `resolveGovernanceContext`), and the Milestone 2.5 Resource Projection function
+(`resource-projection/`: `projectResource`) — no Convention Evaluation Rules (abbreviation,
+normalization, metadata projection, output generation, or validation) and no public `evaluate()`
+function yet. Increment 2.4 (Resource Convention Preparation / Resource Definition selection)
+added no folder or code at all, per its design gate (see [Increment plan](#increment-plan)). No
+empty folder was created for the `convention-evaluation/` stage illustrated in [Dependency
+boundaries](#dependency-boundaries) — it is created only when increment 2.6 begins.
 
 ## Deferred decisions
 
@@ -657,10 +756,12 @@ boundaries](#dependency-boundaries) — it is created only when increment 2.5 be
 - **Whether input runtime validation belongs in `core` or at an integration boundary** — no
   runtime schema library is selected (already tracked in
   [`IMPLEMENTATION.md#deferred-decisions`](../../IMPLEMENTATION.md#deferred-decisions)).
-- **Exact stage boundaries within Convention Evaluation** — the Specification permits more than
-  one faithful split between "generate outputs" and "validate outputs" (for example, whether
-  normalization happens before or interleaved with generation); increments 2.5 and 2.6 above
-  reflect one faithful reading, not the only one.
+- **Exact stage boundaries within Convention Evaluation Rules (2.6)** — the Specification permits
+  more than one faithful split within "generate outputs" and "validate outputs" (for example,
+  whether normalization happens before or interleaved with generation, or how abbreviation
+  application, metadata projection, and validation are internally sequenced); increment 2.5's
+  boundary (Resource Projection: component selection and ordering only, no rendering) is fixed by
+  this document, but increment 2.6's own internal structure is not yet decided.
 - **Diagnostics aggregation across Context Resolution's two halves** — `resolveResourceIdentity`
   and `resolveGovernanceContext` each return their own `diagnostics` array (see [Context
   Resolution: Resource Identity (implemented)](#context-resolution-resource-identity-implemented)
