@@ -105,9 +105,21 @@ This is the **implementation foundation** only. As of this writing:
     increment 2.1 introduced `ConventionEvaluationInput`. No new code, folder, or contract was
     introduced). See
     [`docs/architecture/reference-evaluator.md#increment-plan`](docs/architecture/reference-evaluator.md#increment-plan).
-  - Current increment: **2.5 — Convention Evaluation: projection and output generation** — not
-    yet started.
-  - Planned: **2.6 — Convention Evaluation: validation and Convention Result production**.
+  - Completed increment: **2.5 — Resource Projection** (`projectResource` under
+    [`packages/core/src/evaluator/resource-projection/`](packages/core/src/evaluator/resource-projection/):
+    a design gate concluded this establishes a genuine invariant — combining a Convention Pack's
+    resource-agnostic `naming_component_order` declaration with a specific resolved
+    `ResourceIdentity` to determine, for that resource, which naming components are present,
+    which absent-optional components are omitted, which absent-required components must still
+    be represented (never silently omitted), and each retained component's originating identity
+    plane. Resource Projection is an internal implementation increment within Convention
+    Evaluation, not an independent Specification processing stage; it renders no final name and
+    applies no abbreviation, normalization, or metadata rule — those remain increment 2.6). See
+    [`docs/architecture/reference-evaluator.md#resource-projection-implemented`](docs/architecture/reference-evaluator.md#resource-projection-implemented).
+  - Current increment: **2.6 — Convention Evaluation Rules** — not yet started (abbreviation,
+    normalization, separator, and metadata projection rules; output generation; validation
+    against Resource Definition constraints and the Specification; and Convention Result
+    production).
   - Deferred: see
     [`docs/architecture/reference-evaluator.md#deferred-decisions`](docs/architecture/reference-evaluator.md#deferred-decisions).
 
