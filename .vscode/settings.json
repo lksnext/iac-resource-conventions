@@ -1,4 +1,6 @@
 {
+  "chat.agent.sandbox.enabled": false,
+
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit"
