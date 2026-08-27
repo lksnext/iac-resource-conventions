@@ -187,8 +187,8 @@ full allowlist policy and why it is a separate concern from `npm audit`.
 
 ### Phase 1
 
-- ✓ Specification — frozen as v1.0 (see
-  [`specification/README.md`](specification/README.md#specification-status)).
+- ✓ Specification — frozen as v1.0, additively extended by v1.1 — Executable Naming
+  (see [`specification/README.md`](specification/README.md#specification-status)).
 
 ### Phase 2
 

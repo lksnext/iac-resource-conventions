@@ -22,15 +22,23 @@ The purpose of this document is to identify those boundaries precisely, capabili
 capability, with repository evidence for every claim, and to provide the evidence base
 for a possible future Specification revision. It does not decide that revision.
 
-> This document is non-normative. The frozen Specification remains the source of truth.
+> This document is non-normative. The Specification remains the source of truth.
 
 Nothing in this document modifies, reinterprets, or overrides any file under
 [`specification/`](../../specification/). Where this document says a concept is not yet
 executable, that is a statement about the current implementation boundary, not a
 criticism of the Specification: [`specification/README.md#specification-status`](../../specification/README.md#specification-status)
-already anticipates that "frozen" v1.0 will evolve only "when real implementation
-experience demonstrates that the current model is insufficient" — this document is
-that implementation experience.
+already anticipated that "frozen" v1.0 would evolve only "when real implementation
+experience demonstrates that the current model is insufficient" — this document was
+that implementation experience, and it directly motivated
+[Specification v1.1: Executable Naming](../../specification/README.md#specification-v11-executable-naming),
+which normatively defines separator, casing, and abbreviation semantics (see the
+updated rows below). **No row below is marked Executable as a result of v1.1**: v1.1
+only changed `specification/`; the Reference Evaluator does not yet implement naming
+rule execution (planned as implementation increment 2.6.2 — Executable Naming Rules;
+see [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)), so every classification below is
+unchanged from before v1.1 — only the "Missing executable semantics" column changes,
+from "undefined" to "defined in the Specification; not yet implemented."
 
 ## Executability classification
 
@@ -73,16 +81,16 @@ implementation file and whether runtime tests exist. "—" means no code exists.
 | Component ordering | [convention-pack.md#naming-projections](../../specification/convention-pack.md#naming-projections) | `ConventionPack.naming_component_order` (`ReadonlyArray<string>`) | `projectResource` | Executable | None | — |
 | Optional component omission | [convention-pack.md#naming-projections](../../specification/convention-pack.md#naming-projections) ("which components may be omitted") | `ProjectedNamingComponent.required` | `projectResource`; tested | Executable | None | — |
 | Literal (fixed-text) components | *(not named anywhere in the Specification)* | — | — | Conceptual only | The Specification's naming-projection prose never mentions a fixed-text component distinct from an attribute-derived one; there is nothing to make executable yet | Specification |
-| Separator | [convention-pack.md#naming-projections](../../specification/convention-pack.md#naming-projections) ("what separators are used") | — | — | Conceptual only | No separator value, ownership, placement, repeated/leading/trailing behavior, or interaction with omitted components is defined anywhere; [`convention-packs/aws-workload-default.md`](../../specification/convention-packs/aws-workload-default.md) explicitly states it "does not yet define separators, abbreviations, or casing rules" | Specification (or a future concrete Convention Pack artifact) |
-| Casing | [convention-pack.md#naming-projections](../../specification/convention-pack.md#naming-projections) ("what casing style is used") | — | — | Conceptual only | No casing vocabulary (for example `preserve`/`lower`/`upper`) is defined as data anywhere; only implied by non-normative examples | Specification |
+| Separator | [convention-pack.md#separator](../../specification/convention-pack.md#separator) | `ConventionPack.separator` — Specification defined in v1.1; not yet added to the TypeScript contract | — | Conceptual only | **Normatively specified in Specification v1.1** (value shape, default, omission interaction, leading/trailing/repeated-separator behavior); implementation pending — see [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)'s 2.6.2 increment | Reference Evaluator (2.6.2) |
+| Casing | [convention-pack.md#casing](../../specification/convention-pack.md#casing) | `ConventionPack.casing` — Specification defined in v1.1; not yet added to the TypeScript contract | — | Conceptual only | **Normatively specified in Specification v1.1**: closed `preserve`/`lower`/`upper` vocabulary, default, and execution order relative to abbreviation; implementation pending — see [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)'s 2.6.2 increment | Reference Evaluator (2.6.2) |
 | Normalization (Convention Pack rule) | [convention-pack.md#responsibilities](../../specification/convention-pack.md#responsibilities) ("Normalization rules") | Not modelled (see `ConventionPack`'s own doc comment) | — | Conceptual only | No operations, order, Unicode handling, or interaction with casing/abbreviation/truncation is defined | Specification |
 | Normalization (Resource Definition rule) | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.normalization: string` | — | Modelled but not executable | Free text ("for example, lower-casing, character substitution, or truncation rules"), not a machine-executable instruction set | Specification |
 | Allowed characters | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.allowed_characters: string` | — | Modelled but not executable | Free text, not a defined grammar or regular expression; a string must not be assumed to be a regex | Specification |
-| Abbreviations | [convention-pack.md#responsibilities](../../specification/convention-pack.md#responsibilities) | `ConventionPack.abbreviations: Readonly<Record<string,string>>` | — | Modelled but not executable | Key/value semantics, matching, case sensitivity, application scope, execution order, and fallback behavior are all undefined (see [Abbreviations](#abbreviations)) | Specification |
+| Abbreviations | [convention-pack.md#abbreviations](../../specification/convention-pack.md#abbreviations) | `ConventionPack.abbreviations: Readonly<Record<string,string>>` — reshaped to `Record<attributeReference, Record<exactValue, abbreviation>>` in Specification v1.1; the TypeScript contract still reflects the old, never-executed shape | — | Modelled but not executable | **Normatively specified in Specification v1.1**: key/value semantics, matching, case sensitivity, scope, execution order, and fallback behavior are now defined (see [Abbreviations](#abbreviations)); implementation pending — see [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)'s 2.6.2 increment | Reference Evaluator (2.6.2) |
 | Prefixes | *(not named anywhere in the Specification)* | — | — | Conceptual only | Not mentioned in `convention-pack.md#naming-projections` or elsewhere | Specification |
 | Suffixes | *(not named anywhere in the Specification)* | — | — | Conceptual only | Same as prefixes | Specification |
 | Component length | *(not named anywhere in the Specification)* | — | — | Conceptual only | Only total-name length is named (via Resource Definition); no per-component length concept exists | Specification |
-| Total-name length | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.max_length: number` | — | Modelled but not executable | The numeric constraint itself is precise and would be trivially executable as validation, but has no rendered name to validate against yet, since naming rendering is blocked (see [Length and truncation](#length-and-truncation)) | Reference Evaluator (once naming rendering exists) |
+| Total-name length | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.max_length: number` | — | Modelled but not executable | The numeric constraint itself is precise and would be trivially executable as validation once a rendered name exists; Specification v1.1's naming rule execution order (see [convention-pack.md#naming-rule-execution-order](../../specification/convention-pack.md#naming-rule-execution-order)) now defines how that name is produced, but naming rule execution itself remains unimplemented (see [Length and truncation](#length-and-truncation)) | Reference Evaluator (2.6.2) |
 | Truncation | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) (implied by "truncation rules" example under normalization) | — | — | Conceptual only | Whether truncation is permitted, what is truncated, priority between components, direction, preservation requirements, and warning behavior are all undefined; a `max_length` constraint is not permission to truncate | Specification |
 | Deterministic hashing | *(not named in `specification/`; named only as deferred behavior in [executable-domain-model-traceability.md#deferred-behavior](executable-domain-model-traceability.md#deferred-behavior))* | — | — | Conceptual only | No trigger, source material, algorithm, encoding, output length, placement, separator, or collision semantics is defined anywhere, including in the Specification itself | Specification |
 | Collision handling | [resource-definition.md#identity-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceIdentityConstraints.unique`, `.uniqueness_scope` | — | External | Local determinism (same input → same name) is already guaranteed by Context Resolution and Resource Projection; proving global uniqueness needs a live registry the evaluator must not consult (see [Uniqueness and collision handling](#uniqueness-and-collision-handling)) | External system |
@@ -191,22 +199,36 @@ Specification v1.0 defines none of the following:
   separator, or does the renderer close the gap?).
 
 [`convention-pack.md#naming-projections`](../../specification/convention-pack.md#naming-projections)
-only says separators are "used"; it explicitly states "this document does not define
-any concrete naming syntax." [`convention-packs/aws-workload-default.md`](../../specification/convention-packs/aws-workload-default.md),
-the one concrete Convention Pack example, states directly: "This document does not yet
+only said separators were "used"; it stated "this document does not define any concrete
+naming syntax." [`convention-packs/aws-workload-default.md`](../../specification/convention-packs/aws-workload-default.md),
+the one concrete Convention Pack example, stated directly: "This document does not yet
 define separators, abbreviations, or casing rules for this ordering; those are left for
-a later iteration." Separator rendering is therefore classified **Conceptual only**, not
-**Modelled but not executable** — no contract represents a separator at all.
+a later iteration." Separator rendering was therefore classified **Conceptual only**,
+not **Modelled but not executable** — no contract represented a separator at all.
+
+**Update (Specification v1.1):** every gap above is now closed normatively. See
+[convention-pack.md#separator](../../specification/convention-pack.md#separator) for the
+value, default (empty string), ownership (Convention Pack), placement, and
+omitted-component interaction rules, and
+[convention-pack.md#naming-rule-examples](../../specification/convention-pack.md#naming-rule-examples)
+for worked examples. This is documentation only: no evaluator code implements it yet
+(planned as implementation increment 2.6.2 — see [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)),
+so the classification above is left unchanged.
 
 ## Casing semantics
 
-Casing is named in prose ("what casing style is used",
+Casing was named in prose ("what casing style is used",
 [convention-pack.md#naming-projections](../../specification/convention-pack.md#naming-projections))
-but is not represented as data anywhere, is not executable, and is only ever implied by
-non-normative examples elsewhere in the Specification (none of which are marked
-normative). No behavior is derived from those examples here. A future vocabulary such as
-`preserve` / `lower` / `upper` may be needed, but this document does not add it to the
-Specification.
+but was not represented as data anywhere, was not executable, and was only ever implied
+by non-normative examples elsewhere in the Specification (none of which were marked
+normative). No behavior was derived from those examples in this document.
+
+**Update (Specification v1.1):** a closed `preserve` / `lower` / `upper` vocabulary is
+now defined normatively, with `preserve` as the default and an explicit execution order
+relative to abbreviation — see
+[convention-pack.md#casing](../../specification/convention-pack.md#casing). This is
+documentation only: no evaluator code implements it yet (planned as implementation
+increment 2.6.2), so the classification above is left unchanged.
 
 ## Normalization
 
@@ -255,6 +277,17 @@ The current test fixture (`{ environment: "env" }` in
 key ("environment") rather than the dotted-path convention
 (`deployment.environment`) the contract's own doc comment claims — direct evidence that
 even the key convention is not settled in practice, not only in the Specification.
+
+**Update (Specification v1.1):** every gap above is now closed normatively, with the
+field reshaped to `Record<attributeReference, Record<exactValue, abbreviation>>` — a
+canonical attribute reference outer key, an exact-match resolved-value inner key, exact
+case-sensitive matching only, unabbreviated fallback, and an explicit execution order
+before casing. See [convention-pack.md#abbreviations](../../specification/convention-pack.md#abbreviations).
+This is a shape change from the sketch above (see [Specification v1.1's own delta
+note](../../specification/README.md#delta-from-specification-v10) for why this is
+treated as low-risk); it is documentation only, since no evaluator code reads
+`abbreviations` today and the existing test fixture continues to compile unchanged
+until implementation increment 2.6.2 updates it.
 Classified **Modelled but not executable**; no abbreviation behavior is invented here.
 
 ## Length and truncation
@@ -437,11 +470,11 @@ changes](#no-code-changes-performed)).
 | --- | --- |
 | Governance Profile defaults representation | Unknown / decision required |
 | Naming component canonical attribute vocabulary | Specification, secondarily Executable Domain Model |
-| Separator semantics | Specification |
-| Casing semantics | Specification |
+| Separator semantics | Specification (defined in v1.1); Reference Evaluator (implementation pending) |
+| Casing semantics | Specification (defined in v1.1); Reference Evaluator (implementation pending) |
 | Convention Pack normalization rules | Specification |
 | Resource Definition normalization / allowed-characters grammar | Specification |
-| Abbreviation semantics | Specification |
+| Abbreviation semantics | Specification (defined in v1.1); Reference Evaluator (implementation pending) |
 | Literal / prefix / suffix naming components | Specification |
 | Truncation semantics | Specification |
 | Deterministic hashing | Specification |
@@ -588,3 +621,28 @@ before further implementation proceeds.
 No file under `packages/core/src/model/` or `packages/core/src/evaluator/` was modified
 as part of this analysis. No inaccurate documentation statement requiring a production
 code fix was discovered.
+
+## Specification v1.1 outcome
+
+[Specification v1.1: Executable Naming](../../specification/README.md#specification-v11-executable-naming)
+adopted this recommendation. It closed the three P0 gaps above — Separator semantics,
+Casing semantics, and Abbreviation semantics — together with the executable naming-rule
+model that ties them into a single, deterministic execution order (see
+[convention-pack.md#naming-rule-execution-order](../../specification/convention-pack.md#naming-rule-execution-order)).
+It also formalized the canonical attribute-reference vocabulary (candidate item 10
+above), which the P0 items required as a prerequisite for referencing Resource Identity
+attributes at all, ahead of its original P2 placement in
+[Prioritization](#prioritization) — a re-prioritization driven directly by drafting the
+P0 items, not a change made independently of them.
+
+Candidate items 5–9 (metadata projection, technical constraints and Placement
+Constraint grammar, truncation and hashing, the Governance Profile artifact/input
+model, and diagnostic propagation) remain deferred, unchanged, exactly as scoped in
+[Specification v1.1 Non-Goals](../../specification/README.md#specification-v11-non-goals).
+
+Specification v1.1 changed only `specification/`. No row in the tables above is marked
+**Executable** as a result: the Reference Evaluator does not yet implement naming rule
+execution. That implementation is planned as increment **2.6.2 — Executable Naming
+Rules** (see [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)); only once it lands, with
+tests, should any affected row above change from **Conceptual only** / **Modelled but
+not executable** to **Executable**.

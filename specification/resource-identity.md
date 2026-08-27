@@ -159,3 +159,66 @@ a full Resource Identity by hand; they submit a much smaller request, described 
 [`naming-request.md`](./naming-request.md), which is resolved into a Resource Identity
 alongside a separate [Governance Context](./governance-context.md) through Context
 Resolution (see [`context-resolution.md`](./context-resolution.md)).
+
+## Canonical Attribute References (Specification v1.1)
+
+A **canonical attribute reference** is a dotted path a Convention Pack's naming rules
+use to address a single Resource Identity attribute (see
+[`convention-pack.md#naming-projections`](./convention-pack.md#naming-projections)).
+This vocabulary is new in Specification v1.1; it does not change the Resource Identity
+model above, it only formalizes how external Specification Artifacts refer into it.
+
+### Syntax
+
+A canonical attribute reference has the form `<plane>.<attribute>`: a plane name, a
+single literal dot (`.`), and an attribute name, using only the lowercase ASCII letters
+and underscores already used by the schema field names above — no other characters,
+whitespace, or additional path segments are valid.
+
+### Vocabulary
+
+The vocabulary is **closed**: exactly the twelve references below are valid in
+Specification v1.1, one for every attribute defined in
+[`schemas/resource-identity.schema.json`](./schemas/resource-identity.schema.json).
+Extending it requires a Specification change, because it requires Resource Identity to
+gain a new attribute first — it is not extensible by a Convention Pack on its own.
+
+| Plane | Canonical attribute references |
+| --- | --- |
+| Organizational | `organizational.organization`, `organizational.business_unit`, `organizational.system`, `organizational.tenant` |
+| Deployment | `deployment.platform`, `deployment.deployment_scope`, `deployment.environment`, `deployment.location`, `deployment.instance` |
+| Functional | `functional.service`, `functional.component`, `functional.resource_type` |
+
+Governance Context attributes (`owner`, `managed_by`, `cost_center`, `profile`) are
+**not** part of this vocabulary. Naming projections in
+[`convention-pack.md`](./convention-pack.md#naming-projections) only ever describe
+Resource Identity components; Governance Context participates only in metadata
+projection (see
+[`governance-context.md`](./governance-context.md#metadata-projection)). A canonical
+attribute reference to a Governance Context attribute is invalid.
+
+### Case sensitivity
+
+Canonical attribute references are matched case-sensitively, using the exact spelling
+in the table above.
+
+### Absent attributes
+
+None of the twelve attributes is marked as schema-required (see
+[`resource-identity.schema.json`](./schemas/resource-identity.schema.json)): whether a
+given attribute must be present for a given resource is Convention Pack policy (see
+[`convention-pack.md#required-attributes`](./convention-pack.md#required-attributes)),
+not a Resource Identity constraint. A canonical attribute reference may therefore
+address an attribute that turns out to be absent for a particular resource; how that
+case is handled during naming is defined by
+[`convention-pack.md#naming-projections`](./convention-pack.md#naming-projections), not
+by this vocabulary.
+
+### Invalid references
+
+A canonical attribute reference outside the closed vocabulary above — an unknown plane,
+an unknown attribute, a Governance Context attribute, or malformed syntax — is invalid
+Convention Pack configuration. See
+[`convention-pack.md#naming-projections`](./convention-pack.md#naming-projections) for
+how an invalid reference is handled wherever one may appear (`naming_component_order`,
+`abbreviations`).

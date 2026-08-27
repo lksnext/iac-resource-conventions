@@ -4,22 +4,93 @@ This directory contains the Specification for `iac-resource-conventions`.
 
 ## Specification Status
 
-**Current version:** Specification v1.0
-**Status:** Frozen
+**Current version:** Specification v1.1
+**Status:** Additive extension of the frozen v1.0 baseline
 
 The conceptual Specification described in this directory — Resource Identity,
 Governance Context, Naming Request, Context Resolution, Resource Definition, Convention
-Pack, and Convention Result — is now considered stable. Future conceptual changes
-should only be introduced when real implementation experience demonstrates that the
-current model is insufficient.
+Pack, and Convention Result — is stable. Future conceptual changes should only be
+introduced when real implementation experience demonstrates that the current model is
+insufficient.
+
+Specification v1.0 is preserved, unchanged, at the `specification-v1.0` git tag. It
+never defined enough naming semantics for deterministic execution (see
+[`docs/architecture/convention-evaluation-executability.md`](../docs/architecture/convention-evaluation-executability.md)).
+Specification v1.1 adds exactly the normative naming semantics needed to close that gap,
+additively, without redefining any v1.0 concept — see [Specification v1.1: Executable
+Naming](#specification-v11-executable-naming) below.
 
 The Reference Evaluator, Resource Definitions, Convention Packs, and adapters are
 expected to validate this Specification rather than redefine it. (The Reference
 Evaluator is the reference implementation of Convention Evaluation; this document also
 refers to it as the Convention Engine — see [Architecture](#architecture) below.)
 
-"Frozen" does not mean immutable: future evolution is still allowed when justified by
-implementation evidence (see [Future evolution](#future-evolution) below).
+Being additively extended does not mean immutable: further evolution is still allowed
+when justified by implementation evidence (see [Future evolution](#future-evolution)
+below).
+
+## Specification v1.1: Executable Naming
+
+Specification v1.1 adds the minimum normative semantics required to make naming
+deterministically executable by the Reference Evaluator. It changes three documents:
+[`convention-pack.md`](./convention-pack.md#naming-projections) (component ordering,
+separator, casing, abbreviation, and naming rule execution order semantics),
+[`resource-identity.md`](./resource-identity.md#canonical-attribute-references) (the
+canonical attribute-reference vocabulary naming rules use to address Resource Identity
+attributes), and [`convention-result.md`](./convention-result.md) (a clarification that
+`outputs.name` is now deterministically computable). It also updates the concrete
+[`aws-workload-default`](./convention-packs/aws-workload-default.md) Convention Pack to
+use the new fields.
+
+### Scope
+
+Specification v1.1 defines, normatively:
+
+- a closed, canonical attribute-reference vocabulary for the Resource Identity
+  attributes a naming rule may address;
+- component ordering semantics for `naming_component_order`;
+- separator semantics (a new `separator` field);
+- casing semantics (a new `casing` field, with a closed `preserve` / `lower` / `upper`
+  vocabulary);
+- abbreviation semantics (a reshaped, component-scoped `abbreviations` field);
+- a single normative naming rule execution order that ties the above together
+  deterministically.
+
+### Delta from Specification v1.0
+
+| Field | v1.0 | v1.1 |
+| --- | --- | --- |
+| `naming_component_order` | Described in prose only; ordering, omission, and invalid-reference behavior were not formalized. | Same field name and shape; ordering, duplicate-, unknown-, and absent-component behavior are now normative. Additive. |
+| `separator` | Did not exist. | New, optional; defaults to `""` (no separator) when omitted. Additive. |
+| `casing` | Did not exist. | New, optional; defaults to `preserve` when omitted. Additive. |
+| `abbreviations` | Sketched only as an under-specified `Record<string, string>`; no code read it and no concrete Convention Pack defined it (see [`docs/architecture/convention-evaluation-executability.md`](../docs/architecture/convention-evaluation-executability.md)). | Reshaped to `Record<attributeReference, Record<exactValue, abbreviation>>`, scoped per canonical attribute reference. **This is a shape change**, called out here for visibility per this task's own instructions, even though it changes no currently executing behavior (no evaluator code reads `abbreviations` yet) and no concrete Convention Pack defines one yet. |
+
+No previously executable behavior changes: the Reference Evaluator does not yet
+implement naming rule execution (that is planned as implementation increment
+2.6.2 — Executable Naming Rules; see [`IMPLEMENTATION.md`](../IMPLEMENTATION.md)), so
+this Specification update has no effect on any output a caller observes today.
+
+### Specification v1.1 Non-Goals
+
+Specification v1.1 intentionally does **not** define:
+
+- metadata projection (tags, labels, annotations) semantics;
+- a general normalization language beyond casing (whitespace collapsing, diacritic
+  stripping, character substitution);
+- an `allowed_characters` grammar;
+- automatic truncation when a generated name exceeds `max_length`;
+- hashing or collision-avoidance strategies;
+- global uniqueness verification or a uniqueness registry;
+- an executable Placement Constraint grammar;
+- Governance Profile loading or defaults;
+- a diagnostics-aggregation architecture;
+- provider-specific naming engines;
+- runtime Convention Pack resolution;
+- a JSON Schema for Convention Pack (Convention Pack remains Markdown + TypeScript-only,
+  consistent with v1.0 — see [`convention-pack.md`](./convention-pack.md#out-of-scope)).
+
+These remain deferred, unchanged from Specification v1.0's own scope, until
+implementation evidence demonstrates a genuine need to address them.
 
 ## Purpose
 
@@ -242,8 +313,12 @@ project adopts versioned schema releases.
 
 ## Future evolution
 
-The conceptual Specification is frozen as v1.0, but it is expected to evolve over time.
-Future changes should follow these principles:
+The conceptual Specification was frozen as v1.0 and is expected to evolve over time.
+Specification v1.1 (see [Specification v1.1: Executable
+Naming](#specification-v11-executable-naming) above) is the first such evolution: an
+additive naming-semantics extension driven by the Reference Evaluator's own
+implementation experience, not a theoretical redesign. Future changes should follow
+these principles:
 
 - **Implementation first** — build the Reference Evaluator, a Resource Definition
   catalog, executable Convention Packs, and adapters before revisiting conceptual

@@ -85,15 +85,29 @@ rejected consistently rather than producing partial or ambiguous output.
 
 **Naming component ordering** — the order in which resolved identity components appear
 in a generated name, so that names are structured predictably across every resource
-produced under the pack.
+produced under the pack. Formalized normatively in Specification v1.1 (see
+[Naming projections](#naming-projections) below).
+
+**Separator** — the literal text, if any, inserted between adjacent naming components
+when they are joined into a generated name. New in Specification v1.1 (see
+[Naming projections](#naming-projections) below).
+
+**Casing** — the case transformation, if any, applied to each naming component's value
+before it is joined into a generated name. New in Specification v1.1 (see
+[Naming projections](#naming-projections) below).
 
 **Abbreviations** — the shortened forms used to represent identity components in
 generated names, keeping names within practical length limits while remaining
-recognizable.
+recognizable. Formalized normatively in Specification v1.1 (see
+[Naming projections](#naming-projections) below).
 
 **Normalization rules** — how resolved values should be conformed to the pack's naming
-style (for example, preferred casing or word separation) before being combined into a
-generated name, independently of any technical constraint imposed by a platform.
+style before being combined into a generated name, independently of any technical
+constraint imposed by a platform. Casing and separator handling are formalized
+separately above; general normalization beyond casing (for example, whitespace
+collapsing, diacritic stripping, or character substitution) remains conceptual and
+undefined in Specification v1.1 (see [Specification v1.1
+Non-Goals](./README.md#specification-v11-non-goals)).
 
 **Metadata projection rules** — how resolved Resource Identity and Governance Context
 attributes map onto platform-specific tags, labels, and annotations.
@@ -234,11 +248,288 @@ attributes under different Convention Packs.
 ## Naming projections
 
 A Convention Pack defines how a resolved canonical identity is projected into a
-generated name. This conceptually includes decisions such as which components are
-included and in what order, what separators are used between them, which abbreviations
-apply, which components may be omitted for a given resource, and what casing style is
-used. This document does not define any concrete naming syntax; it only describes that
-this is a Convention Pack responsibility.
+generated name. Specification v1.0 only described this responsibility in prose;
+Specification v1.1 adds the normative rules below — additively, without redefining what
+a Convention Pack fundamentally is — so that a generated name is deterministic and does
+not depend on an implementation's own, unstated choices (see
+[`docs/architecture/convention-evaluation-executability.md`](../docs/architecture/convention-evaluation-executability.md)
+for the gap analysis that motivated this addition, and [Specification v1.1: Executable
+Naming](./README.md#specification-v11-executable-naming) for the full scope and delta).
+
+### Canonical attribute references
+
+A naming rule refers to a Resource Identity attribute using a **canonical attribute
+reference**: a dotted path of the form `<plane>.<attribute>`, where `<plane>` is one of
+`organizational`, `deployment`, or `functional`, and `<attribute>` is one of that
+plane's attributes, as defined in the closed vocabulary in
+[`resource-identity.md#canonical-attribute-references`](./resource-identity.md#canonical-attribute-references).
+Governance Context attributes are not part of this vocabulary: Governance Context
+participates only in [Metadata projections](#metadata-projections), never in naming, so
+a naming rule that references a Governance Context attribute is invalid.
+
+### Component ordering
+
+`naming_component_order` declares, as an ordered list of canonical attribute
+references, exactly which Resource Identity attributes appear in a generated name, and
+in what order. Rendering order always matches declaration order.
+
+- A reference outside the closed canonical attribute vocabulary is invalid.
+- A reference listed more than once is invalid.
+- An absent optional component (one not listed in [Required
+  attributes](#required-attributes)) is omitted from the generated name entirely,
+  together with the separator that would otherwise surround it.
+- An absent required component prevents a name from being generated at all for that
+  resource (see [Naming rule execution order](#naming-rule-execution-order) below).
+- `naming_component_order` remains optional: when it is absent, or an empty list, no
+  naming components are declared, and no name is generated for resources projected
+  under that Convention Pack — this matches the existing behavior of the Reference
+  Evaluator's resource projection.
+- Literal (fixed-text) naming components are not introduced in Specification v1.1: no
+  implementation evidence demonstrated a need for one, and introducing one
+  speculatively would be inconsistent with this Specification's evidence-driven
+  evolution principle (see [`README.md#future-evolution`](./README.md#future-evolution)).
+
+### Separator
+
+`separator` is a new, optional string a Convention Pack declares to join adjacent
+naming components. It may be any string, including the empty string, and is not
+restricted to a single character. When `separator` is omitted, its value is the empty
+string: naming components are concatenated directly, with nothing inserted between
+them. No particular separator (for example `-`) is assumed by the Specification; a
+Convention Pack that wants one declares it explicitly, keeping the naming rule itself
+platform-independent.
+
+The separator is inserted only between two components that both appear in the final,
+already-filtered sequence (see [Naming rule execution
+order](#naming-rule-execution-order)): an omitted optional component never leaves a
+leading, trailing, or doubled separator, because the join step only runs after absent
+optional components have already been removed. The Specification does not sanitize a
+naming component's own resolved or abbreviated value: if that value happens to already
+contain the separator's exact characters, the rendered name will contain them too —
+this is a concern for a resolved attribute value, a Resource Definition constraint, or a
+future normalization rule (see [Specification v1.1
+Non-Goals](./README.md#specification-v11-non-goals)), not for separator semantics
+themselves.
+
+### Casing
+
+`casing` is a new, optional field selecting one of a small, closed set of casing
+transformations applied to each naming component's value:
+
+| Value | Effect |
+| --- | --- |
+| `preserve` | The component's value is used exactly as resolved (and, if applicable, abbreviated — see [Abbreviations](#abbreviations)); no case transformation is applied. |
+| `lower` | The component's value is mapped to lowercase using the Unicode simple lowercase mapping, applied without regard to locale. |
+| `upper` | The component's value is mapped to uppercase using the Unicode simple uppercase mapping, applied without regard to locale. |
+
+`casing` defaults to `preserve` when omitted, so a Convention Pack that does not
+declare a casing rule generates names using resolved values exactly as they appear in
+Resource Identity. No other casing style (for example `camelCase`, `PascalCase`,
+`snake_case`, or title case) is defined in Specification v1.1: none was demonstrated
+necessary to make naming deterministically executable, and adding one speculatively
+would exceed this version's scope (see [Specification v1.1:
+Scope](./README.md#scope)).
+
+Casing applies to each naming component's final per-component value — after
+abbreviation substitution, if any (see [Naming rule execution
+order](#naming-rule-execution-order)) — never to `separator` itself, which is always
+inserted verbatim.
+
+### Abbreviations
+
+`abbreviations` maps a canonical attribute reference to an exact-match table of
+resolved values and their abbreviated forms:
+
+```yaml
+abbreviations:
+  deployment.environment:
+    production: prd
+    development: dev
+  functional.resource_type:
+    aws_s3_bucket: s3
+```
+
+- The outer key is a canonical attribute reference; an outer key outside the closed
+  vocabulary is invalid, the same as an invalid `naming_component_order` entry.
+- The inner key is the exact, case-sensitive resolved value of that attribute. Matching
+  is exact-string only: no prefix, substring, wildcard, or pattern matching is defined.
+- At most one abbreviation can ever apply to a given component, because the mapping is
+  keyed uniquely by the pair of attribute and value; there is no ambiguity to resolve
+  between competing abbreviations.
+- When no mapping exists for a component's attribute, or no entry matches its exact
+  resolved value, the component's original resolved value is used unchanged. This is
+  the only fallback behavior; it is not itself a warning or a failure.
+- Abbreviation is applied before casing (see [Naming rule execution
+  order](#naming-rule-execution-order)): an abbreviation's mapped value is itself
+  subject to the Convention Pack's `casing` rule, exactly like an unabbreviated resolved
+  value, so a Convention Pack only declares one casing rule for the whole name, not one
+  per abbreviation entry.
+
+This is a shape change from how Specification v1.0 sketched `abbreviations`, called out
+explicitly in [Delta from Specification
+v1.0](./README.md#delta-from-specification-v10): v1.0 never made abbreviations
+executable, no Reference Evaluator code reads the field today, and no concrete
+Convention Pack defines one (see
+[`docs/architecture/convention-evaluation-executability.md`](../docs/architecture/convention-evaluation-executability.md)).
+Formalizing the field for the first time, rather than reusing an under-specified shape
+that was never exercised, is treated as the smaller-risk option.
+
+### Naming rule execution order
+
+A conforming implementation of Specification v1.1 naming rules produces the following
+sequence, in this exact order, for every reference declared by
+`naming_component_order`:
+
+1. **Resolve** each canonical attribute reference against the resolved Resource
+   Identity.
+2. **Classify** each resolved reference: present; absent and optional (omit it and its
+   surrounding separator in step 5); or absent and required (see [Required
+   attributes](#required-attributes)) — in which case name generation fails for this
+   resource: no `name` is produced, reported the same way Convention Evaluation already
+   reports any other unresolved required attribute (see
+   [`convention-result.md`](./convention-result.md#convention-evaluation-pipeline)).
+3. **Apply abbreviation** to every present component's resolved value (see
+   [Abbreviations](#abbreviations)).
+4. **Apply casing** to every present component's, possibly abbreviated, value (see
+   [Casing](#casing)).
+5. **Omit** every absent-and-optional component from the sequence.
+6. **Join** the remaining, ordered per-component values using `separator` (see
+   [Separator](#separator)).
+7. The joined string is the resource's generated name, validated against the resource's
+   Resource Definition constraints exactly as already described in
+   [`convention-result.md`](./convention-result.md#convention-evaluation-pipeline).
+
+No other order is conforming: two implementations that, for example, applied casing
+before abbreviation could disagree on the generated name for identical input, which
+would violate the deterministic-output principle this version exists to satisfy (see
+[`README.md#architectural-principles`](../README.md#architectural-principles)).
+Specification v1.1 does not change the validation step in point 7, and does not make
+every Resource Definition constraint in it executable — see [Specification v1.1
+Non-Goals](./README.md#specification-v11-non-goals).
+
+### Naming fields
+
+| Field | Required | Default | Invalid values |
+| --- | --- | --- | --- |
+| `naming_component_order` | No | No naming components declared; no name is generated | A reference outside the canonical attribute vocabulary; a duplicate reference |
+| `separator` | No | `""` (components are concatenated directly) | None beyond being a string |
+| `casing` | No | `preserve` | Any value other than `preserve`, `lower`, or `upper` |
+| `abbreviations` | No | No abbreviation applies to any component | An outer key outside the canonical attribute vocabulary |
+
+### Naming rule examples
+
+These are normative test vectors: given the `naming_component_order`, `separator`,
+`casing`, and `abbreviations` shown, and the resolved Resource Identity attributes
+shown, the generated `name` is exactly as shown.
+
+**Minimal example** — every declared component present, no abbreviation, default
+casing and separator:
+
+```yaml
+# Convention Pack naming rule
+naming_component_order:
+  - organizational.system
+  - functional.service
+  - functional.resource_type
+separator: "-"
+
+# Resolved Resource Identity (relevant attributes only)
+organizational:
+  system: telemetry-platform
+functional:
+  service: ingestion
+  resource_type: aws_s3_bucket
+
+# Generated name
+name: telemetry-platform-ingestion-aws_s3_bucket
+```
+
+**Optional component absent** — `functional.component` is declared but not resolved for
+this resource, so it and its surrounding separator are omitted:
+
+```yaml
+naming_component_order:
+  - organizational.system
+  - functional.service
+  - functional.component
+  - functional.resource_type
+separator: "-"
+
+organizational:
+  system: telemetry-platform
+functional:
+  service: ingestion
+  resource_type: aws_s3_bucket
+# functional.component is not resolved for this resource
+
+name: telemetry-platform-ingestion-aws_s3_bucket
+```
+
+**Abbreviation** — `deployment.environment` has a matching abbreviation entry:
+
+```yaml
+naming_component_order:
+  - organizational.system
+  - deployment.environment
+  - functional.resource_type
+separator: "-"
+abbreviations:
+  deployment.environment:
+    production: prd
+
+organizational:
+  system: telemetry-platform
+deployment:
+  environment: production
+functional:
+  resource_type: aws_s3_bucket
+
+name: telemetry-platform-prd-aws_s3_bucket
+```
+
+**Casing** — `casing: lower` normalizes an inconsistently-cased resolved value:
+
+```yaml
+naming_component_order:
+  - organizational.system
+  - functional.resource_type
+separator: "-"
+casing: lower
+
+organizational:
+  system: Telemetry-Platform
+functional:
+  resource_type: aws_s3_bucket
+
+name: telemetry-platform-aws_s3_bucket
+```
+
+**Validation without truncation** — the generated name violates the Resource
+Definition's `max_length`; Specification v1.1 reports this as a validation failure
+instead of silently truncating the name (see [Specification v1.1
+Non-Goals](./README.md#specification-v11-non-goals)):
+
+```yaml
+naming_component_order:
+  - organizational.system
+  - functional.service
+  - functional.resource_type
+separator: "-"
+
+organizational:
+  system: telemetry-platform
+functional:
+  service: ingestion-pipeline-orchestration
+  resource_type: aws_s3_bucket
+
+# Resource Definition: max_length: 24
+
+name: telemetry-platform-ingestion-pipeline-orchestration-aws_s3_bucket
+validation:
+  valid: false
+  failures:
+    - message: "name exceeds max_length of 24 characters"
+```
 
 ## Metadata projections
 
@@ -304,9 +595,9 @@ responsibilities are divided as follows:
 ## Versioning
 
 Convention Packs are versioned independently of the Specification itself. Changing a
-Convention Pack's required attributes, abbreviations, component ordering, or metadata
-projections may change the generated name, tags, labels, or annotations for resources
-that already exist, which is a potentially breaking change. Convention Packs therefore
+Convention Pack's required attributes, abbreviations, component ordering, separator,
+casing, or metadata projections may change the generated name, tags, labels, or
+annotations for resources that already exist, which is a potentially breaking change. Convention Packs therefore
 follow [Semantic Versioning](https://semver.org/), consistent with how the rest of the
 Specification treats naming algorithms, abbreviations, and generated outputs (see
 [`AGENTS.md`](../AGENTS.md#compatibility-and-versioning)).

@@ -131,23 +131,41 @@ Pack.
 ## Naming projection
 
 `aws-workload-default` projects a resolved Resource Identity into a generated name using
-the following conceptual component order, from broadest to most specific:
+the following `naming_component_order` (see
+[`convention-pack.md#naming-projections`](../convention-pack.md#naming-projections)),
+from broadest to most specific:
 
-```text
-system
-    -> service
-        -> environment
-            -> location
-                -> component
-                    -> resource_type
-                        -> instance
+```yaml
+naming_component_order:
+  - organizational.system
+  - functional.service
+  - deployment.environment
+  - deployment.location
+  - functional.component
+  - functional.resource_type
+  - deployment.instance
+separator: "-"
+casing: lower
+abbreviations:
+  deployment.environment:
+    production: prod
+    staging: stg
+    development: dev
 ```
 
 This ordering places the most stable, broadest identity components first (the system a
 resource belongs to) and the most specific, most volatile components last (an optional
-instance discriminator). This document does not yet define separators, abbreviations, or
-casing rules for this ordering; those are left for a later iteration of this Convention
-Pack, once the ordering itself has been validated.
+instance discriminator). `separator: "-"` and `casing: lower` keep generated names
+consistent with common AWS resource-naming style; `abbreviations` shortens the three
+most common `deployment.environment` values without abbreviating every attribute. Any
+component absent for a given resource — for example `deployment.location` for a global
+resource, or `deployment.instance` when only one instance exists — is omitted from the
+generated name, together with its surrounding separator (see [Component
+ordering](../convention-pack.md#component-ordering)).
+
+For example, a `production` `aws_s3_bucket` resource for the `ingestion` service of the
+`telemetry-platform` system, with no `location`, `component`, or `instance` resolved,
+generates the name `telemetry-platform-ingestion-prod-aws_s3_bucket`.
 
 ## Metadata projection
 
