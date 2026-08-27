@@ -9,6 +9,7 @@
 // current architecture and deferred decisions.
 
 export type {
+  CanonicalResourceIdentityAttribute,
   ConventionMetadata,
   ConventionOutputs,
   ConventionPack,
@@ -28,6 +29,7 @@ export type {
   GovernanceContext,
   GovernanceProfileId,
   Location,
+  NamingCasing,
   NamingRequest,
   NamingRequestDeployment,
   NamingRequestFunctional,

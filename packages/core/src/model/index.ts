@@ -7,6 +7,7 @@
 // here.
 
 export type {
+  CanonicalResourceIdentityAttribute,
   ConventionPackId,
   DeploymentScope,
   Environment,
@@ -29,6 +30,7 @@ export type {
   ConventionPack,
   ConventionPackIdentityDefaults,
   ConventionPackOverridePolicy,
+  NamingCasing,
 } from "./conventions/index.js";
 export type {
   ResourceDefinition,

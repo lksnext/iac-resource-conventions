@@ -1,4 +1,5 @@
 export type {
+  CanonicalResourceIdentityAttribute,
   ConventionPackId,
   DeploymentScope,
   Environment,

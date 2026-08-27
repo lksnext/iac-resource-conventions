@@ -10,9 +10,10 @@
 // ./resource-projection.test.mjs reaches into `dist/` directly.
 //
 // Fixtures are neutral and fictional. They exercise required-attribute completeness
-// validation only — no naming rendering, abbreviation application, normalization,
-// metadata (tags/labels/annotations) generation, or Resource Definition constraint
-// validation is exercised or implied; all remain unimplemented in this increment (see
+// validation only: no `naming_component_order` is declared, so naming rendering never
+// produces `outputs.name` here (see ./naming-evaluation.test.mjs for those runtime
+// tests). Normalization, metadata (tags/labels/annotations) generation, and Resource
+// Definition constraint validation remain unimplemented in this increment (see
 // ../../src/evaluator/convention-evaluation/evaluate-convention.ts).
 
 import assert from "node:assert/strict";
@@ -124,7 +125,7 @@ test("an unrecognized required_attributes entry is treated as unresolved, not ig
 
 // --- Output shape (docs/architecture/reference-evaluator.md) ---
 
-test("outputs is always empty: no name or metadata is generated in this increment", () => {
+test("outputs is empty when the convention pack declares no naming components", () => {
   const result = evaluateConvention(baseInput());
 
   assert.deepEqual(result.outputs, {});

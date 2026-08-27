@@ -1,9 +1,13 @@
-import type { ConventionPackId } from "../common/identifiers.js";
+import type {
+  CanonicalResourceIdentityAttribute,
+  ConventionPackId,
+} from "../common/identifiers.js";
 import type { EvaluationContextSource } from "../contexts/evaluation-context-source.js";
 import type { GovernanceContext } from "../governance/governance-context.js";
 import type { DeploymentIdentity } from "../identity/deployment-identity.js";
 import type { FunctionalIdentity } from "../identity/functional-identity.js";
 import type { OrganizationalIdentity } from "../identity/organizational-identity.js";
+import type { NamingCasing } from "./naming-casing.js";
 
 /**
  * The Specification Artifact that defines how canonical models are projected into
@@ -44,13 +48,24 @@ export interface ConventionPack {
   readonly required_attributes?: ReadonlyArray<string>;
 
   /**
-   * The order, expressed as dotted attribute paths, in which resolved identity
-   * components appear in a generated name.
+   * The order, expressed as canonical Resource Identity attribute references, in
+   * which resolved identity components appear in a generated name.
    */
-  readonly naming_component_order?: ReadonlyArray<string>;
+  readonly naming_component_order?: ReadonlyArray<CanonicalResourceIdentityAttribute>;
 
-  /** Shortened forms used to represent identity components in generated names, keyed by dotted attribute path. */
-  readonly abbreviations?: Readonly<Record<string, string>>;
+  /** The literal separator inserted between adjacent naming components, if any. */
+  readonly separator?: string;
+
+  /** The casing transformation applied to each naming component before joining. */
+  readonly casing?: NamingCasing;
+
+  /**
+   * Shortened forms used to represent identity components in generated names, scoped
+   * by canonical Resource Identity attribute reference and exact resolved value.
+   */
+  readonly abbreviations?: Readonly<
+    Partial<Record<CanonicalResourceIdentityAttribute, Readonly<Record<string, string>>>>
+  >;
 
   /**
    * Which Evaluation Context source is authoritative for a specific canonical
