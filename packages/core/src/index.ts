@@ -51,6 +51,7 @@ export type {
   ResourceDefinition,
   ResourceIdentity,
   ResourceIdentityConstraints,
+  ResourceNameLengthUnit,
   ResourceRenderingConstraints,
   ResourceType,
   RuntimeContext,

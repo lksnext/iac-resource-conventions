@@ -21,6 +21,7 @@ import type {
   ProvisioningContext,
   ResourceDefinition,
   ResourceIdentity,
+  ResourceNameLengthUnit,
   RuntimeContext,
 } from "../../src/model/index.js";
 
@@ -122,6 +123,7 @@ export const resourceDefinition: ResourceDefinition = {
   },
   rendering_constraints: {
     max_length: 63,
+    length_unit: "code_points",
     allowed_characters: "lowercase letters, digits, and hyphens",
   },
   placement_constraints: ["regional; location chosen by the deployment"],
@@ -211,3 +213,28 @@ export const invalidNamingReference: CanonicalResourceIdentityAttribute = "gover
 
 // @ts-expect-error -- the casing vocabulary is closed to preserve/lower/upper.
 export const invalidNamingCasing: NamingCasing = "camel";
+
+// @ts-expect-error -- the length-unit vocabulary is closed to code_points/utf8_bytes
+// (see specification/resource-definition.md#rendering-constraints).
+export const invalidLengthUnit: ResourceNameLengthUnit = "utf16_code_units";
+
+export const renderingConstraintsWithoutLengthUnit: ResourceDefinition = {
+  resource_type: "aws_s3_bucket",
+  platform: "aws",
+  // @ts-expect-error -- max_length requires length_unit to be declared alongside it;
+  // the two must be declared together, or not at all.
+  rendering_constraints: {
+    max_length: 63,
+  },
+};
+
+export const renderingConstraintsWithLengthUnitOnly: ResourceDefinition = {
+  resource_type: "aws_s3_bucket",
+  platform: "aws",
+  // @ts-expect-error -- length_unit without max_length declares a unit for a
+  // constraint that does not exist; the two must be declared together, or not at
+  // all.
+  rendering_constraints: {
+    length_unit: "code_points",
+  },
+};

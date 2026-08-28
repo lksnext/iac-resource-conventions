@@ -104,7 +104,7 @@ implementation file and whether runtime tests exist. "—" means no code exists.
 | Prefixes | *(not named anywhere in the Specification)* | — | — | Conceptual only | Not mentioned in `convention-pack.md#naming-projections` or elsewhere | Specification |
 | Suffixes | *(not named anywhere in the Specification)* | — | — | Conceptual only | Same as prefixes | Specification |
 | Component length | *(not named anywhere in the Specification)* | — | — | Conceptual only | Only total-name length is named (via Resource Definition); no per-component length concept exists | Specification |
-| Total-name length | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.max_length: number` | `maxLengthFailure` ([evaluate-convention.ts](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts)) | Executable | Implemented in increment 2.7.1: measured in Unicode code points, a documented implementation-scoped decision (see [Length and truncation](#length-and-truncation)); only applies when a name was generated and `max_length` is declared; an over-length name is reported invalid and retained untruncated | Reference Evaluator |
+| Total-name length | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.max_length: number` | `maxLengthFailure` ([evaluate-convention.ts](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts)) | Executable | Implemented in increment 2.7.1; measured according to the Resource Definition's own declared `length_unit` since increment 2.7.2, a normative closed `code_points` / `utf8_bytes` vocabulary (see [Length and truncation](#length-and-truncation)); only applies when a name was generated and `max_length` is declared; an over-length name is reported invalid and retained untruncated | Reference Evaluator |
 | Truncation | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) (implied by "truncation rules" example under normalization) | — | — | Conceptual only | Whether truncation is permitted, what is truncated, priority between components, direction, preservation requirements, and warning behavior are all undefined; a `max_length` constraint is not permission to truncate | Specification |
 | Deterministic hashing | *(not named in `specification/`; named only as deferred behavior in [executable-domain-model-traceability.md#deferred-behavior](executable-domain-model-traceability.md#deferred-behavior))* | — | — | Conceptual only | No trigger, source material, algorithm, encoding, output length, placement, separator, or collision semantics is defined anywhere, including in the Specification itself | Specification |
 | Collision handling | [resource-definition.md#identity-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceIdentityConstraints.unique`, `.uniqueness_scope` | — | External | Local determinism (same input → same name) is already guaranteed by Context Resolution and Resource Projection; proving global uniqueness needs a live registry the evaluator must not consult (see [Uniqueness and collision handling](#uniqueness-and-collision-handling)) | External system |
@@ -402,25 +402,28 @@ These are separate concerns with different executability:
   failure and the generated name is retained exactly as produced — never truncated,
   never omitted.
 
-  **Length unit.** Specification v1.1 does not define the unit `max_length` counts,
-  and its own normative test vector uses only ASCII text, which cannot disambiguate
-  between Unicode code points, UTF-16 code units, or bytes, since the three coincide
-  for ASCII. Increment 2.7.1 deliberately measures **Unicode code points**
-  (`[...name].length`), not JavaScript's native UTF-16-code-unit
-  `String.prototype.length`: code points are the length notion most other mainstream
-  language runtimes expose by default (for example Python's `len(str)`, Rust's
-  `.chars().count()`), while UTF-16 code units are specific to a handful of runtimes
-  (JavaScript, Java, C#). This choice does not contradict the existing ASCII-only
-  normative example (code points, UTF-16 units, and bytes all coincide for ASCII), so
-  it does not change any previously documented or tested behavior. It is recorded here
-  as a **documented implementation-scoped decision, not a Specification change** — the
-  same treatment increment 2.6.4 gave its Unicode Character Database version decision
-  (see [Unicode Character Database version
-  determinism](#unicode-character-database-version-determinism-increment-264) below):
-  no second-language adapter exists yet to demonstrate an actual cross-language
-  divergence for either decision. Should one be built, this choice should be
-  revisited and, if still correct, promoted to normative Specification text rather
-  than left as an implementation default.
+  **Length unit (increment 2.7.2).** This is now a normative, closed vocabulary, not an
+  evaluator choice. Specification v1.1 originally did not define the unit `max_length`
+  counts, and its own normative test vector used only ASCII text, which could not
+  disambiguate between Unicode code points, UTF-16 code units, or bytes, since the
+  three coincide for ASCII; increment 2.7.1 measured Unicode code points
+  (`[...name].length`) as a documented implementation-scoped decision to close that
+  gap for a single running evaluator, without resolving the underlying cross-language
+  ambiguity. This has since been closed normatively:
+  [`resource-definition.md#rendering-constraints`](../../specification/resource-definition.md#rendering-constraints)
+  now requires a Resource Definition that declares `rendering_constraints.max_length`
+  to also declare `rendering_constraints.length_unit`, from a closed `code_points` /
+  `utf8_bytes` vocabulary (see
+  [`ResourceNameLengthUnit`](../../packages/core/src/model/definitions/resource-name-length-unit.ts)).
+  `ResourceRenderingConstraints` is a discriminated union that makes `max_length`
+  without `length_unit` (and vice versa) unrepresentable in TypeScript.
+  `maxLengthFailure` no longer makes an independent length-unit choice: it measures
+  each generated name according to the Resource Definition's own declared
+  `length_unit`, via the internal `measureLength` helper — `code_points` uses
+  `[...value].length`; `utf8_bytes` uses a pure ECMAScript code-point-to-byte-count
+  calculation (no dependency added; Node's `Buffer` is not usable here without adding
+  `@types/node`). The same generated name can be valid under one Resource Definition
+  and invalid under another, solely because their declared `length_unit` differs.
 - **Truncation** — a maximum length is not permission to truncate. The Specification
   never states whether truncation is allowed at all, what would be truncated, the
   priority between naming components, truncation direction, preservation requirements

@@ -167,7 +167,7 @@ test(
       resource_definition: {
         resource_type: "aws_s3_bucket",
         platform: "aws",
-        rendering_constraints: { max_length: 24 },
+        rendering_constraints: { max_length: 24, length_unit: "code_points" },
       },
     });
 

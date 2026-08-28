@@ -163,9 +163,10 @@ This is the **implementation foundation** only. As of this writing:
     omission, required-component failure handling, abbreviation application, casing, separator
     joining, and deterministic `outputs.name` generation in `packages/core/src/evaluator/`.
     `ConventionPack` now exposes `separator`, `casing`, `naming_component_order`, and the
-    reshaped `abbreviations`, with corresponding tests. Not yet complete: validation against
-    `ResourceRenderingConstraints.max_length` remains deferred because the Specification does not
-    define the length unit unambiguously.
+    reshaped `abbreviations`, with corresponding tests. Not yet complete at the end of this
+    increment: validation against `ResourceRenderingConstraints.max_length` remained deferred; it
+    was subsequently implemented in 2.7.1, and its cross-language measurement semantics were
+    formalized in 2.7.2.
   - Completed: **2.6.3 — Executable Naming Conformance** — closes two conformance gaps found in
     2.6.2's naming implementation. First, `evaluateConvention` now rejects a Convention Pack
     whose `naming_component_order` lists the same canonical attribute reference more than once
@@ -246,10 +247,11 @@ This is the **implementation foundation** only. As of this writing:
     [`specification/convention-pack.md#naming-rule-examples`](specification/convention-pack.md#naming-rule-examples)
     ("Validation without truncation"): an over-length generated name is reported as a
     `ConventionValidationFailure`, composed with any other failures, and the name itself is
-    retained exactly as produced, never truncated. Length is measured in Unicode code points, a
-    documented implementation-scoped decision recorded in
+    retained exactly as produced, never truncated. Length was measured in Unicode code points at
+    the end of this increment, a documented implementation-scoped decision recorded in
     [`docs/architecture/convention-evaluation-executability.md#length-and-truncation`](docs/architecture/convention-evaluation-executability.md#length-and-truncation)
-    since the Specification does not define the length unit itself; `allowed_characters`
+    since the Specification did not yet define the length unit itself; this was formalized
+    normatively in 2.7.2 below. `allowed_characters`
     remains deferred. Second, `evaluate()`'s final line previously discarded Convention
     Evaluation's own `ConventionResult.warnings` whenever Context Resolution's diagnostics-
     derived warnings were also present, instead of merging both; a new `mergeWarnings` helper in
@@ -257,6 +259,36 @@ This is the **implementation foundation** only. As of this writing:
     both sources (Context Resolution's warnings first, Convention Evaluation's second) without
     inventing a new warning taxonomy). See
     [`docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented`](docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented).
+  - Completed increment: **2.7.2 — Deterministic Name Length Semantics** (closes the remaining
+    `max_length` interoperability ambiguity left open by 2.7.1: Specification v1.1 defined
+    `max_length` validation, but never normatively defined the unit it counts, so two
+    independently conforming Reference Evaluator implementations could measure the same
+    generated name differently.
+    [`specification/resource-definition.md#rendering-constraints`](specification/resource-definition.md#rendering-constraints)
+    now normatively requires a Resource Definition that declares
+    `rendering_constraints.max_length` to also declare `rendering_constraints.length_unit`, from
+    a closed `code_points` / `utf8_bytes` vocabulary (a new
+    [`ResourceNameLengthUnit`](packages/core/src/model/definitions/resource-name-length-unit.ts)
+    type). `ResourceRenderingConstraints` is now a discriminated union that makes `max_length`
+    without `length_unit` (and vice versa) unrepresentable in TypeScript, proven by new
+    compile-time contract fixtures in
+    [`packages/core/test/types/contract-fixtures.ts`](packages/core/test/types/contract-fixtures.ts).
+    `maxLengthFailure` no longer makes an independent length-unit choice: it measures each
+    generated name according to the Resource Definition's own declared `length_unit`, via a new
+    internal `measureLength` helper (`code_points` via `[...value].length`; `utf8_bytes` via a
+    pure ECMAScript code-point-to-byte-count calculation — no dependency added, since Node's
+    `Buffer` is not usable here without adding `@types/node`). A `length_unit`-less `max_length`
+    arriving from an untyped source (for example, parsed JSON) is reported as its own dedicated
+    validation failure at runtime, never silently defaulted to a unit. New runtime tests in
+    [`packages/core/test/runtime/convention-evaluation.test.mjs`](packages/core/test/runtime/convention-evaluation.test.mjs)
+    prove the same generated name can be valid under one Resource Definition and invalid under
+    another, solely because their declared `length_unit` differs. This is documented as a
+    Specification v1.1 clarification, not a new Specification version, in
+    [`specification/README.md#length-unit-clarification`](specification/README.md#length-unit-clarification).
+    See
+    [`docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented`](docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented)
+    and
+    [`docs/architecture/convention-evaluation-executability.md#length-and-truncation`](docs/architecture/convention-evaluation-executability.md#length-and-truncation).
   - Not yet started: metadata projection, general normalization, `allowed_characters` grammar,
     Placement Constraint validation, Governance Profile defaults, truncation, hashing, and
     global uniqueness. Every one of these is a Specification v1.1 Non-Goal (see

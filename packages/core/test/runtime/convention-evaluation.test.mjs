@@ -149,7 +149,7 @@ test("a generated name exactly at max_length is valid", () => {
       resource_type: "aws_s3_bucket",
       platform: "aws",
       // "aws_s3_bucket" is 13 characters.
-      rendering_constraints: { max_length: 13 },
+      rendering_constraints: { max_length: 13, length_unit: "code_points" },
     },
   });
 
@@ -168,7 +168,7 @@ test("a generated name one unit below max_length is valid", () => {
     resource_definition: {
       resource_type: "aws_s3_bucket",
       platform: "aws",
-      rendering_constraints: { max_length: 14 },
+      rendering_constraints: { max_length: 14, length_unit: "code_points" },
     },
   });
 
@@ -189,7 +189,7 @@ test(
       resource_definition: {
         resource_type: "aws_s3_bucket",
         platform: "aws",
-        rendering_constraints: { max_length: 12 },
+        rendering_constraints: { max_length: 12, length_unit: "code_points" },
       },
     });
 
@@ -227,7 +227,7 @@ test("an over-length name composes with an unrelated missing-required-attribute 
     resource_definition: {
       resource_type: "aws_s3_bucket",
       platform: "aws",
-      rendering_constraints: { max_length: 12 },
+      rendering_constraints: { max_length: 12, length_unit: "code_points" },
     },
   });
 
@@ -251,7 +251,7 @@ test("max_length is never applied to an absent name (naming itself is invalid)",
     resource_definition: {
       resource_type: "aws_s3_bucket",
       platform: "aws",
-      rendering_constraints: { max_length: 1 },
+      rendering_constraints: { max_length: 1, length_unit: "code_points" },
     },
   });
 
@@ -263,37 +263,98 @@ test("max_length is never applied to an absent name (naming itself is invalid)",
   assert.match(result.validation.failures[0].message, /lists canonical attribute reference/);
 });
 
-test("max_length is measured in Unicode code points, not UTF-16 code units", () => {
-  // U+1F389 PARTY POPPER is one Unicode code point but a UTF-16 surrogate pair (two
-  // code units), so this distinguishes the two candidate length units concretely:
-  // twelve code points is 24 UTF-16 code units.
+function partyPopperInput(overrides = {}) {
+  // U+1F389 PARTY POPPER is one Unicode code point, a UTF-16 surrogate pair (two code
+  // units), and 4 UTF-8 bytes, so twelve of them distinguish every candidate length
+  // unit concretely: 12 code points, 24 UTF-16 code units, 48 UTF-8 bytes.
   const partyPopper = "\u{1F389}";
   const twelveCodePoints = partyPopper.repeat(12);
 
-  const input = baseInput({
-    resolved_context: {
-      resource_identity: {
-        organizational: { system: "telemetry-platform" },
-        deployment: { environment: "production" },
-        functional: { resource_type: twelveCodePoints },
+  return {
+    name: twelveCodePoints,
+    input: baseInput({
+      resolved_context: {
+        resource_identity: {
+          organizational: { system: "telemetry-platform" },
+          deployment: { environment: "production" },
+          functional: { resource_type: twelveCodePoints },
+        },
+        governance_context: { owner: "platform-team" },
       },
-      governance_context: { owner: "platform-team" },
-    },
-    convention_pack: {
-      id: "test-pack",
-      naming_component_order: ["functional.resource_type"],
-    },
-    resource_definition: {
-      resource_type: twelveCodePoints,
-      platform: "aws",
-      rendering_constraints: { max_length: 12 },
-    },
-  });
+      convention_pack: {
+        id: "test-pack",
+        naming_component_order: ["functional.resource_type"],
+      },
+      resource_definition: {
+        resource_type: twelveCodePoints,
+        platform: "aws",
+        rendering_constraints: { max_length: 12, ...overrides },
+      },
+    }),
+  };
+}
 
-  const result = evaluateConvention(input);
+test(
+  "the same generated name is valid under length_unit: code_points and invalid under " +
+    "length_unit: utf8_bytes, purely because of the declared unit",
+  () => {
+    const codePoints = partyPopperInput({ length_unit: "code_points" });
+    const utf8Bytes = partyPopperInput({ length_unit: "utf8_bytes" });
 
-  assert.equal(result.outputs.name, twelveCodePoints);
-  assert.deepEqual(result.validation, { valid: true });
+    const codePointsResult = evaluateConvention(codePoints.input);
+    const utf8BytesResult = evaluateConvention(utf8Bytes.input);
+
+    assert.equal(codePointsResult.outputs.name, codePoints.name);
+    assert.deepEqual(codePointsResult.validation, { valid: true });
+
+    assert.equal(utf8BytesResult.outputs.name, utf8Bytes.name);
+    assert.equal(utf8BytesResult.validation.valid, false);
+    assert.deepEqual(utf8BytesResult.validation.failures, [
+      { message: "name exceeds max_length of 12 characters" },
+    ]);
+  },
+);
+
+test(
+  "max_length declared without a recognized length_unit reports a dedicated failure, " +
+    "never a silent pass or a coincidental max_length violation",
+  () => {
+    const input = baseInput({
+      convention_pack: {
+        id: "test-pack",
+        naming_component_order: ["functional.resource_type"],
+      },
+      resource_definition: {
+        resource_type: "aws_s3_bucket",
+        platform: "aws",
+        // This shape is unrepresentable in TypeScript (see
+        // ../types/contract-fixtures.ts); it is exercised here to prove the runtime
+        // guard against malformed, non-TypeScript-checked input (for example, parsed
+        // JSON) does not silently default to a length unit.
+        rendering_constraints: { max_length: 12 },
+      },
+    });
+
+    const result = evaluateConvention(input);
+
+    assert.equal(result.validation.valid, false);
+    assert.deepEqual(result.validation.failures, [
+      {
+        message:
+          "Resource Definition declares max_length without a recognized length_unit " +
+          '("code_points" or "utf8_bytes"); length cannot be measured deterministically.',
+      },
+    ]);
+  },
+);
+
+test("measureLength is deterministic: repeated evaluation of the same input is identical", () => {
+  const { input } = partyPopperInput({ length_unit: "code_points" });
+
+  const first = evaluateConvention(input);
+  const second = evaluateConvention(input);
+
+  assert.deepEqual(first, second);
 });
 
 test("resource_identity and governance_context are copied through unchanged", () => {

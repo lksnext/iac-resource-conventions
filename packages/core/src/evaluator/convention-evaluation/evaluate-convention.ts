@@ -5,6 +5,7 @@ import type {
   ConventionValidation,
   ConventionValidationFailure,
   ResourceDefinition,
+  ResourceNameLengthUnit,
 } from "../../model/index.js";
 import type { ContextResolutionResult } from "../contracts/context-resolution-result.js";
 import type { ConventionEvaluationInput } from "../contracts/convention-evaluation-input.js";
@@ -104,6 +105,42 @@ function explain(
 }
 
 /**
+ * Measures `value` according to the Resource Definition's own declared
+ * {@link ResourceNameLengthUnit} (see
+ * `../../model/definitions/resource-name-length-unit.ts` and
+ * `specification/resource-definition.md#rendering-constraints`):
+ *
+ * - `code_points` — the number of Unicode code points, computed with the spread
+ *   operator (`[...value].length`), which iterates by code point and correctly
+ *   accounts for surrogate pairs — unlike JavaScript's native UTF-16-code-unit
+ *   `String.prototype.length`.
+ * - `utf8_bytes` — the number of bytes in `value`'s UTF-8 encoding, computed with a
+ *   pure ECMAScript code-point iteration (`for...of` iterates a string by code point):
+ *   each code point contributes 1 byte (U+0000–U+007F), 2 bytes (U+0080–U+07FF), 3
+ *   bytes (U+0800–U+FFFF), or 4 bytes (U+10000–U+10FFFF), per the standard UTF-8
+ *   encoding rule — the same byte count Node's `Buffer.byteLength(value, "utf8")`
+ *   produces, without depending on Node's ambient type declarations (`Buffer` itself
+ *   is not usable here without adding `@types/node`, which this increment must not
+ *   add).
+ *
+ * Pure and deterministic: the same `value` and `unit` always produce the same result.
+ */
+function measureLength(value: string, unit: ResourceNameLengthUnit): number {
+  switch (unit) {
+    case "code_points":
+      return [...value].length;
+    case "utf8_bytes": {
+      let bytes = 0;
+      for (const codePoint of value) {
+        const point = codePoint.codePointAt(0) ?? 0;
+        bytes += point <= 0x7f ? 1 : point <= 0x7ff ? 2 : point <= 0xffff ? 3 : 4;
+      }
+      return bytes;
+    }
+  }
+}
+
+/**
  * Validates a generated name against the resource's Resource Definition `max_length`
  * (see `specification/convention-pack.md#naming-rule-examples`, "Validation without
  * truncation"): a generated name that exceeds `max_length` is reported as a validation
@@ -116,38 +153,45 @@ function explain(
  * otherwise invalid (no name generated) has nothing to measure, and a Resource
  * Definition with no `max_length` imposes no constraint to violate.
  *
- * **Length unit: Unicode code points.** Specification v1.1 does not define the unit
- * `max_length` counts (see
- * `docs/architecture/convention-evaluation-executability.md#length-and-truncation`);
- * its own normative test vector uses only ASCII text, which cannot disambiguate
- * between code points, UTF-16 code units, or bytes, since all three coincide for
- * ASCII. This function deliberately measures Unicode code points (`[...name].length`),
- * not JavaScript's native UTF-16-code-unit `String.prototype.length`: code points are
- * the length notion most other mainstream language runtimes expose by default (for
- * example Python's `len(str)`, Rust's `.chars().count()`), while UTF-16 code units are
- * specific to a handful of runtimes (JavaScript, Java, C#). Choosing code points keeps
- * this evaluator's behavior the more portable candidate for a future cross-language
- * adapter, without contradicting the existing ASCII-only normative example. This is a
- * documented implementation-scoped decision, not a Specification change — see
- * `docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented` for
- * the full rationale, recorded the same way increment 2.6.4 documented its Unicode
- * Character Database version decision without changing normative text.
+ * Length is measured with {@link measureLength}, according to the Resource
+ * Definition's own declared `length_unit` — never an evaluator-chosen default.
+ * `ResourceRenderingConstraints` requires `length_unit` whenever `max_length` is
+ * declared (see `../../model/definitions/resource-definition.ts`), so this function
+ * never makes an independent length-unit choice; the same generated name can satisfy
+ * one Resource Definition and violate another solely because their declared
+ * `length_unit` differs.
+ *
+ * This invariant is enforced at compile time for TypeScript callers, but a
+ * `ResourceDefinition` can also arrive from an untyped source (for example, parsed
+ * JSON). If `max_length` is declared without a recognized `length_unit`, length cannot
+ * be measured deterministically; this is reported as its own validation failure,
+ * distinct from a `max_length` violation, rather than silently defaulting to a unit
+ * or silently passing.
  */
 function maxLengthFailure(
   name: string | undefined,
   resourceDefinition: ResourceDefinition,
 ): ConventionValidationFailure | undefined {
-  const maxLength = resourceDefinition.rendering_constraints?.max_length;
-  if (name === undefined || maxLength === undefined) {
+  const constraints = resourceDefinition.rendering_constraints;
+  if (name === undefined || constraints === undefined || constraints.max_length === undefined) {
     return undefined;
   }
 
-  const length = [...name].length;
-  if (length <= maxLength) {
+  const unit: string | undefined = constraints.length_unit;
+  if (unit !== "code_points" && unit !== "utf8_bytes") {
+    return {
+      message:
+        "Resource Definition declares max_length without a recognized length_unit " +
+        '("code_points" or "utf8_bytes"); length cannot be measured deterministically.',
+    };
+  }
+
+  const length = measureLength(name, unit);
+  if (length <= constraints.max_length) {
     return undefined;
   }
 
-  return { message: `name exceeds max_length of ${maxLength} characters` };
+  return { message: `name exceeds max_length of ${constraints.max_length} characters` };
 }
 
 /**
@@ -199,10 +243,10 @@ function maxLengthFailure(
  * without truncation") normatively requires that a generated name exceeding the
  * resource's Resource Definition `max_length` be reported as a validation failure,
  * with the generated name retained exactly as produced — never truncated, never
- * omitted. `maxLengthFailure` implements this, measuring length in Unicode code
- * points (see its own doc comment for the length-unit rationale); it only applies
- * when a name was actually generated and the Resource Definition declares a
- * `max_length`.
+ * omitted. `maxLengthFailure` implements this, measuring length according to the
+ * Resource Definition's own declared `length_unit` (see {@link measureLength}); it
+ * only applies when a name was actually generated and the Resource Definition
+ * declares a `max_length`.
  *
  * **Deliberately not implemented — the current frozen Specification and Executable
  * Domain Model do not yet define the concrete rule, only its concept in prose (see

@@ -541,7 +541,9 @@ functional:
   service: ingestion-pipeline-orchestration
   resource_type: aws_s3_bucket
 
-# Resource Definition: max_length: 24
+# Resource Definition:
+#   max_length: 24
+#   length_unit: code_points
 
 name: telemetry-platform-ingestion-pipeline-orchestration-aws_s3_bucket
 validation:
