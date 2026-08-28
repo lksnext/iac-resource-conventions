@@ -472,8 +472,9 @@ renamed to match the Specification's own terms ("Evaluate Convention" / "Generat
   handling, abbreviation application, casing, separator joining, and deterministic `outputs.name`
   generation, under `convention-evaluation/naming/` (see [Convention Evaluation Rules
   (implemented)](#convention-evaluation-rules-implemented) for the current, up-to-date
-  description of this behavior). `ResourceRenderingConstraints.max_length` validation remains
-  deferred, since the Specification does not define the length unit unambiguously. **Status:
+  description of this behavior). `ResourceRenderingConstraints.max_length` validation remained
+  deferred at the end of this increment; it was implemented in 2.7.1, and its cross-language
+  measurement semantics were formalized in 2.7.2 (see below). **Status:
   complete.**
 - **2.6.3 — Executable Naming Conformance**. Closes two conformance gaps found in 2.6.2's naming
   implementation: `evaluateConvention` now rejects a Convention Pack whose
@@ -511,6 +512,20 @@ renamed to match the Specification's own terms ("Evaluate Convention" / "Generat
   Convention Evaluation currently has no rule that populates `warnings`, this bug had no
   observable effect yet, but it would have silently dropped a real warning the moment Convention
   Evaluation gained one. **Status: complete.**
+- **2.7.2 — Deterministic Name Length Semantics**. Closes the remaining `max_length`
+  interoperability ambiguity left open by 2.7.1: Specification v1.1 defined `max_length`
+  validation, but never normatively defined the unit it counts, so two independently conforming
+  Reference Evaluator implementations could measure the same generated name differently.
+  `specification/resource-definition.md#rendering-constraints` now normatively requires a
+  Resource Definition that declares `rendering_constraints.max_length` to also declare
+  `rendering_constraints.length_unit`, from a closed `code_points` / `utf8_bytes` vocabulary (see
+  [`ResourceNameLengthUnit`](../../packages/core/src/model/definitions/resource-name-length-unit.ts)).
+  `ResourceRenderingConstraints` is now a discriminated union that makes `max_length` without
+  `length_unit` (and vice versa) unrepresentable in TypeScript. `evaluateConvention` no longer
+  makes an independent length-unit choice: it measures each generated name according to the
+  Resource Definition's own declared `length_unit` (see the "Length unit (increment 2.7.2)"
+  subsection of [Convention Evaluation Rules
+  (implemented)](#convention-evaluation-rules-implemented)). **Status: complete.**
 
 ## Pipeline contracts (implemented)
 
@@ -907,22 +922,28 @@ over-length name produces exactly one additional `ConventionValidationFailure` w
 — max_length is executable independently of it, since it is a free-standing numeric comparison
 with no dependency on any character-grammar decision.
 
-*Length unit: Unicode code points.* Specification v1.1 does not define the unit `max_length`
-counts (see
-[`docs/architecture/convention-evaluation-executability.md#length-and-truncation`](convention-evaluation-executability.md#length-and-truncation));
-its own normative test vector uses only ASCII text, which cannot disambiguate between code
-points, UTF-16 code units, or bytes, since the three coincide for ASCII. This increment
-deliberately measures Unicode code points (`[...name].length`), not JavaScript's native
-UTF-16-code-unit `String.prototype.length`: code points are the length notion most other
-mainstream language runtimes expose by default (for example Python's `len(str)`, Rust's
-`.chars().count()`), while UTF-16 code units are specific to a handful of runtimes (JavaScript,
-Java, C#). This is a documented **implementation-scoped decision, not a Specification change** —
-recorded the same way increment 2.6.4 documented its Unicode Character Database version decision
-without changing normative text (see
-[`docs/architecture/convention-evaluation-executability.md#unicode-character-database-version-determinism-increment-264`](convention-evaluation-executability.md#unicode-character-database-version-determinism-increment-264)).
-No second-language adapter exists yet to demonstrate an actual cross-language divergence; should
-one be built, this choice should be revisited and, if still correct, promoted to normative
-Specification text rather than left as an implementation default.
+*Length unit (increment 2.7.2): a normative, closed vocabulary, not an evaluator choice.*
+Increment 2.7.1 measured `max_length` in Unicode code points as a documented
+implementation-scoped decision, because Specification v1.1 did not define the unit
+`max_length` counts and its own normative test vector used only ASCII text, which cannot
+disambiguate between code points, UTF-16 code units, or bytes. This has since been closed
+normatively: [`specification/resource-definition.md#rendering-constraints`](../../specification/resource-definition.md#rendering-constraints)
+now requires a Resource Definition that declares `rendering_constraints.max_length` to
+also declare `rendering_constraints.length_unit`, from a closed `code_points` /
+`utf8_bytes` vocabulary (see
+[`ResourceNameLengthUnit`](../../packages/core/src/model/definitions/resource-name-length-unit.ts)).
+`evaluateConvention` no longer makes an independent length-unit choice: it measures each
+generated name according to the Resource Definition's own declared `length_unit`, via the
+internal `measureLength` helper — `code_points` uses `[...value].length` (spread-operator
+code-point iteration, correctly handling surrogate pairs); `utf8_bytes` uses a pure
+ECMAScript code-point-to-byte-count calculation (no dependency; `Buffer` is not usable
+here without adding `@types/node`, which this increment does not add). The same generated
+name can therefore be valid under one Resource Definition and invalid under another,
+solely because their declared `length_unit` differs. `ResourceRenderingConstraints` is a
+discriminated union that makes `max_length` without `length_unit` (and vice versa)
+unrepresentable in TypeScript; a `length_unit`-less `max_length` arriving from an untyped
+source (for example, parsed JSON) is reported as its own dedicated validation failure at
+runtime, never silently defaulted to a unit.
 
 **Invariants.** Pure and deterministic (same input, same output); never mutates `resolved_context`,
 `resource_definition`, or `convention_pack`; never throws for an unresolved required attribute;

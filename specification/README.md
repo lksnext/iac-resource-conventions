@@ -54,7 +54,11 @@ Specification v1.1 defines, normatively:
   vocabulary);
 - abbreviation semantics (a reshaped, component-scoped `abbreviations` field);
 - a single normative naming rule execution order that ties the above together
-  deterministically.
+  deterministically;
+- a required length-measurement unit for `resource-definition.md`'s
+  `rendering_constraints.max_length` (a new closed `code_points` / `utf8_bytes`
+  `length_unit` field; see [Length-unit clarification](#length-unit-clarification)
+  below).
 
 ### Delta from Specification v1.0
 
@@ -64,6 +68,7 @@ Specification v1.1 defines, normatively:
 | `separator` | Did not exist. | New, optional; defaults to `""` (no separator) when omitted. Additive. |
 | `casing` | Did not exist. | New, optional; defaults to `preserve` when omitted. Additive. |
 | `abbreviations` | Sketched only as an under-specified `Record<string, string>`; no code read it and no concrete Convention Pack defined it (see [`docs/architecture/convention-evaluation-executability.md`](../docs/architecture/convention-evaluation-executability.md)). | Reshaped to `Record<attributeReference, Record<exactValue, abbreviation>>`, scoped per canonical attribute reference. **This is a shape change**, called out here for visibility per this task's own instructions, even though it changes no currently executing behavior (no evaluator code reads `abbreviations` yet) and no concrete Convention Pack defines one yet. |
+| `rendering_constraints.length_unit` | Did not exist; `max_length`'s measurement unit was left undefined in prose, and the Reference Evaluator's own choice of Unicode code points (implementation increment 2.7.1) was documented as an implementation-scoped decision, not a Specification rule. | New; required whenever `rendering_constraints.max_length` is declared, from a closed `code_points` / `utf8_bytes` vocabulary (see [`resource-definition.md`](./resource-definition.md#rendering-constraints)). **This is a breaking change, contained to Resource Definitions that already declare `max_length`**: they must now also declare `length_unit`; see [Length-unit clarification](#length-unit-clarification) below. |
 
 At the time Specification v1.1 was drafted, no previously executable behavior changed:
 the Reference Evaluator had not yet implemented naming rule execution (that was planned
@@ -75,6 +80,28 @@ increment **2.6.3 — Executable Naming Conformance** closed two conformance gap
 it (duplicate `naming_component_order` reference rejection, and a casing wording
 correction); see [`IMPLEMENTATION.md`](../IMPLEMENTATION.md) for current milestone
 status.
+
+### Length-unit clarification
+
+Specification v1.1 originally defined `max_length` validation only in prose, without
+normatively defining the unit it counts. Implementation increment 2.7.1 made
+`max_length` validation executable, but had to choose a length unit (Unicode code
+points) to do so; that choice was documented as implementation-scoped, not normative,
+because two independently conforming Reference Evaluator implementations could
+otherwise measure the same generated name differently and disagree on validity.
+
+This is now closed: [`resource-definition.md`](./resource-definition.md#rendering-constraints)
+normatively requires a Resource Definition that declares `rendering_constraints.max_length`
+to also declare `rendering_constraints.length_unit`, from a closed `code_points` /
+`utf8_bytes` vocabulary. This is a clarification of Specification v1.1's existing
+`max_length` concept — it does not introduce a new naming capability — so it does not
+warrant a new Specification version label; it is recorded here, in the Delta table
+above, and in [`convention-pack.md`](./convention-pack.md#naming-rule-examples)'s
+"Validation without truncation" example, the same way increment 2.6.3 recorded its own
+conformance corrections without a new version label (see [Future
+evolution](#future-evolution) below and
+[`AGENTS.md`](../AGENTS.md#compatibility-and-versioning) for this repository's
+versioning policy).
 
 ### Specification v1.1 Non-Goals
 

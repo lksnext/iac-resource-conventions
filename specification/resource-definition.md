@@ -59,6 +59,23 @@ generated:
   the platform or provider that Convention Evaluation must respect when generating
   outputs for this resource type.
 
+A maximum length is only a portable constraint if every conforming Reference Evaluator
+measures a generated name the same way. A Resource Definition that declares a maximum
+length must therefore also declare the unit it counts, from a closed vocabulary:
+
+- **Unicode code points** — the number of Unicode scalar values in the name, counting a
+  character outside the Basic Multilingual Plane (for example, an emoji) as one unit
+  regardless of how many UTF-16 code units it requires.
+- **UTF-8 bytes** — the number of bytes in the name's UTF-8 encoding.
+
+This vocabulary is closed to the two units above; it is not exhaustive of every unit a
+resource type could in principle need (for example, UTF-16 code units or grapheme
+clusters), and it is extended only when a real, supported resource type demonstrates the
+need — never speculatively. The unit belongs to the Resource Definition, since it is the
+resource type's own technical constraint, the same way the maximum length itself is; it
+is never a Convention Pack concern, and Convention Evaluation never chooses a unit on the
+Resource Definition's behalf.
+
 ### Placement Constraints
 
 Placement Constraints describe the valid deployment topology for a resource type — not
@@ -111,7 +128,7 @@ Resolution produces Resource Identity and Governance Context only, and does not 
 select or resolve a Resource Definition.
 
 `deployment.location` continues to belong to Resource Identity (see
-[`resource-identity.md`](./resource-identity.md#plane-2-deployment-identity)): Resource 
+[`resource-identity.md`](./resource-identity.md#plane-2-deployment-identity)): Resource
 Identity defines the resource's canonical deployment location. Placement
 Constraints define whether that location is valid for the selected resource type — they
 never replace or duplicate it. For example, a Resource Identity with

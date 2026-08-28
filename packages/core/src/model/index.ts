@@ -35,6 +35,7 @@ export type {
 export type {
   ResourceDefinition,
   ResourceIdentityConstraints,
+  ResourceNameLengthUnit,
   ResourceRenderingConstraints,
 } from "./definitions/index.js";
 export type { GovernanceContext } from "./governance/index.js";

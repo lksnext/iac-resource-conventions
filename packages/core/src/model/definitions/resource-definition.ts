@@ -1,4 +1,5 @@
 import type { Platform, ResourceType } from "../common/identifiers.js";
+import type { ResourceNameLengthUnit } from "./resource-name-length-unit.js";
 
 /**
  * The technical characteristics of a canonical resource type, independently of any
@@ -65,11 +66,17 @@ export interface ResourceIdentityConstraints {
  * generated. The Specification names these categories in prose but defines no concrete
  * schema for their values; fields stay close to plain, descriptive types rather than
  * inventing a rendering grammar the Specification does not define.
+ *
+ * `max_length` and `length_unit` are declared together, or not at all: Specification
+ * v1.1's clarified `max_length` semantics (see
+ * `specification/resource-definition.md#rendering-constraints`) require every Resource
+ * Definition that declares a maximum name length to also declare the unit it counts,
+ * from the closed {@link ResourceNameLengthUnit} vocabulary, so that two independently
+ * conforming Reference Evaluator implementations measure the same generated name the
+ * same way. This union makes the invalid "`max_length` without `length_unit`" state
+ * unrepresentable, rather than merely undocumented.
  */
-export interface ResourceRenderingConstraints {
-  /** Maximum length imposed by the underlying platform, if any. */
-  readonly max_length?: number;
-
+export type ResourceRenderingConstraints = {
   /** Allowed characters or casing rule imposed by the underlying platform, described as free text. */
   readonly allowed_characters?: string;
 
@@ -78,4 +85,16 @@ export interface ResourceRenderingConstraints {
 
   /** Provider-specific capabilities or limitations Convention Evaluation must respect. */
   readonly provider_capabilities?: ReadonlyArray<string>;
-}
+} & (
+  | {
+      readonly max_length?: undefined;
+      readonly length_unit?: undefined;
+    }
+  | {
+      /** Maximum length imposed by the underlying platform, measured in `length_unit`. */
+      readonly max_length: number;
+
+      /** The unit `max_length` counts. Required whenever `max_length` is declared. */
+      readonly length_unit: ResourceNameLengthUnit;
+    }
+);
