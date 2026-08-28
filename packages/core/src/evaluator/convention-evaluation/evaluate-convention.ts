@@ -4,6 +4,7 @@ import type {
   ConventionResult,
   ConventionValidation,
   ConventionValidationFailure,
+  ResourceDefinition,
 } from "../../model/index.js";
 import type { ContextResolutionResult } from "../contracts/context-resolution-result.js";
 import type { ConventionEvaluationInput } from "../contracts/convention-evaluation-input.js";
@@ -80,6 +81,7 @@ function explain(
   requiredAttributes: ReadonlyArray<string>,
   missing: ReadonlyArray<string>,
   duplicateNamingReferences: ReadonlyArray<string>,
+  maxLengthFailure: ConventionValidationFailure | undefined,
 ): string {
   const requiredAttributesSummary =
     requiredAttributes.length === 0
@@ -89,15 +91,63 @@ function explain(
         : `${missing.length} of ${requiredAttributes.length} required attribute(s) declared by ` +
           `convention pack "${conventionPack.id}" could not be resolved: ${missing.join(", ")}.`;
 
-  if (duplicateNamingReferences.length === 0) {
-    return requiredAttributesSummary;
+  const duplicateNamingReferencesSummary =
+    duplicateNamingReferences.length === 0
+      ? ""
+      : ` The naming_component_order declared by convention pack "${conventionPack.id}" lists ` +
+        `the following canonical attribute reference(s) more than once, so no name was ` +
+        `generated: ${duplicateNamingReferences.join(", ")}.`;
+
+  const maxLengthSummary = maxLengthFailure === undefined ? "" : ` ${maxLengthFailure.message}.`;
+
+  return `${requiredAttributesSummary}${duplicateNamingReferencesSummary}${maxLengthSummary}`;
+}
+
+/**
+ * Validates a generated name against the resource's Resource Definition `max_length`
+ * (see `specification/convention-pack.md#naming-rule-examples`, "Validation without
+ * truncation"): a generated name that exceeds `max_length` is reported as a validation
+ * failure, and the generated name itself is left exactly as produced — never
+ * truncated, never omitted.
+ *
+ * Only applies when a name was actually generated (`name !== undefined`) and the
+ * Resource Definition actually declares a `max_length` (see
+ * `../../model/definitions/resource-definition.ts`); a Convention Pack whose naming is
+ * otherwise invalid (no name generated) has nothing to measure, and a Resource
+ * Definition with no `max_length` imposes no constraint to violate.
+ *
+ * **Length unit: Unicode code points.** Specification v1.1 does not define the unit
+ * `max_length` counts (see
+ * `docs/architecture/convention-evaluation-executability.md#length-and-truncation`);
+ * its own normative test vector uses only ASCII text, which cannot disambiguate
+ * between code points, UTF-16 code units, or bytes, since all three coincide for
+ * ASCII. This function deliberately measures Unicode code points (`[...name].length`),
+ * not JavaScript's native UTF-16-code-unit `String.prototype.length`: code points are
+ * the length notion most other mainstream language runtimes expose by default (for
+ * example Python's `len(str)`, Rust's `.chars().count()`), while UTF-16 code units are
+ * specific to a handful of runtimes (JavaScript, Java, C#). Choosing code points keeps
+ * this evaluator's behavior the more portable candidate for a future cross-language
+ * adapter, without contradicting the existing ASCII-only normative example. This is a
+ * documented implementation-scoped decision, not a Specification change — see
+ * `docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented` for
+ * the full rationale, recorded the same way increment 2.6.4 documented its Unicode
+ * Character Database version decision without changing normative text.
+ */
+function maxLengthFailure(
+  name: string | undefined,
+  resourceDefinition: ResourceDefinition,
+): ConventionValidationFailure | undefined {
+  const maxLength = resourceDefinition.rendering_constraints?.max_length;
+  if (name === undefined || maxLength === undefined) {
+    return undefined;
   }
 
-  return (
-    `${requiredAttributesSummary} The naming_component_order declared by convention pack ` +
-    `"${conventionPack.id}" lists the following canonical attribute reference(s) more than ` +
-    `once, so no name was generated: ${duplicateNamingReferences.join(", ")}.`
-  );
+  const length = [...name].length;
+  if (length <= maxLength) {
+    return undefined;
+  }
+
+  return { message: `name exceeds max_length of ${maxLength} characters` };
 }
 
 /**
@@ -144,6 +194,16 @@ function explain(
  * `outputs.name` — and each duplicated reference is reported as its own
  * `ConventionValidationFailure`, alongside any unresolved required attributes.
  *
+ * **Implemented rule: `max_length` validation, without truncation (Specification
+ * v1.1).** `specification/convention-pack.md#naming-rule-examples` ("Validation
+ * without truncation") normatively requires that a generated name exceeding the
+ * resource's Resource Definition `max_length` be reported as a validation failure,
+ * with the generated name retained exactly as produced — never truncated, never
+ * omitted. `maxLengthFailure` implements this, measuring length in Unicode code
+ * points (see its own doc comment for the length-unit rationale); it only applies
+ * when a name was actually generated and the Resource Definition declares a
+ * `max_length`.
+ *
  * **Deliberately not implemented — the current frozen Specification and Executable
  * Domain Model do not yet define the concrete rule, only its concept in prose (see
  * `docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented`
@@ -154,9 +214,9 @@ function explain(
  *   Specification or domain model);
  * - metadata projection — Tags, Labels, Annotations (`ConventionPack` has no metadata
  *   projection mapping field at all; see `../../model/conventions/convention-pack.ts`);
- * - Resource Definition technical-constraint validation (`max_length`,
- *   `allowed_characters`) — `max_length` remains deferred because the Specification
- *   does not define its length unit unambiguously;
+ * - Resource Definition technical-constraint validation (`allowed_characters`) — free
+ *   text, not a defined grammar; a string must not be assumed to be a regular
+ *   expression;
  * - Placement Constraint validation — `ResourceDefinition.placement_constraints` is a
  *   `ReadonlyArray<string>` of free-form descriptive statements, since the
  *   Specification defines no formal grammar for them yet;
@@ -172,7 +232,11 @@ function explain(
  * `ConventionResult`; `input` (and everything it references) is never mutated.
  */
 export function evaluateConvention(input: ConventionEvaluationInput): ConventionResult {
-  const { resolved_context: resolvedContext, convention_pack: conventionPack } = input;
+  const {
+    resolved_context: resolvedContext,
+    convention_pack: conventionPack,
+    resource_definition: resourceDefinition,
+  } = input;
   const requiredAttributes = conventionPack.required_attributes ?? [];
   const namingComponentOrder = conventionPack.naming_component_order ?? [];
   const duplicateNamingReferences =
@@ -190,6 +254,8 @@ export function evaluateConvention(input: ConventionEvaluationInput): Convention
     (attribute) => resolveRequiredAttributeValue(resolvedContext, attribute) === undefined,
   );
 
+  const nameLengthFailure = maxLengthFailure(name, resourceDefinition);
+
   const failures: ConventionValidationFailure[] = [
     ...missing.map(
       (attribute): ConventionValidationFailure => ({
@@ -201,6 +267,7 @@ export function evaluateConvention(input: ConventionEvaluationInput): Convention
         message: `naming_component_order declared by convention pack "${conventionPack.id}" lists canonical attribute reference "${attribute}" more than once.`,
       }),
     ),
+    ...(nameLengthFailure === undefined ? [] : [nameLengthFailure]),
   ];
 
   const validation: ConventionValidation =
@@ -213,6 +280,12 @@ export function evaluateConvention(input: ConventionEvaluationInput): Convention
     governance_context: resolvedContext.governance_context,
     outputs,
     validation,
-    explanation: explain(conventionPack, requiredAttributes, missing, duplicateNamingReferences),
+    explanation: explain(
+      conventionPack,
+      requiredAttributes,
+      missing,
+      duplicateNamingReferences,
+      nameLengthFailure,
+    ),
   };
 }

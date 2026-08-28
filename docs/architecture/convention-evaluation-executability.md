@@ -104,7 +104,7 @@ implementation file and whether runtime tests exist. "—" means no code exists.
 | Prefixes | *(not named anywhere in the Specification)* | — | — | Conceptual only | Not mentioned in `convention-pack.md#naming-projections` or elsewhere | Specification |
 | Suffixes | *(not named anywhere in the Specification)* | — | — | Conceptual only | Same as prefixes | Specification |
 | Component length | *(not named anywhere in the Specification)* | — | — | Conceptual only | Only total-name length is named (via Resource Definition); no per-component length concept exists | Specification |
-| Total-name length | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.max_length: number` | — | Modelled but not executable | The numeric constraint itself is precise and would be trivially executable as validation once a rendered name exists; Specification v1.1 now defines how that name is produced, but the Specification still does not define the length unit for cross-language determinism, so this validation remains deferred (see [Length and truncation](#length-and-truncation)) | Reference Evaluator (deferred) |
+| Total-name length | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.max_length: number` | `maxLengthFailure` ([evaluate-convention.ts](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts)) | Executable | Implemented in increment 2.7.1: measured in Unicode code points, a documented implementation-scoped decision (see [Length and truncation](#length-and-truncation)); only applies when a name was generated and `max_length` is declared; an over-length name is reported invalid and retained untruncated | Reference Evaluator |
 | Truncation | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) (implied by "truncation rules" example under normalization) | — | — | Conceptual only | Whether truncation is permitted, what is truncated, priority between components, direction, preservation requirements, and warning behavior are all undefined; a `max_length` constraint is not permission to truncate | Specification |
 | Deterministic hashing | *(not named in `specification/`; named only as deferred behavior in [executable-domain-model-traceability.md#deferred-behavior](executable-domain-model-traceability.md#deferred-behavior))* | — | — | Conceptual only | No trigger, source material, algorithm, encoding, output length, placement, separator, or collision semantics is defined anywhere, including in the Specification itself | Specification |
 | Collision handling | [resource-definition.md#identity-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceIdentityConstraints.unique`, `.uniqueness_scope` | — | External | Local determinism (same input → same name) is already guaranteed by Context Resolution and Resource Projection; proving global uniqueness needs a live registry the evaluator must not consult (see [Uniqueness and collision handling](#uniqueness-and-collision-handling)) | External system |
@@ -126,7 +126,7 @@ implementation file and whether runtime tests exist. "—" means no code exists.
 
 | Capability | Specification source | Domain model | Evaluator | Status | Missing executable semantics | Likely owner |
 | --- | --- | --- | --- | --- | --- | --- |
-| Technical constraints (`max_length`) | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.max_length` | — | Modelled but not executable | Blocked transitively on naming rendering (see Naming table above) | Reference Evaluator |
+| Technical constraints (`max_length`) | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.max_length` | `maxLengthFailure` ([evaluate-convention.ts](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts)) | Executable | Implemented in increment 2.7.1 (see [Length and truncation](#length-and-truncation)) | Reference Evaluator |
 | Technical constraints (`allowed_characters`) | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.allowed_characters` | — | Modelled but not executable | Free text, no grammar | Specification |
 | Normalization constraints | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.normalization` | — | Modelled but not executable | Free text | Specification |
 | Placement Constraints | [resource-definition.md#placement-constraints](../../specification/resource-definition.md#placement-constraints) | `ResourceDefinition.placement_constraints: ReadonlyArray<string>` | — | Modelled but not executable | Free-form prose; [resource-definition.md#out-of-scope-for-this-document](../../specification/resource-definition.md#out-of-scope-for-this-document) explicitly defers "a formal schema or grammar for expressing Placement Constraints" | Specification |
@@ -391,17 +391,42 @@ in the [Naming](#naming) table above is classified **Executable** accordingly.
 These are separate concerns with different executability:
 
 - **Length validation** — `ResourceRenderingConstraints.max_length: number` is a
-  precise, well-typed numeric constraint. In isolation it would be trivially
-  executable (`renderedName.length <= max_length`). It is classified **Modelled but not
-  executable** here only because there is no rendered name to validate against yet
-  (naming rendering itself is blocked — see [Separator semantics](#separator-semantics)
-  and [Casing semantics](#casing-semantics)); the constraint's own semantics are not the
-  blocker.
+  precise, well-typed numeric constraint. It is now classified **Executable**:
+  increment 2.7.1 implements it as `maxLengthFailure`
+  ([evaluate-convention.ts](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts)),
+  applied once a rendered name exists (naming rendering itself became executable in
+  increment 2.6.2 — see [Separator semantics](#separator-semantics) and [Casing
+  semantics](#casing-semantics)). Per
+  [`convention-pack.md#naming-rule-examples`](../../specification/convention-pack.md#naming-rule-examples)
+  ("Validation without truncation"), an over-length name produces a validation
+  failure and the generated name is retained exactly as produced — never truncated,
+  never omitted.
+
+  **Length unit.** Specification v1.1 does not define the unit `max_length` counts,
+  and its own normative test vector uses only ASCII text, which cannot disambiguate
+  between Unicode code points, UTF-16 code units, or bytes, since the three coincide
+  for ASCII. Increment 2.7.1 deliberately measures **Unicode code points**
+  (`[...name].length`), not JavaScript's native UTF-16-code-unit
+  `String.prototype.length`: code points are the length notion most other mainstream
+  language runtimes expose by default (for example Python's `len(str)`, Rust's
+  `.chars().count()`), while UTF-16 code units are specific to a handful of runtimes
+  (JavaScript, Java, C#). This choice does not contradict the existing ASCII-only
+  normative example (code points, UTF-16 units, and bytes all coincide for ASCII), so
+  it does not change any previously documented or tested behavior. It is recorded here
+  as a **documented implementation-scoped decision, not a Specification change** — the
+  same treatment increment 2.6.4 gave its Unicode Character Database version decision
+  (see [Unicode Character Database version
+  determinism](#unicode-character-database-version-determinism-increment-264) below):
+  no second-language adapter exists yet to demonstrate an actual cross-language
+  divergence for either decision. Should one be built, this choice should be
+  revisited and, if still correct, promoted to normative Specification text rather
+  than left as an implementation default.
 - **Truncation** — a maximum length is not permission to truncate. The Specification
   never states whether truncation is allowed at all, what would be truncated, the
   priority between naming components, truncation direction, preservation requirements
   (for example, never truncating `resource_type`), or whether truncation implies a
-  warning. Classified **Conceptual only**.
+  warning. Classified **Conceptual only**. Increment 2.7.1 explicitly does not
+  implement truncation: an over-length name is reported invalid and left unmodified.
 
 ## Hashing
 

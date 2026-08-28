@@ -137,6 +137,165 @@ test("warnings is never populated in this increment", () => {
   assert.equal(result.warnings, undefined);
 });
 
+// --- max_length validation, without truncation (specification/convention-pack.md#naming-rule-examples) ---
+
+test("a generated name exactly at max_length is valid", () => {
+  const input = baseInput({
+    convention_pack: {
+      id: "test-pack",
+      naming_component_order: ["functional.resource_type"],
+    },
+    resource_definition: {
+      resource_type: "aws_s3_bucket",
+      platform: "aws",
+      // "aws_s3_bucket" is 13 characters.
+      rendering_constraints: { max_length: 13 },
+    },
+  });
+
+  const result = evaluateConvention(input);
+
+  assert.equal(result.outputs.name, "aws_s3_bucket");
+  assert.deepEqual(result.validation, { valid: true });
+});
+
+test("a generated name one unit below max_length is valid", () => {
+  const input = baseInput({
+    convention_pack: {
+      id: "test-pack",
+      naming_component_order: ["functional.resource_type"],
+    },
+    resource_definition: {
+      resource_type: "aws_s3_bucket",
+      platform: "aws",
+      rendering_constraints: { max_length: 14 },
+    },
+  });
+
+  const result = evaluateConvention(input);
+
+  assert.deepEqual(result.validation, { valid: true });
+});
+
+test(
+  "a generated name one unit over max_length is invalid, and the name is retained " +
+    "unmodified, never truncated",
+  () => {
+    const input = baseInput({
+      convention_pack: {
+        id: "test-pack",
+        naming_component_order: ["functional.resource_type"],
+      },
+      resource_definition: {
+        resource_type: "aws_s3_bucket",
+        platform: "aws",
+        rendering_constraints: { max_length: 12 },
+      },
+    });
+
+    const result = evaluateConvention(input);
+
+    assert.equal(result.outputs.name, "aws_s3_bucket");
+    assert.equal(result.validation.valid, false);
+    assert.deepEqual(result.validation.failures, [
+      { message: "name exceeds max_length of 12 characters" },
+    ]);
+  },
+);
+
+test("an absent max_length imposes no constraint on an otherwise valid name", () => {
+  const input = baseInput({
+    convention_pack: {
+      id: "test-pack",
+      naming_component_order: ["functional.resource_type"],
+    },
+  });
+
+  const result = evaluateConvention(input);
+
+  assert.equal(result.outputs.name, "aws_s3_bucket");
+  assert.deepEqual(result.validation, { valid: true });
+});
+
+test("an over-length name composes with an unrelated missing-required-attribute failure", () => {
+  const input = baseInput({
+    convention_pack: {
+      id: "test-pack",
+      naming_component_order: ["functional.resource_type"],
+      required_attributes: ["organizational.tenant"],
+    },
+    resource_definition: {
+      resource_type: "aws_s3_bucket",
+      platform: "aws",
+      rendering_constraints: { max_length: 12 },
+    },
+  });
+
+  const result = evaluateConvention(input);
+
+  assert.equal(result.outputs.name, "aws_s3_bucket");
+  assert.equal(result.validation.valid, false);
+  assert.equal(result.validation.failures.length, 2);
+  assert.deepEqual(result.validation.failures[1], {
+    message: "name exceeds max_length of 12 characters",
+  });
+});
+
+test("max_length is never applied to an absent name (naming itself is invalid)", () => {
+  const input = baseInput({
+    convention_pack: {
+      id: "test-pack",
+      naming_component_order: ["functional.resource_type", "functional.resource_type"],
+      required_attributes: [],
+    },
+    resource_definition: {
+      resource_type: "aws_s3_bucket",
+      platform: "aws",
+      rendering_constraints: { max_length: 1 },
+    },
+  });
+
+  const result = evaluateConvention(input);
+
+  assert.deepEqual(result.outputs, {});
+  assert.equal(result.validation.valid, false);
+  assert.equal(result.validation.failures.length, 1);
+  assert.match(result.validation.failures[0].message, /lists canonical attribute reference/);
+});
+
+test("max_length is measured in Unicode code points, not UTF-16 code units", () => {
+  // U+1F389 PARTY POPPER is one Unicode code point but a UTF-16 surrogate pair (two
+  // code units), so this distinguishes the two candidate length units concretely:
+  // twelve code points is 24 UTF-16 code units.
+  const partyPopper = "\u{1F389}";
+  const twelveCodePoints = partyPopper.repeat(12);
+
+  const input = baseInput({
+    resolved_context: {
+      resource_identity: {
+        organizational: { system: "telemetry-platform" },
+        deployment: { environment: "production" },
+        functional: { resource_type: twelveCodePoints },
+      },
+      governance_context: { owner: "platform-team" },
+    },
+    convention_pack: {
+      id: "test-pack",
+      naming_component_order: ["functional.resource_type"],
+    },
+    resource_definition: {
+      resource_type: twelveCodePoints,
+      platform: "aws",
+      rendering_constraints: { max_length: 12 },
+    },
+  });
+
+  const result = evaluateConvention(input);
+
+  assert.equal(result.outputs.name, twelveCodePoints);
+  assert.deepEqual(result.validation, { valid: true });
+});
+
 test("resource_identity and governance_context are copied through unchanged", () => {
   const input = baseInput();
 

@@ -497,6 +497,20 @@ renamed to match the Specification's own terms ("Evaluate Convention" / "Generat
   diagnostics are not duplicated, since `evaluateConvention` already re-derives that outcome).
   See [Reference Evaluator API (implemented)](#reference-evaluator-api-implemented) for the full
   description. **Status: complete.**
+- **2.7.1 — Public Evaluator Conformance**. A post-implementation review of increment 2.7 found
+  two conformance gaps and this increment closes both, without redesigning `evaluate()` or
+  `evaluateConvention`. First, `max_length` validation (see the "max_length validation
+  (increment 2.7.1)" subsection of [Convention Evaluation Rules
+  (implemented)](#convention-evaluation-rules-implemented)): `specification/convention-pack.md#naming-rule-examples`
+  ("Validation without truncation") normatively requires an over-length generated name to be
+  reported invalid, retained untruncated — `evaluateConvention` did not implement this at all.
+  Second, the warning-merge fix (see {@link mergeWarnings} in
+  [`evaluate.ts`](../../packages/core/src/evaluator/evaluate.ts)): `evaluate()`'s final line
+  previously discarded Convention Evaluation's own `ConventionResult.warnings` whenever Context
+  Resolution's diagnostics-derived warnings were present, instead of merging both sources. Since
+  Convention Evaluation currently has no rule that populates `warnings`, this bug had no
+  observable effect yet, but it would have silently dropped a real warning the moment Convention
+  Evaluation gained one. **Status: complete.**
 
 ## Pipeline contracts (implemented)
 
@@ -815,14 +829,17 @@ named concept:
 | Separators and casing | [`specification/convention-pack.md#separator`](../../specification/convention-pack.md#separator), [`specification/convention-pack.md#casing`](../../specification/convention-pack.md#casing) | **Yes** — implemented by `evaluateName` via `separator` and `applyCasing` |
 | Truncation and hashing | *(none — not named as structured data anywhere)* | No — no field or normative rule defines any of these |
 | Metadata projection (Tags, Labels, Annotations) | [`specification/convention-result.md#conceptual-contents`](../../specification/convention-result.md#conceptual-contents) | No — `ConventionPack` has no metadata projection mapping field at all |
-| Resource Definition technical-constraint validation (`max_length`, `allowed_characters`) | [`ResourceDefinition.rendering_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | No — validating these requires a rendered name, which naming rendering above cannot yet produce |
+| Resource Definition technical-constraint validation (`max_length`) | [`ResourceDefinition.rendering_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | **Yes** — implemented by `maxLengthFailure` (increment 2.7.1), once a rendered name exists |
+| Resource Definition technical-constraint validation (`allowed_characters`) | [`ResourceDefinition.rendering_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | No — free text, not a defined grammar |
 | Placement Constraint validation | [`ResourceDefinition.placement_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | No — documented as free-form prose with no formal grammar |
 | Collision / uniqueness handling | [`ResourceDefinition.identity_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | No — proving uniqueness needs an external registry, which the evaluator must not consult |
 
-Required-attribute completeness and executable naming are now implemented; truncation, hashing,
-metadata projection, Resource Definition constraint validation, Placement Constraints, and
-collision handling remain the cited blocking gaps. Each is also documented as a "deliberately not
-implemented" case directly in [`evaluate-convention.ts`](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts).
+Required-attribute completeness and executable naming are now implemented; `max_length`
+validation is now implemented too (increment 2.7.1 — see the "max_length validation (increment
+2.7.1)" subsection below). Truncation, hashing, metadata projection,
+`allowed_characters` validation, Placement Constraints, and collision handling remain the cited
+blocking gaps. Each is also documented as a "deliberately not implemented" case directly in
+[`evaluate-convention.ts`](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts).
 
 Milestone 2.6.1 formalizes this same boundary — every capability named in this document,
 classified consistently as Executable, Modelled but not executable, Conceptual only, External,
@@ -858,12 +875,14 @@ required attribute; `evaluateConvention` never throws for this condition.
 
 **Output shape.** `outputs.name` is now populated when the selected Convention Pack declares
 naming components and all declared required naming components resolve. `outputs.metadata` remains
-unpopulated in this increment. `warnings` is never populated, since every currently-implementable
-warning-worthy transformation other than naming itself (for example, normalization or truncation)
-remains unimplemented. `resource_identity` and `governance_context` are copied through from the
-`ContextResolutionResult` unchanged. `resource_definition` is accepted on the input but is only
-consulted for any validation this increment can actually execute; `max_length` validation remains
-deferred until the Specification defines the length unit unambiguously.
+unpopulated in this increment. `warnings` is never populated by `evaluateConvention` itself, since
+every currently-implementable warning-worthy transformation other than naming and `max_length`
+validation (for example, normalization or truncation) remains unimplemented. `resource_identity`
+and `governance_context` are copied through from the `ContextResolutionResult` unchanged.
+`resource_definition` is accepted on the input and is now also consulted for `max_length`
+validation (see the "max_length validation (increment 2.7.1)" subsection below);
+`allowed_characters` validation remains
+deferred, since it is free text, not a defined grammar.
 
 **Naming conformance (increment 2.6.3).** `evaluateConvention` rejects a selected Convention Pack
 whose `naming_component_order` lists the same canonical attribute reference more than once (per
@@ -873,6 +892,37 @@ whose `naming_component_order` lists the same canonical attribute reference more
 never projected twice — and each duplicated reference is reported as its own
 `ConventionValidationFailure`. This closed the last conformance gap identified against Specification
 v1.1's naming projection rules.
+
+**max_length validation (increment 2.7.1).** `specification/convention-pack.md#naming-rule-examples`
+("Validation without truncation") normatively requires that a generated name exceeding the
+resource's Resource Definition `max_length` be reported as a validation failure — never silently
+truncated, and never omitted from `outputs.name`. `evaluateConvention` now implements this:
+whenever a name was actually generated (naming did not fail structurally, for example due to a
+duplicate `naming_component_order` reference) and the selected Resource Definition declares a
+`rendering_constraints.max_length`, the generated name's length is compared against it. An
+over-length name produces exactly one additional `ConventionValidationFailure` with the message
+`"name exceeds max_length of <N> characters"`, composed with any other failures already present
+(unresolved required attributes, duplicate naming references) rather than replacing them;
+`outputs.name` is left completely unmodified either way. `allowed_characters` remains deferred
+— max_length is executable independently of it, since it is a free-standing numeric comparison
+with no dependency on any character-grammar decision.
+
+*Length unit: Unicode code points.* Specification v1.1 does not define the unit `max_length`
+counts (see
+[`docs/architecture/convention-evaluation-executability.md#length-and-truncation`](convention-evaluation-executability.md#length-and-truncation));
+its own normative test vector uses only ASCII text, which cannot disambiguate between code
+points, UTF-16 code units, or bytes, since the three coincide for ASCII. This increment
+deliberately measures Unicode code points (`[...name].length`), not JavaScript's native
+UTF-16-code-unit `String.prototype.length`: code points are the length notion most other
+mainstream language runtimes expose by default (for example Python's `len(str)`, Rust's
+`.chars().count()`), while UTF-16 code units are specific to a handful of runtimes (JavaScript,
+Java, C#). This is a documented **implementation-scoped decision, not a Specification change** —
+recorded the same way increment 2.6.4 documented its Unicode Character Database version decision
+without changing normative text (see
+[`docs/architecture/convention-evaluation-executability.md#unicode-character-database-version-determinism-increment-264`](convention-evaluation-executability.md#unicode-character-database-version-determinism-increment-264)).
+No second-language adapter exists yet to demonstrate an actual cross-language divergence; should
+one be built, this choice should be revisited and, if still correct, promoted to normative
+Specification text rather than left as an implementation default.
 
 **Invariants.** Pure and deterministic (same input, same output); never mutates `resolved_context`,
 `resource_definition`, or `convention_pack`; never throws for an unresolved required attribute;
@@ -1012,11 +1062,16 @@ and an aggregate object keeps call sites additive per
    already independently re-derives that same outcome as a `ConventionValidationFailure` —
    propagating it too would duplicate one failure across two result fields.
    `"protected-value-conflict"` has no other downstream representation anywhere in the pipeline,
-   so it is mapped to `ConventionResult.warnings` (`{ message: string }`), an existing,
-   general-purpose extension point already documented as "non-fatal issues detected while
-   generating the result" — composing an existing result field, not inventing a new one. When no
-   `protected-value-conflict` diagnostic occurred, `warnings` is omitted entirely (not set to an
-   empty array), consistent with `exactOptionalPropertyTypes`.
+   so it is mapped to a `ConventionWarning` (`{ message: string }`), an existing, general-purpose
+   extension point already documented as "non-fatal issues detected while generating the result"
+   — composing an existing result field, not inventing a new one. This Context-Resolution-derived
+   warning is then merged with Convention Evaluation's own `ConventionResult.warnings` by
+   `mergeWarnings` (Context Resolution's warnings first, Convention Evaluation's second, matching
+   the order the two stages run in), fixed by increment 2.7.1 after a post-implementation review
+   found the original code discarded one source whenever the other was present (see [2.7.1 —
+   Public Evaluator Conformance](#increment-plan)). When neither source produced any warnings,
+   `warnings` is omitted entirely (not set to an empty array), consistent with
+   `exactOptionalPropertyTypes`.
 
 `evaluate` is exported from the package root
 ([`packages/core/src/index.ts`](../../packages/core/src/index.ts)), alongside `EvaluateInput` —

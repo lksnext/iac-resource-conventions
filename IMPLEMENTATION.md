@@ -74,9 +74,11 @@ This is the **implementation foundation** only. As of this writing:
   is recorded in
   [`docs/architecture/executable-domain-model-traceability.md`](docs/architecture/executable-domain-model-traceability.md).
   Compile-time contract tests and package-level build/runtime tests pass (see [Testing and
-  fixture strategy](#testing-and-fixture-strategy)). No Reference Evaluator behavior exists.
-- **Milestone 2 — Reference Evaluator: In progress.** The deterministic, platform-independent
-  implementation of Context Resolution and Convention Evaluation. Architecture defined in
+  fixture strategy](#testing-and-fixture-strategy)). Milestone 1 itself introduced no
+  Reference Evaluator behavior; evaluator behavior was added later under Milestone 2.
+- **Milestone 2 — Reference Evaluator: Complete for Specification v1.1 executable scope.** The
+  deterministic, platform-independent implementation of Context Resolution and Convention
+  Evaluation. Architecture defined in
   [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md).
   - Completed increment: **2.1 — Evaluator architecture and public contract** (architecture,
     module boundary, and the behavior-free internal pipeline contracts
@@ -235,9 +237,32 @@ This is the **implementation foundation** only. As of this writing:
     `unresolved-required-attribute` diagnostics are not duplicated, since `evaluateConvention`
     already re-derives that outcome independently)). See
     [`docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented`](docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented).
+  - Completed increment: **2.7.1 — Public Evaluator Conformance** (a post-implementation review
+    of 2.7 found, and this increment closes, two conformance gaps without redesigning
+    `evaluate()` or `evaluateConvention`: first, `max_length` validation
+    (`ResourceRenderingConstraints.max_length`) is now implemented as `maxLengthFailure` in
+    [`packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts`](packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts),
+    per
+    [`specification/convention-pack.md#naming-rule-examples`](specification/convention-pack.md#naming-rule-examples)
+    ("Validation without truncation"): an over-length generated name is reported as a
+    `ConventionValidationFailure`, composed with any other failures, and the name itself is
+    retained exactly as produced, never truncated. Length is measured in Unicode code points, a
+    documented implementation-scoped decision recorded in
+    [`docs/architecture/convention-evaluation-executability.md#length-and-truncation`](docs/architecture/convention-evaluation-executability.md#length-and-truncation)
+    since the Specification does not define the length unit itself; `allowed_characters`
+    remains deferred. Second, `evaluate()`'s final line previously discarded Convention
+    Evaluation's own `ConventionResult.warnings` whenever Context Resolution's diagnostics-
+    derived warnings were also present, instead of merging both; a new `mergeWarnings` helper in
+    [`packages/core/src/evaluator/evaluate.ts`](packages/core/src/evaluator/evaluate.ts) merges
+    both sources (Context Resolution's warnings first, Convention Evaluation's second) without
+    inventing a new warning taxonomy). See
+    [`docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented`](docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented).
   - Not yet started: metadata projection, general normalization, `allowed_characters` grammar,
     Placement Constraint validation, Governance Profile defaults, truncation, hashing, and
-    global uniqueness.
+    global uniqueness. Every one of these is a Specification v1.1 Non-Goal (see
+    [`specification/README.md#specification-v11-non-goals`](specification/README.md#specification-v11-non-goals)),
+    not a gap within v1.1's own executable scope, so their absence does not contradict Milestone
+    2's "Complete for Specification v1.1 executable scope" status above.
   - Deferred: see
     [`docs/architecture/reference-evaluator.md#deferred-decisions`](docs/architecture/reference-evaluator.md#deferred-decisions).
 
