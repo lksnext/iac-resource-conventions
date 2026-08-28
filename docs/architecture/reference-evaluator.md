@@ -197,11 +197,13 @@ contract, and `core` never loads a Resource Definition itself (see
 
 This is illustrative, not a commitment beyond what has already been built: `context-resolution/`,
 `resource-projection/`, and `convention-evaluation/` all exist today (see [Code
-scaffold](#code-scaffold) below); `convention-evaluation/` currently contains only the
-required-attribute completeness rule (see [Convention Evaluation Rules
-(implemented)](#convention-evaluation-rules-implemented)) — abbreviation application,
-normalization, separators, casing, metadata projection, and Resource Definition constraint
-validation remain unimplemented, each blocked on a documented Specification or domain-model gap.
+scaffold](#code-scaffold) below). `convention-evaluation/` now implements required-attribute
+completeness and Specification v1.1 executable naming — component ordering, abbreviation,
+casing, separator joining, optional-component omission, and duplicate `naming_component_order`
+reference rejection (see [Convention Evaluation Rules
+(implemented)](#convention-evaluation-rules-implemented)). Normalization beyond casing,
+truncation, hashing, metadata projection, and Resource Definition constraint validation remain
+unimplemented, each blocked on a documented Specification or domain-model gap.
 
 Dependency direction:
 
@@ -436,15 +438,52 @@ renamed to match the Specification's own terms ("Evaluate Convention" / "Generat
   implements only that rule, in `evaluateConvention` under
   [`packages/core/src/evaluator/convention-evaluation/`](../../packages/core/src/evaluator/convention-evaluation/)
   (see [Convention Evaluation Rules (implemented)](#convention-evaluation-rules-implemented)),
-  and produces `outputs: {}` (no `name`, no `metadata`) and no `warnings`, since every rule that
-  would populate them remains blocked. **Definition of done:** given a `ConventionEvaluationInput`,
-  `evaluateConvention` returns a `ConventionResult` whose `validation.valid` correctly reflects
-  whether every declared required attribute resolved, for both complete and incomplete inputs,
-  verified by table-driven tests; every other candidate rule is either implemented or explicitly
-  documented as blocked, with a citation, rather than silently omitted. **Status: complete for
-  the currently executable rule** — abbreviation, normalization, separator, casing, truncation,
-  hashing, collision, metadata projection, and Resource Definition constraint validation remain
-  open for a future increment, once the Specification defines the missing mechanisms.
+  and, at the time this increment completed, produced `outputs: {}` (no `name`, no `metadata`)
+  and no `warnings`, since every rule that would populate them was still blocked. **Definition of
+  done:** given a `ConventionEvaluationInput`, `evaluateConvention` returns a `ConventionResult`
+  whose `validation.valid` correctly reflects whether every declared required attribute resolved,
+  for both complete and incomplete inputs, verified by table-driven tests; every other candidate
+  rule is either implemented or explicitly documented as blocked, with a citation, rather than
+  silently omitted. **Status: complete for the rule this increment implemented** —
+  required-attribute completeness. Naming rendering itself (separator, casing, abbreviation,
+  component ordering) was blocked on missing Specification semantics at the time this increment
+  completed; see **2.6.1**, **Specification v1.1**, **2.6.2**, and **2.6.3** below for how that
+  blocker was subsequently resolved. Normalization beyond casing, truncation, hashing, collision
+  handling, metadata projection, and Resource Definition constraint validation remain open for a
+  future increment, once the Specification defines the missing mechanisms.
+- **2.6.1 — Executability Gap Analysis**. A pure documentation and analysis increment (no
+  production code, tests, or Specification changes) that formalized, capability by capability
+  with full repository citations, which Specification concepts were Executable, Modelled but not
+  executable, Conceptual only, External, or Deferred — see
+  [`docs/architecture/convention-evaluation-executability.md`](convention-evaluation-executability.md).
+  Its explicit recommendation was to pursue a Specification revision for naming-rendering
+  semantics (separator, casing, abbreviation) before increment 2.7 begins. **Status: complete.**
+- **Specification v1.1 — Executable Naming**. A Specification-only change (no production code,
+  tests, or dependency changes) that adopted 2.6.1's recommendation: it added the canonical
+  attribute-reference vocabulary
+  ([`specification/resource-identity.md#canonical-attribute-references`](../../specification/resource-identity.md#canonical-attribute-references))
+  and normative separator, casing, abbreviation, and naming rule execution order semantics
+  ([`specification/convention-pack.md#naming-projections`](../../specification/convention-pack.md#naming-projections)).
+  It changed no evaluator behavior by itself. **Status: complete.**
+- **2.6.2 — Executable Naming Rules**. Implements Specification v1.1's canonical naming
+  vocabulary, component ordering, optional-component omission, required-component failure
+  handling, abbreviation application, casing, separator joining, and deterministic `outputs.name`
+  generation, under `convention-evaluation/naming/` (see [Convention Evaluation Rules
+  (implemented)](#convention-evaluation-rules-implemented) for the current, up-to-date
+  description of this behavior). `ResourceRenderingConstraints.max_length` validation remains
+  deferred, since the Specification does not define the length unit unambiguously. **Status:
+  complete.**
+- **2.6.3 — Executable Naming Conformance**. Closes two conformance gaps found in 2.6.2's naming
+  implementation: `evaluateConvention` now rejects a Convention Pack whose
+  `naming_component_order` lists the same canonical attribute reference more than once (per
+  [`specification/convention-pack.md#naming-projections`](../../specification/convention-pack.md#naming-projections)),
+  and the Specification's casing wording was corrected to describe the Unicode Default Case
+  Conversion algorithm it actually implements, rather than the stricter "Unicode simple case
+  mapping" an earlier draft described. **Status: complete.**
+- **2.7 — Reference Evaluator API**. Not yet started. See [Deferred decisions](#deferred-decisions)
+  for the design invariants recorded ahead of this increment (final function signature, Resource
+  Definition and Convention Pack identity boundaries, Context Resolution orchestration, and
+  diagnostics propagation).
 
 ## Pipeline contracts (implemented)
 
@@ -808,6 +847,15 @@ remains unimplemented. `resource_identity` and `governance_context` are copied t
 consulted for any validation this increment can actually execute; `max_length` validation remains
 deferred until the Specification defines the length unit unambiguously.
 
+**Naming conformance (increment 2.6.3).** `evaluateConvention` rejects a selected Convention Pack
+whose `naming_component_order` lists the same canonical attribute reference more than once (per
+[`specification/convention-pack.md#naming-projections`](../../specification/convention-pack.md#naming-projections):
+"A reference listed more than once is invalid."). When duplicates are found, `outputs.name` is left
+`undefined` — Resource Projection and naming rendering are never invoked, so the same attribute is
+never projected twice — and each duplicated reference is reported as its own
+`ConventionValidationFailure`. This closed the last conformance gap identified against Specification
+v1.1's naming projection rules.
+
 **Invariants.** Pure and deterministic (same input, same output); never mutates `resolved_context`,
 `resource_definition`, or `convention_pack`; never throws for an unresolved required attribute;
 `explanation` is a deterministic summary of how many required attributes were checked and how
@@ -824,11 +872,57 @@ the package root — proven at compile time by
 Milestone 2.2/2.3 Context Resolution resolvers (`context-resolution/`: `resolveResourceIdentity`
 and `resolveGovernanceContext`), the Milestone 2.5 Resource Projection function
 (`resource-projection/`: `projectResource` and the canonical Resource Identity attribute
-accessor helper it uses), and the Milestone 2.6 Convention Evaluation Rules function
+accessor helper it uses), and the Milestone 2.6/2.6.2/2.6.3 Convention Evaluation Rules function
 (`convention-evaluation/`: `evaluateConvention`, with `convention-evaluation/naming/`
 implementing naming rendering). No public `evaluate()` function exists yet. Increment 2.4
 (Resource Convention Preparation / Resource Definition selection) added no folder or code at all,
 per its design gate (see [Increment plan](#increment-plan)).
+
+## 2.7 readiness and design invariants
+
+Milestone **2.6.4 — Naming Specification & Architecture Closure** reviewed whether increment 2.7
+(the public `evaluate()` API) is unblocked, and recorded the following design invariants a future
+2.7 implementation must resolve. None of these are implemented here — this section records
+requirements only, consistent with this increment's documentation-only scope.
+
+- **Minimum viable public result.** [`specification/convention-result.md#conceptual-contents`](../../specification/convention-result.md#conceptual-contents)
+  treats Convention Outputs (names and metadata) as a single grouping without requiring every
+  output kind to be present before a result is meaningful — a naming output may be generated
+  before metadata projection exists (see
+  [`specification/convention-packs/aws-workload-default.md`](../../specification/convention-packs/aws-workload-default.md)'s
+  own staged-rollout example). With naming rendering now implemented (2.6.2–2.6.3), a first
+  `evaluate()` — resolved identity and governance context, a generated name where the Convention
+  Pack declares naming components, and validation — is a meaningful result; metadata projection
+  remaining absent does not block it.
+- **Resource Definition identity boundary.** The Specification never states that the evaluator
+  itself must verify that a caller-supplied `ResourceDefinition.resource_type` matches the
+  resolved `resource_identity.functional.resource_type` — Resource Definition selection is
+  described as "a lookup, not a resolution"
+  ([`specification/context-resolution.md#what-context-resolution-produces`](../../specification/context-resolution.md#what-context-resolution-produces)),
+  performed by the caller before invoking Convention Evaluation. Increment 2.7 must decide
+  whether the public API adds a mismatch check (defensive validation at the public boundary) or
+  continues to trust the caller's selection, as `evaluateConvention` does today.
+- **Convention Pack identity boundary.** Similarly, [`specification/naming-request.md`](../../specification/naming-request.md)
+  describes `convention` as selecting the Convention Pack used for a request, but does not
+  normatively require the evaluator to verify `naming_request.convention == convention_pack.id`
+  once both are supplied as already-resolved inputs. Increment 2.7 must decide whether this
+  belongs to the public API as a defensive check or remains the caller's responsibility.
+- **Context Resolution orchestration.** A public `evaluate()` must invoke both
+  `resolveResourceIdentity` and `resolveGovernanceContext` from one `ContextResolutionInput` and
+  compose their two results into one `ContextResolutionResult`, without re-exposing either
+  internal resolver publicly and without introducing a third normative pipeline stage — the
+  Specification defines exactly two (see [Evaluation pipeline](#evaluation-pipeline)).
+- **Diagnostics propagation.** [Diagnostics aggregation across Context Resolution's two
+  halves](#deferred-decisions) remains an open question independent of 2.7: `evaluateConvention`
+  already recomputes required-attribute completeness directly against `ContextResolutionResult`
+  rather than reusing `resolveResourceIdentity`/`resolveGovernanceContext`'s own
+  `ContextResolutionDiagnostic`s. This is a design choice 2.7 may revisit but is not a blocker —
+  the current recompute-based approach already produces a correct, tested `ConventionResult`.
+
+None of the above is a P0 blocker for beginning increment 2.7; each is a design decision 2.7 must
+make explicitly rather than a missing capability. See
+[`docs/architecture/convention-evaluation-executability.md`](convention-evaluation-executability.md)
+for the corresponding P0 naming readiness matrix.
 
 ## Deferred decisions
 
