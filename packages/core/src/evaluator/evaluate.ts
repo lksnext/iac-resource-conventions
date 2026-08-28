@@ -45,6 +45,43 @@ function toWarnings(
 }
 
 /**
+ * Merges Context Resolution's warnings ({@link toWarnings}) with Convention
+ * Evaluation's own `ConventionResult.warnings`, so neither source silently overwrites
+ * the other in the composed `ConventionResult` — fixing a conformance gap where the
+ * final result previously kept only one source's warnings (see
+ * `docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented`).
+ *
+ * Context Resolution's warnings are ordered first, Convention Evaluation's second,
+ * matching the order the two stages actually run in (see
+ * `specification/README.md#architecture`). Returns `undefined`, not an empty array,
+ * when neither source has any warnings, so `ConventionResult.warnings` continues to be
+ * omitted entirely rather than present-but-empty (see `exactOptionalPropertyTypes` in
+ * `tsconfig.base.json`).
+ *
+ * Exported from this module only so it can be unit-tested directly by importing the
+ * built `dist/evaluator/evaluate.js` module, the same way
+ * `../convention-evaluation/evaluate-convention.ts`'s `evaluateConvention` is tested —
+ * not re-exported from the package root (`../index.ts`), so it is not part of the
+ * public API (see `docs/architecture/reference-evaluator.md#public-api-principles`).
+ * Convention Evaluation has no currently-executable rule that populates
+ * `ConventionResult.warnings` yet, so this merge cannot be exercised end-to-end through
+ * `evaluate` for its "Convention-Evaluation-only" and "both sources" cases; testing the
+ * function directly avoids fabricating a warning-producing rule solely to test it.
+ */
+export function mergeWarnings(
+  contextResolutionWarnings: ReadonlyArray<ConventionWarning> | undefined,
+  conventionEvaluationWarnings: ReadonlyArray<ConventionWarning> | undefined,
+): ReadonlyArray<ConventionWarning> | undefined {
+  if (contextResolutionWarnings === undefined) {
+    return conventionEvaluationWarnings;
+  }
+  if (conventionEvaluationWarnings === undefined) {
+    return contextResolutionWarnings;
+  }
+  return [...contextResolutionWarnings, ...conventionEvaluationWarnings];
+}
+
+/**
  * Defensive consistency checks at the public evaluator boundary (see
  * `docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented`),
  * resolving the two identity-boundary questions recorded by [2.6.4's "2.7 readiness
@@ -99,8 +136,9 @@ function identityBoundaryFailures(
  * orchestrates `resolveResourceIdentity`, `resolveGovernanceContext`, and
  * `evaluateConvention` exactly as increments 2.2, 2.3, and 2.6 already implemented and
  * tested them, plus the two identity-boundary checks recorded as open design
- * invariants by 2.6.4 (see {@link identityBoundaryFailures}) and the diagnostics
- * propagation decision described by {@link toWarnings}. See
+ * invariants by 2.6.4 (see {@link identityBoundaryFailures}), the diagnostics
+ * propagation decision described by {@link toWarnings}, and the warning-merge fix
+ * described by {@link mergeWarnings}. See
  * `docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented` for
  * the full rationale.
  *
@@ -152,5 +190,7 @@ export function evaluate(input: EvaluateInput): ConventionResult {
 
   const result = evaluateConvention(conventionEvaluationInput);
 
-  return warnings === undefined ? result : { ...result, warnings };
+  const mergedWarnings = mergeWarnings(warnings, result.warnings);
+
+  return mergedWarnings === undefined ? result : { ...result, warnings: mergedWarnings };
 }

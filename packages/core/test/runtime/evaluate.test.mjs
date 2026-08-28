@@ -20,6 +20,7 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { mergeWarnings } from "../../dist/evaluator/evaluate.js";
 import { evaluate } from "../../dist/index.js";
 
 function deepFreeze(value) {
@@ -154,10 +155,8 @@ test("acceptance: casing — casing: lower normalizes an inconsistently-cased re
 });
 
 test(
-  "acceptance: validation without truncation — a name exceeding max_length is not " +
-    "truncated (documented gap: max_length validation itself remains unimplemented, " +
-    "see docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented, " +
-    "so validation.valid is still true here rather than the Specification's illustrative false)",
+  "acceptance: validation without truncation — a name exceeding max_length is reported " +
+    "invalid, and the generated name is retained exactly as produced, never truncated",
   () => {
     const input = baseInput({
       naming_request: {
@@ -178,7 +177,10 @@ test(
       result.outputs.name,
       "telemetry-platform-ingestion-pipeline-orchestration-aws_s3_bucket",
     );
-    assert.equal(result.validation.valid, true);
+    assert.equal(result.validation.valid, false);
+    assert.deepEqual(result.validation.failures, [
+      { message: "name exceeds max_length of 24 characters" },
+    ]);
   },
 );
 
@@ -331,4 +333,44 @@ test("no boundary check fires when the Naming Request selects no convention expl
   const result = evaluate(input);
 
   assert.equal(result.validation.valid, true);
+});
+
+// --- Warning composition: mergeWarnings (docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented) ---
+//
+// mergeWarnings is exported from its own module only (not the package root; see its
+// own doc comment in ../../src/evaluator/evaluate.ts) so it can be unit-tested
+// directly. Convention Evaluation has no currently-executable rule that populates
+// `ConventionResult.warnings`, so its "Convention-Evaluation-only" and "both sources"
+// cases cannot be exercised end-to-end through `evaluate` without fabricating one; the
+// "neither source" and "Context-Resolution-only" cases already are, above (see "an
+// unresolved required attribute is reported once..." and "a protected-value conflict
+// is surfaced as a warning...").
+
+test("mergeWarnings returns undefined when neither source has warnings", () => {
+  assert.equal(mergeWarnings(undefined, undefined), undefined);
+});
+
+test("mergeWarnings returns Context Resolution's warnings unchanged when Convention Evaluation has none", () => {
+  const contextResolutionWarnings = [{ message: "a Context Resolution warning" }];
+
+  assert.deepEqual(mergeWarnings(contextResolutionWarnings, undefined), contextResolutionWarnings);
+});
+
+test("mergeWarnings returns Convention Evaluation's warnings unchanged when Context Resolution has none", () => {
+  const conventionEvaluationWarnings = [{ message: "a Convention Evaluation warning" }];
+
+  assert.deepEqual(
+    mergeWarnings(undefined, conventionEvaluationWarnings),
+    conventionEvaluationWarnings,
+  );
+});
+
+test("mergeWarnings concatenates both sources, Context Resolution first, when both have warnings", () => {
+  const contextResolutionWarnings = [{ message: "a Context Resolution warning" }];
+  const conventionEvaluationWarnings = [{ message: "a Convention Evaluation warning" }];
+
+  assert.deepEqual(mergeWarnings(contextResolutionWarnings, conventionEvaluationWarnings), [
+    { message: "a Context Resolution warning" },
+    { message: "a Convention Evaluation warning" },
+  ]);
 });
