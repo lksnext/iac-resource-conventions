@@ -48,9 +48,16 @@ This is the **implementation foundation** only. As of this writing:
 - license-checker-rseidelsohn provides dependency license compliance validation locally and in
   CI (see [Dependency license validation](#dependency-license-validation)) — a separate concern
   from npm audit's security scanning.
-- No Context Resolution, Convention Evaluation, naming algorithm, metadata projection,
-  Placement Constraint validation, CLI behavior, or adapter integration has been
-  implemented.
+- Context Resolution (Resource Identity and Governance Context) and Convention Evaluation —
+  including Specification v1.1 executable naming (component ordering, abbreviation, casing,
+  separator joining, optional-component omission, and rejection of a Convention Pack whose
+  `naming_component_order` lists the same canonical attribute reference more than once) — are
+  implemented under
+  [`packages/core/src/evaluator/`](packages/core/src/evaluator/) (see
+  [Milestones](#milestones) below). This internal behavior is not yet re-exported as a public
+  `evaluate()` API (increment 2.7, not yet started). Metadata projection, general
+  normalization, `allowed_characters` grammar, Placement Constraint validation, truncation,
+  hashing, global uniqueness, CLI behavior, and adapter integration remain unimplemented.
 - `packages/catalog`, `packages/cli`, and `packages/adapters/*` do not exist yet — they
   are planned (see [Planned packages](#planned-packages)) and must only be created when
   a concrete task needs them, per the repository's incremental-evolution principle (see
@@ -130,12 +137,6 @@ This is the **implementation foundation** only. As of this writing:
     produces a `ConventionResult` whose `validation.valid` reflects completeness, with
     `outputs: {}` and no `warnings` in this increment). See
     [`docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented`](docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented).
-  - Not yet started: naming rendering, abbreviation application, normalization, metadata
-    projection, and Resource Definition constraint validation (blocked pending Specification
-    definitions for separators, casing, abbreviation semantics, and a metadata projection
-    mapping — see [Deferred decisions](docs/architecture/reference-evaluator.md#deferred-decisions)),
-    and the public Reference Evaluator `evaluate()` API (increment 2.7, not yet started — its
-    final signature and whether it can proceed ahead of the rules above remain open).
   - Completed increment: **2.6.1 — Executability Gap Analysis** — a pure documentation and
     analysis increment (no production code, tests, or Specification changes) that formalizes,
     capability by capability with full repository citations, which Specification concepts are
@@ -154,7 +155,7 @@ This is the **implementation foundation** only. As of this writing:
     additively over the frozen `specification-v1.0` baseline. See
     [`specification/README.md#specification-v11-executable-naming`](specification/README.md#specification-v11-executable-naming)
     for the full scope, delta, and non-goals. It changes no evaluator behavior by itself.
-  - In progress: **2.6.2 — Executable Naming Rules** — implements Specification v1.1's
+  - Completed: **2.6.2 — Executable Naming Rules** — implements Specification v1.1's
     canonical Resource Identity naming vocabulary, component ordering, optional-component
     omission, required-component failure handling, abbreviation application, casing, separator
     joining, and deterministic `outputs.name` generation in `packages/core/src/evaluator/`.
@@ -162,6 +163,30 @@ This is the **implementation foundation** only. As of this writing:
     reshaped `abbreviations`, with corresponding tests. Not yet complete: validation against
     `ResourceRenderingConstraints.max_length` remains deferred because the Specification does not
     define the length unit unambiguously.
+  - Completed: **2.6.3 — Executable Naming Conformance** — closes two conformance gaps found in
+    2.6.2's naming implementation. First, `evaluateConvention` now rejects a Convention Pack
+    whose `naming_component_order` lists the same canonical attribute reference more than once
+    (per
+    [`specification/convention-pack.md#naming-projections`](specification/convention-pack.md#naming-projections):
+    "A reference listed more than once is invalid."): when duplicates are found, `outputs.name`
+    is left `undefined` (Resource Projection and naming are never invoked, so the same attribute
+    is never projected twice) and each duplicated reference is reported as its own
+    `ConventionValidationFailure`. Second, a documented, evidence-based review (citing ECMA-262
+    §22.1.3.28/22.1.3.30 and the Unicode.org Case Mapping FAQ, plus empirical verification)
+    found that `casing`'s existing implementation — JavaScript's `toLowerCase()`/
+    `toUpperCase()` — implements the Unicode Default Case Conversion algorithm (locale-
+    insensitive, but not restricted to one-to-one code point mappings), not the strictly
+    one-to-one "Unicode simple case mapping" the Specification previously described; the
+    Specification wording in
+    [`specification/convention-pack.md#casing`](specification/convention-pack.md#casing) was
+    corrected to describe Default Case Conversion, since aligning the wording to the existing,
+    cross-runtime-reproducible implementation was the resolution that required no new
+    dependency and no implementation change. Both fixes are covered by new runtime tests in
+    [`packages/core/test/runtime/naming-evaluation.test.mjs`](packages/core/test/runtime/naming-evaluation.test.mjs).
+    This increment also corrected stale "no evaluator behavior is implemented" documentation
+    left over from before 2.2–2.6.2 in
+    [`packages/core/src/index.ts`](packages/core/src/index.ts) and
+    [`packages/core/src/evaluator/index.ts`](packages/core/src/evaluator/index.ts).
   - Not yet started: metadata projection, general normalization, `allowed_characters` grammar,
     Placement Constraint validation, Governance Profile defaults, truncation, hashing, global
     uniqueness, and the public Reference Evaluator `evaluate()` API (increment 2.7, not yet
@@ -438,11 +463,13 @@ All contracts are exported from the package root only — no subpath imports:
 import type { NamingRequest, ConventionResult } from "@lksnext/iac-conventions-core";
 ```
 
-Every contract is type-only (an `interface` or a `type` alias); the package still has no
-runtime behavior beyond the existing `CORE_PACKAGE_NAME` constant. Context Resolution,
-Convention Evaluation, naming algorithms, validation rules, and every adapter remain
-unimplemented — see
-[`docs/architecture/executable-domain-model.md#non-goals`](docs/architecture/executable-domain-model.md#non-goals).
+Every contract is type-only (an `interface` or a `type` alias); the model layer itself carries
+no runtime behavior beyond the existing `CORE_PACKAGE_NAME` constant, by design (see
+[`docs/architecture/executable-domain-model.md#non-goals`](docs/architecture/executable-domain-model.md#non-goals)).
+Context Resolution, Convention Evaluation, and Specification v1.1 executable naming are
+implemented separately, under `packages/core/src/evaluator/` (see
+[Milestones](#milestones)), which depends on the model but is never depended on by it; every
+adapter remains unimplemented.
 
 Two Specification documents — [`convention-pack.md`](specification/convention-pack.md) and
 [`resource-definition.md`](specification/resource-definition.md) — explicitly leave their

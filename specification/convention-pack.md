@@ -319,8 +319,8 @@ transformations applied to each naming component's value:
 | Value | Effect |
 | --- | --- |
 | `preserve` | The component's value is used exactly as resolved (and, if applicable, abbreviated — see [Abbreviations](#abbreviations)); no case transformation is applied. |
-| `lower` | The component's value is mapped to lowercase using the Unicode simple lowercase mapping, applied without regard to locale. |
-| `upper` | The component's value is mapped to uppercase using the Unicode simple uppercase mapping, applied without regard to locale. |
+| `lower` | The component's value is mapped to lowercase using the Unicode Default Case Conversion algorithm's lowercase mapping, applied without regard to locale. |
+| `upper` | The component's value is mapped to uppercase using the Unicode Default Case Conversion algorithm's uppercase mapping, applied without regard to locale. |
 
 `casing` defaults to `preserve` when omitted, so a Convention Pack that does not
 declare a casing rule generates names using resolved values exactly as they appear in
@@ -329,6 +329,22 @@ Resource Identity. No other casing style (for example `camelCase`, `PascalCase`,
 necessary to make naming deterministically executable, and adding one speculatively
 would exceed this version's scope (see [Specification v1.1:
 Scope](./README.md#scope)).
+
+The Unicode Default Case Conversion algorithm (Unicode Standard, Chapter 3, "Default
+Case Algorithms") is locale-insensitive but is not restricted to one-to-one code point
+mappings: it applies every locale-insensitive mapping in both `UnicodeData.txt` and
+`SpecialCasing.txt`, so a single input code point can map to more than one output code
+point (for example, `ß` U+00DF uppercases to the two-character sequence `SS`, and `İ`
+U+0130 lowercases to the two-character sequence `i` + U+0307 COMBINING DOT ABOVE). This
+is a deliberately different, broader algorithm than the "Unicode simple case mapping"
+referenced by earlier drafts of this section, which is restricted to the strictly
+one-to-one mappings in `UnicodeData.txt` alone and would leave code points such as `ß`
+unchanged. `casing: lower` and `casing: upper` are defined in terms of Default Case
+Conversion specifically because it is what every mainstream language runtime's default,
+locale-independent case-conversion function implements (including ECMAScript's
+`String.prototype.toLowerCase`/`toUpperCase`, which the Reference Evaluator's TypeScript
+implementation uses directly); requiring the stricter simple mapping instead would make
+`casing` harder, not easier, to implement identically across adapters and languages.
 
 Casing applies to each naming component's final per-component value — after
 abbreviation substitution, if any (see [Naming rule execution

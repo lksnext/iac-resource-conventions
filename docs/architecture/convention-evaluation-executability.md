@@ -33,12 +33,23 @@ experience demonstrates that the current model is insufficient" — this documen
 that implementation experience, and it directly motivated
 [Specification v1.1: Executable Naming](../../specification/README.md#specification-v11-executable-naming),
 which normatively defines separator, casing, and abbreviation semantics (see the
-updated rows below). **No row below is marked Executable as a result of v1.1**: v1.1
-only changed `specification/`; the Reference Evaluator does not yet implement naming
-rule execution (planned as implementation increment 2.6.2 — Executable Naming Rules;
-see [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)), so every classification below is
-unchanged from before v1.1 — only the "Missing executable semantics" column changes,
-from "undefined" to "defined in the Specification; not yet implemented."
+updated rows below).
+
+> **Status update:** this document's original analysis (below) reflects the point in
+> time before implementation increment 2.6.2. Naming rule execution — separator,
+> casing, abbreviation application, component ordering, optional-component omission,
+> and generated name output — has since been implemented by **2.6.2 — Executable
+> Naming Rules**, and increment **2.6.3 — Executable Naming Conformance** added
+> rejection of a `naming_component_order` with a duplicated canonical attribute
+> reference and corrected the Specification's casing wording to match the existing
+> implementation's Unicode Default Case Conversion semantics (see
+> [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md) for current milestone status). The
+> capability tables below already reflect this — every row this document originally
+> analyzed as blocked purely on missing Specification semantics (separator, casing,
+> abbreviations, component ordering, generated name output) is now marked
+> **Executable**; only the narrative sections further below, written before 2.6.2,
+> still describe the pre-implementation gap analysis and are retained as historical
+> record.
 
 ## Executability classification
 
@@ -213,9 +224,10 @@ not **Modelled but not executable** — no contract represented a separator at a
 value, default (empty string), ownership (Convention Pack), placement, and
 omitted-component interaction rules, and
 [convention-pack.md#naming-rule-examples](../../specification/convention-pack.md#naming-rule-examples)
-for worked examples. This is documentation only: no evaluator code implements it yet
-(planned as implementation increment 2.6.2 — see [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)),
-so the classification above is left unchanged.
+for worked examples. At the time this section was written, this was documentation only;
+it has since been implemented by `evaluateName` (see
+[`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)'s 2.6.2 entry), and the Separator row in
+the [Naming](#naming) table above is classified **Executable** accordingly.
 
 ## Casing semantics
 
@@ -228,9 +240,17 @@ normative). No behavior was derived from those examples in this document.
 **Update (Specification v1.1):** a closed `preserve` / `lower` / `upper` vocabulary is
 now defined normatively, with `preserve` as the default and an explicit execution order
 relative to abbreviation — see
-[convention-pack.md#casing](../../specification/convention-pack.md#casing). This is
-documentation only: no evaluator code implements it yet (planned as implementation
-increment 2.6.2), so the classification above is left unchanged.
+[convention-pack.md#casing](../../specification/convention-pack.md#casing). At the time
+this section was written, this was documentation only; it has since been implemented by
+`applyCasing` (see [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)'s 2.6.2 entry), and the
+Casing row in the [Naming](#naming) table above is classified **Executable**
+accordingly. Increment **2.6.3 — Executable Naming Conformance** additionally corrected
+this section's Specification citation itself: `casing: lower`/`upper` are defined in
+terms of the Unicode Default Case Conversion algorithm, not the strictly one-to-one
+"Unicode simple case mapping" an earlier draft of `convention-pack.md#casing`
+described — a documented, evidence-based correction (ECMA-262, Unicode.org), not an
+implementation change, since `applyCasing`'s `toLowerCase()`/`toUpperCase()` calls
+already conformed to Default Case Conversion.
 
 ## Normalization
 
@@ -295,10 +315,10 @@ case-sensitive matching only, unabbreviated fallback, and an explicit execution 
 before casing. See [convention-pack.md#abbreviations](../../specification/convention-pack.md#abbreviations).
 This is a shape change from the sketch above (see [Specification v1.1's own delta
 note](../../specification/README.md#delta-from-specification-v10) for why this is
-treated as low-risk); it is documentation only, since no evaluator code reads
-`abbreviations` today and the existing test fixture continues to compile unchanged
-until implementation increment 2.6.2 updates it.
-Classified **Modelled but not executable**; no abbreviation behavior is invented here.
+treated as low-risk). At the time this section was written, this was documentation
+only; it has since been implemented by `applyAbbreviation` (see
+[`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)'s 2.6.2 entry), and the Abbreviations row
+in the [Naming](#naming) table above is classified **Executable** accordingly.
 
 ## Length and truncation
 
@@ -650,9 +670,9 @@ Constraint grammar, truncation and hashing, the Governance Profile artifact/inpu
 model, and diagnostic propagation) remain deferred, unchanged, exactly as scoped in
 [Specification v1.1 Non-Goals](../../specification/README.md#specification-v11-non-goals).
 
-Specification v1.1 changed only `specification/`. No row in the tables above is marked
-**Executable** as a result: the Reference Evaluator does not yet implement naming rule
-execution. That implementation is planned as increment **2.6.2 — Executable Naming
-Rules** (see [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)); only once it lands, with
-tests, should any affected row above change from **Conceptual only** / **Modelled but
-not executable** to **Executable**.
+Specification v1.1 changed only `specification/` at the time this document was
+written. As noted in the status update at the top of this document, implementation
+increment **2.6.2 — Executable Naming Rules** has since landed, with tests (see
+[`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)); the Separator, Casing, Abbreviations,
+Component ordering, and Generated name output rows in the [Naming](#naming) table above
+now read **Executable** as a result, exactly as this section anticipated.
