@@ -340,11 +340,14 @@ is a deliberately different, broader algorithm than the "Unicode simple case map
 referenced by earlier drafts of this section, which is restricted to the strictly
 one-to-one mappings in `UnicodeData.txt` alone and would leave code points such as `ß`
 unchanged. `casing: lower` and `casing: upper` are defined in terms of Default Case
-Conversion specifically because it is what every mainstream language runtime's default,
-locale-independent case-conversion function implements (including ECMAScript's
-`String.prototype.toLowerCase`/`toUpperCase`, which the Reference Evaluator's TypeScript
-implementation uses directly); requiring the stricter simple mapping instead would make
-`casing` harder, not easier, to implement identically across adapters and languages.
+Conversion, rather than the stricter simple case mapping, because Default Case
+Conversion is the Unicode Standard's own general-purpose, locale-independent case
+conversion algorithm; requiring the stricter simple mapping instead would silently
+exclude well-formed one-to-many mappings such as `ß` → `SS` for no normative reason. See
+[`docs/architecture/convention-evaluation-executability.md#casing-semantics`](../docs/architecture/convention-evaluation-executability.md#casing-semantics)
+for the cross-runtime, non-normative evidence (ECMA-262, the Unicode Character Encoding
+Stability Policies, and the current Reference Evaluator's conformance) that motivated
+this choice.
 
 Casing applies to each naming component's final per-component value — after
 abbreviation substitution, if any (see [Naming rule execution

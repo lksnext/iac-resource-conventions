@@ -65,10 +65,16 @@ Specification v1.1 defines, normatively:
 | `casing` | Did not exist. | New, optional; defaults to `preserve` when omitted. Additive. |
 | `abbreviations` | Sketched only as an under-specified `Record<string, string>`; no code read it and no concrete Convention Pack defined it (see [`docs/architecture/convention-evaluation-executability.md`](../docs/architecture/convention-evaluation-executability.md)). | Reshaped to `Record<attributeReference, Record<exactValue, abbreviation>>`, scoped per canonical attribute reference. **This is a shape change**, called out here for visibility per this task's own instructions, even though it changes no currently executing behavior (no evaluator code reads `abbreviations` yet) and no concrete Convention Pack defines one yet. |
 
-No previously executable behavior changes: the Reference Evaluator does not yet
-implement naming rule execution (that is planned as implementation increment
-2.6.2 — Executable Naming Rules; see [`IMPLEMENTATION.md`](../IMPLEMENTATION.md)), so
-this Specification update has no effect on any output a caller observes today.
+At the time Specification v1.1 was drafted, no previously executable behavior changed:
+the Reference Evaluator had not yet implemented naming rule execution (that was planned
+as implementation increment 2.6.2 — Executable Naming Rules; see
+[`IMPLEMENTATION.md`](../IMPLEMENTATION.md)), so this Specification update had no effect
+on any output a caller observed at the time. Implementation increment **2.6.2 —
+Executable Naming Rules** has since implemented this naming rule execution, and
+increment **2.6.3 — Executable Naming Conformance** closed two conformance gaps found in
+it (duplicate `naming_component_order` reference rejection, and a casing wording
+correction); see [`IMPLEMENTATION.md`](../IMPLEMENTATION.md) for current milestone
+status.
 
 ### Specification v1.1 Non-Goals
 

@@ -187,11 +187,43 @@ This is the **implementation foundation** only. As of this writing:
     left over from before 2.2–2.6.2 in
     [`packages/core/src/index.ts`](packages/core/src/index.ts) and
     [`packages/core/src/evaluator/index.ts`](packages/core/src/evaluator/index.ts).
+  - Completed: **2.6.4 — Naming Specification & Architecture Closure** — a documentation-only
+    increment (no evaluator behavior, dependency, or public API changes) that: (1) corrected
+    remaining stale documentation describing pre-2.6.2 executability across
+    [`specification/README.md`](specification/README.md),
+    [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md) (its
+    "Dependency boundaries" section and "Increment plan," which previously had no entries for
+    2.6.1, Specification v1.1, 2.6.2, or 2.6.3), and
+    [`packages/core/src/evaluator/contracts/index.ts`](packages/core/src/evaluator/contracts/index.ts)'s
+    header comment; (2) investigated whether cross-implementation Default Case Conversion
+    determinism requires pinning a specific Unicode Character Database version in
+    [`specification/convention-pack.md#casing`](specification/convention-pack.md#casing) —
+    concluding, on the evidence of the Unicode Consortium's own Stability Policies and ECMA-262,
+    that a version pin is not warranted yet, since no second-language adapter exists to
+    demonstrate an actual divergence (see
+    [`docs/architecture/convention-evaluation-executability.md`](docs/architecture/convention-evaluation-executability.md)'s
+    new "Unicode Character Database version determinism" section for the full analysis); (3)
+    removed an ECMAScript-specific normative justification from
+    [`specification/convention-pack.md#casing`](specification/convention-pack.md#casing),
+    relocating the cross-runtime evidence to the non-normative architecture document instead, so
+    the Specification's casing rule depends only on the Unicode Standard; (4) confirmed, in a new
+    "P0 naming readiness" section of
+    [`docs/architecture/convention-evaluation-executability.md`](docs/architecture/convention-evaluation-executability.md),
+    that every P0 naming capability (canonical attribute vocabulary, component ordering,
+    duplicate-reference rejection, optional-component omission, required-component handling,
+    abbreviation, casing, separator, deterministic rendering) is normatively specified, executable,
+    and tested, with P1/P2 items correctly left deferred; and (5) recorded, in a new "2.7 readiness
+    and design invariants" section of
+    [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md), the
+    non-naming design questions increment 2.7 must still resolve (minimum viable public result,
+    Resource Definition and Convention Pack identity boundary checks, Context Resolution
+    orchestration, and diagnostics propagation) without deciding or implementing any of them. No
+    P0 blocker remains for increment 2.7.
   - Not yet started: metadata projection, general normalization, `allowed_characters` grammar,
     Placement Constraint validation, Governance Profile defaults, truncation, hashing, global
-    uniqueness, and the public Reference Evaluator `evaluate()` API (increment 2.7, not yet
-    started — its final signature and whether it can proceed ahead of the rules above remain
-    open).
+    uniqueness, and the public Reference Evaluator `evaluate()` API (**increment 2.7 — Reference
+    Evaluator API, now the next active increment**; its final signature and the design invariants
+    recorded by 2.6.4 remain open, but no P0 naming blocker prevents starting it).
   - Deferred: see
     [`docs/architecture/reference-evaluator.md#deferred-decisions`](docs/architecture/reference-evaluator.md#deferred-decisions).
 

@@ -90,6 +90,7 @@ implementation file and whether runtime tests exist. "—" means no code exists.
 | --- | --- | --- | --- | --- | --- | --- |
 | Naming component selection | [convention-pack.md#naming-projections](../../specification/convention-pack.md#naming-projections) | `ConventionPack.naming_component_order` | `projectResource` ([project-resource.ts](../../packages/core/src/evaluator/resource-projection/project-resource.ts)); tested in [resource-projection.test.mjs](../../packages/core/test/runtime/resource-projection.test.mjs) | Executable | None for selection itself; the attribute vocabulary it resolves against is hard-coded (see [Naming component ordering](#naming-component-ordering) and [Hard-coded canonical attribute vocabulary](#hard-coded-canonical-attribute-vocabulary)) | — |
 | Component ordering | [convention-pack.md#naming-projections](../../specification/convention-pack.md#naming-projections) | `ConventionPack.naming_component_order` (`ReadonlyArray<string>`) | `projectResource` | Executable | None | — |
+| Duplicate reference rejection | [convention-pack.md#naming-projections](../../specification/convention-pack.md#naming-projections) ("A reference listed more than once is invalid.") | `ConventionPack.naming_component_order` | `evaluateConvention` ([evaluate-convention.ts](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts)); tested in [naming-evaluation.test.mjs](../../packages/core/test/runtime/naming-evaluation.test.mjs) | Executable | None (closed by increment 2.6.3) | — |
 | Canonical Resource Identity attribute vocabulary | [resource-identity.md#canonical-attribute-references](../../specification/resource-identity.md#canonical-attribute-references) | `CanonicalResourceIdentityAttribute` | `resolveCanonicalResourceIdentityAttribute`, `planeOfCanonicalResourceIdentityAttribute` ([canonical-resource-identity-attribute.ts](../../packages/core/src/evaluator/resource-projection/canonical-resource-identity-attribute.ts)) | Executable | None | — |
 | Optional component omission | [convention-pack.md#naming-projections](../../specification/convention-pack.md#naming-projections) ("which components may be omitted") | `ProjectedNamingComponent.required` | `projectResource`; tested | Executable | None | — |
 | Literal (fixed-text) components | *(not named anywhere in the Specification)* | — | — | Conceptual only | The Specification's naming-projection prose never mentions a fixed-text component distinct from an attribute-derived one; there is nothing to make executable yet | Specification |
@@ -136,7 +137,7 @@ implementation file and whether runtime tests exist. "—" means no code exists.
 
 | Capability | Specification source | Domain model | Evaluator | Status | Missing executable semantics | Likely owner |
 | --- | --- | --- | --- | --- | --- | --- |
-| Convention Outputs (shape) | [convention-result.md#convention-outputs](../../specification/convention-result.md#convention-outputs) | `ConventionOutputs` (Implemented, per traceability matrix) | `evaluateConvention` always returns `outputs: {}` | Modelled but not executable | The contract exists and is exercised, but nothing currently populates `name` or `metadata` (see Naming and Metadata tables above) | Reference Evaluator |
+| Convention Outputs (shape) | [convention-result.md#convention-outputs](../../specification/convention-result.md#convention-outputs) | `ConventionOutputs` (Implemented, per traceability matrix) | `evaluateConvention` populates `outputs.name` when the selected Convention Pack declares naming components and all declared required components resolve | Executable, with a caveat | `outputs.metadata` remains unpopulated — no metadata projection mapping exists yet (see Metadata table below) | Reference Evaluator (for metadata) |
 | Validation — required-attribute completeness | [convention-pack.md#required-attributes](../../specification/convention-pack.md#required-attributes) | `ConventionValidation`, `ConventionValidationFailure` | `evaluateConvention`; tested in [convention-evaluation.test.mjs](../../packages/core/test/runtime/convention-evaluation.test.mjs) | Executable | None | — |
 | Validation — technical/normalization/placement/uniqueness constraints | [convention-result.md#conceptual-contents](../../specification/convention-result.md#conceptual-contents) | `ConventionValidation` | — | Modelled but not executable / External | See Resource validation table above | Specification / External system |
 | Explanation | [convention-result.md#conceptual-contents](../../specification/convention-result.md#conceptual-contents) | `ConventionResult.explanation?: string` | `evaluateConvention` produces a deterministic string; tested | Executable, with a caveat | The Specification requires only "a human-readable account"; exact content/structure is implementation-defined and must not be treated as a stable compatibility surface (see [Explanation](#explanation)) | — |
@@ -251,6 +252,71 @@ terms of the Unicode Default Case Conversion algorithm, not the strictly one-to-
 described — a documented, evidence-based correction (ECMA-262, Unicode.org), not an
 implementation change, since `applyCasing`'s `toLowerCase()`/`toUpperCase()` calls
 already conformed to Default Case Conversion.
+
+### Unicode Character Database version determinism (increment 2.6.4)
+
+Increment 2.6.4 investigated a further cross-implementation determinism concern the
+2.6.3 wording correction did not address: two conforming implementations of Default Case
+Conversion, built against different versions of the Unicode Character Database (UCD),
+could in principle map the same input code point differently if that code point's case
+mapping was added or changed between the two versions.
+
+**Evidence.**
+
+- The Unicode Consortium's own [Unicode Character Encoding Stability
+  Policies](https://www.unicode.org/policies/stability_policy.html) list *Case Pair
+  Stability* (applicable from Unicode 5.0+): once two characters form a case pair, they
+  remain one in every later version, and two characters that do not form a pair never
+  become one later. This guarantees case-pair *relationships* are stable, but the same
+  page's *Identity Stability* policy explicitly lists "Case mappings" among the
+  properties that "may still be changed" for an already-encoded character, provided the
+  change does not alter the character's fundamental identity — meaning Default Case
+  Conversion's exact mapping for a given code point is not given an unconditional,
+  version-independent stability guarantee the way, for example, `Decomposition_Mapping`
+  is (guaranteed stable only from Unicode 4.0+, and only for normalization purposes).
+- ECMA-262 (`String.prototype.toLowerCase`/`toUpperCase`, §22.1.3.28/22.1.3.30) requires
+  conformance to "the Unicode Default Case Conversion algorithm" and "the
+  locale-insensitive case mappings in the Unicode Character Database," but does not
+  itself pin a specific Unicode Standard version — each ECMAScript implementation
+  embeds whatever version of the Unicode Character Database its own Unicode data
+  source (for example, ICU) currently ships.
+- The practical consequence: a code point recently assigned a case mapping (or, more
+  rarely, one whose mapping was corrected) could be mapped differently — or left
+  unmapped — by two implementations built against different UCD snapshots. This is a
+  narrow, real risk in principle, not a hypothetical one Unicode's stability policy
+  rules out.
+
+**Why this is currently Outcome A (no version pin), not Outcome B.** Pinning a specific
+Unicode Standard version in `specification/convention-pack.md#casing` was considered and
+rejected for this increment, for reasons consistent with this repository's own
+evidence-over-speculation principle
+([`specification/README.md#future-evolution`](../../specification/README.md#future-evolution)):
+
+- Only one implementation of Default Case Conversion exists in this repository today
+  (the TypeScript Reference Evaluator, via `applyCasing`); no second-language adapter
+  exists yet to demonstrate an actual, observed divergence for any real naming input.
+  Choosing a specific version now would be a speculative precision with no concrete
+  Specification-evolution evidence behind it.
+- The realistic domain of Resource Identity attribute values this Specification
+  projects into names (organization names, environment codes, service names, resource
+  types) overwhelmingly uses long-stable scripts (ASCII, common Latin, Cyrillic, CJK)
+  whose case mappings were fixed many Unicode versions ago; the risk is concentrated in
+  recently assigned, rarely-used code points unlikely to appear in these attribute
+  values.
+- Choosing a version because it happens to match the current Node.js runtime's bundled
+  ICU data would be exactly the kind of ungrounded, implementation-driven choice this
+  increment's own instructions warn against.
+
+**Recommendation.** If a future adapter (a second language runtime, or a different ICU
+version) ever demonstrates an actual divergence in Default Case Conversion output for a
+real naming input, that would be the implementation evidence needed to justify a narrow,
+future Specification clarification — for example, "Specification version *N* normatively
+targets Unicode Standard version *X.Y* for Default Case Conversion" — analogous to how
+2.6.1's gap analysis motivated Specification v1.1. Choosing that concrete version number
+is a governance decision for the Specification's maintainers, not one this increment
+infers from Unicode or ECMA-262 documentation alone; it is intentionally not made here.
+No Specification wording changes as a result of this investigation beyond the
+already-completed 2.6.3 wording correction.
 
 ## Normalization
 
@@ -676,3 +742,32 @@ increment **2.6.2 — Executable Naming Rules** has since landed, with tests (se
 [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)); the Separator, Casing, Abbreviations,
 Component ordering, and Generated name output rows in the [Naming](#naming) table above
 now read **Executable** as a result, exactly as this section anticipated.
+
+## P0 naming readiness (increment 2.6.4)
+
+Increment 2.6.1 identified separator, casing, and abbreviation semantics as the P0
+blockers for a first useful `ConventionResult` (see [Prioritization](#prioritization)).
+Increment 2.6.4 re-examined every P0-adjacent naming capability against the now-completed
+2.6.2/2.6.3 implementation and the corrected Specification wording:
+
+| Capability | Normatively specified | Executable | Tested |
+| --- | --- | --- | --- |
+| Canonical Resource Identity attribute vocabulary | Yes ([resource-identity.md#canonical-attribute-references](../../specification/resource-identity.md#canonical-attribute-references)) | Yes | Yes |
+| Component ordering | Yes ([convention-pack.md#naming-projections](../../specification/convention-pack.md#naming-projections)) | Yes | Yes |
+| Duplicate-reference rejection | Yes (same section) | Yes | Yes |
+| Optional-component omission | Yes (same section) | Yes | Yes |
+| Required-component failure handling | Yes ([convention-pack.md#required-attributes](../../specification/convention-pack.md#required-attributes)) | Yes | Yes |
+| Abbreviation | Yes ([convention-pack.md#abbreviations](../../specification/convention-pack.md#abbreviations)) | Yes | Yes |
+| Casing | Yes ([convention-pack.md#casing](../../specification/convention-pack.md#casing)) | Yes | Yes |
+| Separator | Yes ([convention-pack.md#separator](../../specification/convention-pack.md#separator)) | Yes | Yes |
+| Deterministic rendering (naming rule execution order) | Yes ([convention-pack.md#naming-rule-execution-order](../../specification/convention-pack.md#naming-rule-execution-order)) | Yes | Yes |
+
+No P0 naming blocker remains. The [Prioritization](#prioritization) section's P1 items
+(technical constraints and Placement Constraint grammar, the Governance Profile
+artifact/input model, metadata projection) and P2 items (truncation and hashing,
+canonical attribute-reference vocabulary formalization beyond what v1.1 already added,
+diagnostic propagation refinement) remain deferred exactly as originally scoped — none
+is elevated to P0 by this review, and none is implemented here. This clears the
+naming-specific precondition for beginning increment 2.7; see
+[`docs/architecture/reference-evaluator.md#27-readiness-and-design-invariants`](reference-evaluator.md#27-readiness-and-design-invariants)
+for the separate, non-naming design invariants 2.7 must still resolve.
