@@ -1,13 +1,14 @@
 // Runtime checks against the actual built package artifact (`dist/`).
 //
 // These complement the compile-time contract fixtures in ../types/contract-fixtures.ts:
-// since the Executable Domain Model is entirely type-only (no runtime values besides
-// the pre-existing CORE_PACKAGE_NAME constant), "public export availability" for the
-// model itself is a compile-time concern, not a runtime one — type-only exports leave
-// no trace in the built JavaScript. What *can* be verified at runtime is that the
-// build produces the expected artifact shape: no unexpected runtime exports leak from
-// a type-only model, a declaration file is generated, and no production dependency was
-// introduced.
+// since the Executable Domain Model is entirely type-only, "public export availability"
+// for the model itself is a compile-time concern, not a runtime one — type-only exports
+// leave no trace in the built JavaScript. The package root's only intentional runtime
+// exports are the pre-existing `CORE_PACKAGE_NAME` constant and, since Milestone 2.7,
+// the public `evaluate` function (see ../../src/evaluator/evaluate.ts). What *can* be
+// verified at runtime is that the build produces exactly this expected artifact shape:
+// no unexpected runtime exports leak from the type-only model or the internal evaluator
+// stages, a declaration file is generated, and no production dependency was introduced.
 //
 // Requires `npm run build` to have already produced `dist/` (see package.json#test,
 // which runs `build` before this file).
@@ -31,10 +32,12 @@ test("the built package exposes only its intentional runtime surface", async () 
 
   assert.deepEqual(
     Object.keys(builtModule).sort(),
-    ["CORE_PACKAGE_NAME"],
-    "the Executable Domain Model is type-only; it must not add runtime exports",
+    ["CORE_PACKAGE_NAME", "evaluate"],
+    "the package root must expose only its intentional runtime surface: the domain " +
+      "model is type-only, and only `evaluate` is re-exported from the evaluator",
   );
   assert.equal(builtModule.CORE_PACKAGE_NAME, "@lksnext/iac-conventions-core");
+  assert.equal(typeof builtModule.evaluate, "function");
 });
 
 test("the build generates a declaration file for the package root", () => {

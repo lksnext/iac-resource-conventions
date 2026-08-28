@@ -54,10 +54,11 @@ This is the **implementation foundation** only. As of this writing:
   `naming_component_order` lists the same canonical attribute reference more than once) — are
   implemented under
   [`packages/core/src/evaluator/`](packages/core/src/evaluator/) (see
-  [Milestones](#milestones) below). This internal behavior is not yet re-exported as a public
-  `evaluate()` API (increment 2.7, not yet started). Metadata projection, general
-  normalization, `allowed_characters` grammar, Placement Constraint validation, truncation,
-  hashing, global uniqueness, CLI behavior, and adapter integration remain unimplemented.
+  [Milestones](#milestones) below), and composed into the public `evaluate()` function
+  (increment 2.7), exported from the package root alongside its `EvaluateInput` contract. Metadata
+  projection, general normalization, `allowed_characters` grammar, Placement Constraint
+  validation, truncation, hashing, global uniqueness, CLI behavior, and adapter integration
+  remain unimplemented.
 - `packages/catalog`, `packages/cli`, and `packages/adapters/*` do not exist yet — they
   are planned (see [Planned packages](#planned-packages)) and must only be created when
   a concrete task needs them, per the repository's incremental-evolution principle (see
@@ -219,11 +220,24 @@ This is the **implementation foundation** only. As of this writing:
     Resource Definition and Convention Pack identity boundary checks, Context Resolution
     orchestration, and diagnostics propagation) without deciding or implementing any of them. No
     P0 blocker remains for increment 2.7.
+  - Completed increment: **2.7 — Reference Evaluator API** (`evaluate()` and its `EvaluateInput`
+    contract under
+    [`packages/core/src/evaluator/`](packages/core/src/evaluator/), exported from the package
+    root: the first stable public orchestration API for the Reference Evaluator, composing
+    `resolveResourceIdentity`, `resolveGovernanceContext`, and `evaluateConvention` exactly as
+    2.2, 2.3, and 2.6 implemented and tested them, introducing no new processing stage and no
+    new evaluation rule. Resolves all four design invariants recorded by 2.6.4: the public
+    function signature (`EvaluateInput`, a single aggregate input object), the Resource
+    Definition and Convention Pack identity boundaries (defensive `ConventionValidationFailure`-
+    shaped checks at the public boundary), Context Resolution orchestration (both resolvers
+    invoked and composed into one `ContextResolutionResult`), and diagnostics propagation
+    (`protected-value-conflict` diagnostics surface as `ConventionResult.warnings`;
+    `unresolved-required-attribute` diagnostics are not duplicated, since `evaluateConvention`
+    already re-derives that outcome independently)). See
+    [`docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented`](docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented).
   - Not yet started: metadata projection, general normalization, `allowed_characters` grammar,
-    Placement Constraint validation, Governance Profile defaults, truncation, hashing, global
-    uniqueness, and the public Reference Evaluator `evaluate()` API (**increment 2.7 — Reference
-    Evaluator API, now the next active increment**; its final signature and the design invariants
-    recorded by 2.6.4 remain open, but no P0 naming blocker prevents starting it).
+    Placement Constraint validation, Governance Profile defaults, truncation, hashing, and
+    global uniqueness.
   - Deferred: see
     [`docs/architecture/reference-evaluator.md#deferred-decisions`](docs/architecture/reference-evaluator.md#deferred-decisions).
 

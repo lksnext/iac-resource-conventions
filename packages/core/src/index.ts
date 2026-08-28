@@ -3,13 +3,20 @@
 // Exposes the Executable Domain Model: the behavior-free TypeScript representation of
 // the frozen Specification (Resource Identity, Governance Context, Naming Request,
 // Evaluation Context, Resource Definition, Convention Pack, Convention Result — see
-// ./model/index.ts and docs/architecture/executable-domain-model.md). Internally, this
-// package also implements Context Resolution (for the sources currently modeled),
-// Resource Projection, and Specification v1.1 executable naming (see
-// ./evaluator/index.ts) — but that Reference Evaluator behavior is intentionally not
-// re-exported from this package root yet, pending the public `evaluate()` API (see
+// ./model/index.ts and docs/architecture/executable-domain-model.md). It also exposes
+// the public Reference Evaluator API (Milestone 2.7): `evaluate`, a single
+// deterministic function composing Context Resolution and Convention Evaluation, and
+// its aggregate input contract, `EvaluateInput` (see ./evaluator/evaluate.ts and
+// ./evaluator/evaluate-input.ts). Every other evaluator stage and pipeline contract
+// (Context Resolution's individual resolvers, Resource Projection, Convention
+// Evaluation Rules, and their internal contracts — see ./evaluator/index.ts) remains
+// internal, not re-exported from this package root (see
+// docs/architecture/reference-evaluator.md#public-api-principles, and
 // IMPLEMENTATION.md at the repository root for the current architecture, milestone
 // status, and deferred decisions).
+
+export { evaluate } from "./evaluator/evaluate.js";
+export type { EvaluateInput } from "./evaluator/evaluate-input.js";
 
 export type {
   CanonicalResourceIdentityAttribute,

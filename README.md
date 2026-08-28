@@ -5,8 +5,9 @@
 > 🚧 This project is currently under active development.
 > APIs, convention packs, and adapters may change until the first stable release (v1.0.0).
 >
-> The Executable Domain Model is complete. Work is now beginning on the platform-independent
-> Reference Evaluator (see [Roadmap](#roadmap) below).
+> The Executable Domain Model is complete, and the platform-independent Reference Evaluator now
+> exposes its first public API, `evaluate()` (see [Quick Start](#quick-start) and
+> [Roadmap](#roadmap) below).
 
 ## Overview
 
@@ -169,6 +170,42 @@ licenses:production` — see [`CONTRIBUTING.md`](CONTRIBUTING.md#dependency-lice
 the commands and [`IMPLEMENTATION.md`](IMPLEMENTATION.md#dependency-license-validation) for the
 full allowlist policy and why it is a separate concern from `npm audit`.
 
+### Evaluating a Naming Request
+
+The Reference Evaluator's public API, `evaluate()`, is available from
+`@lksnext/iac-conventions-core`:
+
+```ts
+import { evaluate, type EvaluateInput } from "@lksnext/iac-conventions-core";
+
+const input: EvaluateInput = {
+  naming_request: {
+    convention: "aws-workload-default",
+    resource_type: "aws_s3_bucket",
+    functional: { service: "ingestion" },
+  },
+  convention_pack: {
+    id: "aws-workload-default",
+    naming_component_order: ["organizational.system", "functional.service", "functional.resource_type"],
+    separator: "-",
+  },
+  evaluation_context: {
+    shared_organizational_context: { system: "telemetry-platform" },
+  },
+  resource_definition: {
+    resource_type: "aws_s3_bucket",
+    platform: "aws",
+  },
+};
+
+const result = evaluate(input);
+// result.outputs.name === "telemetry-platform-ingestion-aws_s3_bucket"
+```
+
+See [`packages/core/README.md`](packages/core/README.md#usage) and
+[`docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented`](docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented)
+for the full API contract, design rationale, and current capability scope.
+
 ## Documentation
 
 - [`IMPLEMENTATION.md`](IMPLEMENTATION.md) — implementation monorepo architecture.
@@ -195,8 +232,8 @@ full allowlist policy and why it is a separate concern from `npm audit`.
 - ✓ Implementation monorepo architecture (see [`IMPLEMENTATION.md`](IMPLEMENTATION.md)).
 - ✓ Executable Domain Model (Milestone 1 — complete; see
   [`IMPLEMENTATION.md`](IMPLEMENTATION.md#milestones)).
-- Reference Evaluator (Milestone 2 — in progress; see
-  [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md)).
+- Reference Evaluator (Milestone 2 — in progress; the public `evaluate()` API is now
+  available, see [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md)).
 - Resource Definition catalog
 - Executable Convention Packs
 - Contract Tests

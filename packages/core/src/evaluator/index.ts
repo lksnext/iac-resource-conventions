@@ -14,12 +14,17 @@
 // truncation, hashing, metadata projection, Resource Definition technical-constraint
 // validation, and Placement Constraint validation remain unimplemented, each blocked
 // on a documented Specification or domain-model gap — see
-// docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented. A
-// public `evaluate()` function does not exist yet.
+// docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented.
 //
-// This module is intentionally NOT re-exported from ../index.ts (the package root):
-// evaluator stages and contracts are internal by default until a concrete, stable
-// public evaluator API is defined (see
+// Milestone 2.7 added a public `evaluate()` function (../evaluator/evaluate.ts) and its
+// `EvaluateInput` contract (../evaluator/evaluate-input.ts), composing the stages this
+// module exports. Both are re-exported directly from ../index.ts (the package root)
+// instead of from this barrel — see ../index.ts and
+// docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented.
+//
+// This module itself is intentionally NOT re-exported from ../index.ts: every other
+// evaluator stage and contract exported below remains internal by default, since no
+// concrete consumer need justifies making it independently public (see
 // docs/architecture/reference-evaluator.md#public-api-principles). It may depend on
 // the domain model (../model/index.js); the domain model must never depend on it.
 
