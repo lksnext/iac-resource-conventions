@@ -74,10 +74,10 @@ logical pipeline and explicitly states that it "does not describe implementation
 as data structures, APIs, or execution order guarantees beyond" the conceptual steps it lists
 (see
 [`specification/convention-result.md#convention-evaluation-pipeline`](../../specification/convention-result.md#convention-evaluation-pipeline)).
-This means the evaluator's concrete public function signature is not fully determined by the
-Specification today.
+This means the evaluator's concrete public function signature was not fully determined by the
+Specification alone.
 
-Two faithful shapes are possible:
+Two faithful shapes were possible:
 
 - **One aggregate input object** — a single value grouping the Naming Request, Convention
   Pack, Evaluation Context, and (once selected) Resource Definition.
@@ -86,9 +86,9 @@ Two faithful shapes are possible:
   distinct inputs shown in the canonical pipeline diagram in
   [`specification/README.md#architecture`](../../specification/README.md#architecture).
 
-Neither shape is finalized here. It is recorded as **deferred to the first code increment**
-(see [Deferred decisions](#deferred-decisions)), to be decided with the evidence a real
-implementation provides rather than guessed in advance.
+**Resolved by increment 2.7**, in favor of the aggregate input object: see
+[`EvaluateInput`](../../packages/core/src/evaluator/evaluate-input.ts) and [Reference Evaluator
+API (implemented)](#reference-evaluator-api-implemented) for the full rationale.
 
 The output is unambiguous: every evaluation produces a `ConventionResult` (see
 [`ConventionResult`](../../packages/core/src/model/results/convention-result.ts)), already
@@ -291,20 +291,22 @@ same inputs.
 
 ## Public API principles
 
-The future evaluator's public API should follow the same principles already established for
-the Executable Domain Model (see [Public API in
-`executable-domain-model.md`](executable-domain-model.md#public-api)):
+The evaluator's public API follows the same principles already established for the Executable
+Domain Model (see [Public API in
+`executable-domain-model.md`](executable-domain-model.md#public-api)). Increment 2.7's
+`evaluate`/`EvaluateInput` (see [Reference Evaluator API
+(implemented)](#reference-evaluator-api-implemented)) satisfy each of these concretely:
 
 - importable from the package root only, no deep imports;
-- an explicit, documented input contract (shape to be finalized per [Inputs and
+- an explicit, documented input contract (`EvaluateInput`, per [Inputs and
   outputs](#inputs-and-outputs));
 - a deterministic output (`ConventionResult`);
 - no provider-specific parameters;
 - no IO side effects;
 - stable public types, evolved additively wherever possible;
 - internal evaluator stages (Context Resolution, Resource Definition selection, Resource
-  Projection, Convention Evaluation Rules) are implementation details, not public API surface,
-  unless a concrete consumer need justifies exposing one independently.
+  Projection, Convention Evaluation Rules) remain implementation details, not public API
+  surface — only `evaluate` and `EvaluateInput` are re-exported from the package root.
 
 ## Testing strategy
 
@@ -480,18 +482,31 @@ renamed to match the Specification's own terms ("Evaluate Convention" / "Generat
   and the Specification's casing wording was corrected to describe the Unicode Default Case
   Conversion algorithm it actually implements, rather than the stricter "Unicode simple case
   mapping" an earlier draft described. **Status: complete.**
-- **2.7 — Reference Evaluator API**. Not yet started. See [Deferred decisions](#deferred-decisions)
-  for the design invariants recorded ahead of this increment (final function signature, Resource
-  Definition and Convention Pack identity boundaries, Context Resolution orchestration, and
-  diagnostics propagation).
+- **2.7 — Reference Evaluator API**. Implements the first stable public orchestration API for
+  the Reference Evaluator: `EvaluateInput` (an aggregate input object composing `NamingRequest`,
+  `ConventionPack`, `EvaluationContext`, and `ResourceDefinition`) and `evaluate()`, which
+  composes `resolveResourceIdentity`, `resolveGovernanceContext`, and `evaluateConvention` exactly
+  as increments 2.2, 2.3, and 2.6 already implemented and tested them — introducing no new
+  processing stage and no new evaluation rule. Resolves all four design invariants recorded by
+  [2.7 readiness and design invariants](#27-readiness-and-design-invariants): the public function
+  signature (an aggregate object), the Resource Definition and Convention Pack identity
+  boundaries (implemented as defensive `ConventionValidationFailure`-shaped checks), Context
+  Resolution orchestration (both resolvers invoked and composed into one
+  `ContextResolutionResult`), and diagnostics propagation (`protected-value-conflict`
+  diagnostics surface as `ConventionResult.warnings`; `unresolved-required-attribute`
+  diagnostics are not duplicated, since `evaluateConvention` already re-derives that outcome).
+  See [Reference Evaluator API (implemented)](#reference-evaluator-api-implemented) for the full
+  description. **Status: complete.**
 
 ## Pipeline contracts (implemented)
 
 Milestone 2.1 implements the behavior-free internal contracts that make the stage
 boundaries described in [Evaluation pipeline](#evaluation-pipeline) explicit in code, under
-[`packages/core/src/evaluator/contracts/`](../../packages/core/src/evaluator/contracts/). No
-Context Resolution, Resource Definition selection, or Convention Evaluation behavior exists —
-these are types only.
+[`packages/core/src/evaluator/contracts/`](../../packages/core/src/evaluator/contracts/). These
+contracts are types only; the behavior that fills them in — Context Resolution, Resource
+Projection, and Convention Evaluation — is implemented by later increments, described in their
+own sections below, and composed into the public API by increment 2.7 (see [Reference Evaluator
+API (implemented)](#reference-evaluator-api-implemented)).
 
 | Contract | Composes | Produced by | Consumed by | Visibility |
 | --- | --- | --- | --- | --- |
@@ -503,10 +518,11 @@ Each is required-field-only (unlike the domain contracts it composes, whose own 
 optional to mirror their permissive JSON Schemas): a stage-boundary contract represents "this
 stage has everything it needs," which is a stronger, evaluator-specific invariant the domain
 model does not itself express. All three remain internal — none are re-exported from the
-package root (`packages/core/src/index.ts`) — because the public `evaluate()` signature is
-still an open decision (see [Deferred decisions](#deferred-decisions)), and no consumer outside
-the evaluator's own orchestration needs to inspect them yet (see [Public API
-principles](#public-api-principles)). They are exported only from
+package root (`packages/core/src/index.ts`) — now that increment 2.7 has settled the public
+`evaluate()` signature on its own aggregate `EvaluateInput` contract instead (see [Reference
+Evaluator API (implemented)](#reference-evaluator-api-implemented)); no consumer outside the
+evaluator's own orchestration needs to inspect these stage-boundary contracts directly (see
+[Public API principles](#public-api-principles)). They are exported only from
 [`packages/core/src/evaluator/index.ts`](../../packages/core/src/evaluator/index.ts), the
 evaluator's own internal module boundary.
 
@@ -538,10 +554,12 @@ evaluator's own internal module boundary.
   [`specification/convention-result.md`](../../specification/convention-result.md)); introducing
   a second name for the same shape would duplicate an existing domain contract.
 - **A single contract bundling the entire pipeline end to end** (an `EvaluationInput`-style
-  aggregate matching a possible public `evaluate()` signature) — rejected for this increment.
-  This is exactly the still-open public function signature question recorded in [Inputs and
-  outputs](#inputs-and-outputs); inventing it now would fabricate a public contract this
-  document cannot yet honor truthfully.
+  aggregate matching a possible public `evaluate()` signature) — rejected for increments 2.1
+  through 2.6, since the public function signature question recorded in [Inputs and
+  outputs](#inputs-and-outputs) was still open at the time; inventing it earlier would have
+  fabricated a public contract those increments could not yet honor truthfully. Increment 2.7
+  introduced exactly this aggregate, as `EvaluateInput` — see [Reference Evaluator API
+  (implemented)](#reference-evaluator-api-implemented).
 - **A dedicated "Resource Convention Preparation" contract** (variously named
   `ResourceConventionData` or similar), produced by a new increment 2.4 step between Context
   Resolution and Resource Projection (2.5) — rejected, per the increment 2.4 design gate (see
@@ -872,18 +890,23 @@ the package root — proven at compile time by
 Milestone 2.2/2.3 Context Resolution resolvers (`context-resolution/`: `resolveResourceIdentity`
 and `resolveGovernanceContext`), the Milestone 2.5 Resource Projection function
 (`resource-projection/`: `projectResource` and the canonical Resource Identity attribute
-accessor helper it uses), and the Milestone 2.6/2.6.2/2.6.3 Convention Evaluation Rules function
+accessor helper it uses), the Milestone 2.6/2.6.2/2.6.3 Convention Evaluation Rules function
 (`convention-evaluation/`: `evaluateConvention`, with `convention-evaluation/naming/`
-implementing naming rendering). No public `evaluate()` function exists yet. Increment 2.4
-(Resource Convention Preparation / Resource Definition selection) added no folder or code at all,
-per its design gate (see [Increment plan](#increment-plan)).
+implementing naming rendering), and the Milestone 2.7 public API (`evaluate.ts`: `evaluate()`,
+and `evaluate-input.ts`: `EvaluateInput`), which composes all of the above and is the only part
+of this directory re-exported from the package root (see [Reference Evaluator API
+(implemented)](#reference-evaluator-api-implemented)). Increment 2.4 (Resource Convention
+Preparation / Resource Definition selection) added no folder or code at all, per its design gate
+(see [Increment plan](#increment-plan)).
 
 ## 2.7 readiness and design invariants
 
 Milestone **2.6.4 — Naming Specification & Architecture Closure** reviewed whether increment 2.7
-(the public `evaluate()` API) is unblocked, and recorded the following design invariants a future
-2.7 implementation must resolve. None of these are implemented here — this section records
-requirements only, consistent with this increment's documentation-only scope.
+(the public `evaluate()` API) was unblocked, and recorded the following design invariants ahead
+of that increment. **All four are now resolved by increment 2.7** — see [Reference Evaluator API
+(implemented)](#reference-evaluator-api-implemented) for how each was implemented. This section
+is kept as the historical record of the readiness review; it is no longer a list of open
+questions.
 
 - **Minimum viable public result.** [`specification/convention-result.md#conceptual-contents`](../../specification/convention-result.md#conceptual-contents)
   treats Convention Outputs (names and metadata) as a single grouping without requiring every
@@ -899,39 +922,132 @@ requirements only, consistent with this increment's documentation-only scope.
   resolved `resource_identity.functional.resource_type` — Resource Definition selection is
   described as "a lookup, not a resolution"
   ([`specification/context-resolution.md#what-context-resolution-produces`](../../specification/context-resolution.md#what-context-resolution-produces)),
-  performed by the caller before invoking Convention Evaluation. Increment 2.7 must decide
-  whether the public API adds a mismatch check (defensive validation at the public boundary) or
-  continues to trust the caller's selection, as `evaluateConvention` does today.
+  performed by the caller before invoking Convention Evaluation. **Resolved:** increment 2.7 adds
+  a defensive mismatch check at the public boundary (see [Reference Evaluator API
+  (implemented)](#reference-evaluator-api-implemented)); `evaluateConvention` itself continues to
+  trust the caller's selection, unchanged.
 - **Convention Pack identity boundary.** Similarly, [`specification/naming-request.md`](../../specification/naming-request.md)
   describes `convention` as selecting the Convention Pack used for a request, but does not
   normatively require the evaluator to verify `naming_request.convention == convention_pack.id`
-  once both are supplied as already-resolved inputs. Increment 2.7 must decide whether this
-  belongs to the public API as a defensive check or remains the caller's responsibility.
+  once both are supplied as already-resolved inputs. **Resolved:** increment 2.7 adds this as a
+  defensive check in the public API (see [Reference Evaluator API
+  (implemented)](#reference-evaluator-api-implemented)).
 - **Context Resolution orchestration.** A public `evaluate()` must invoke both
   `resolveResourceIdentity` and `resolveGovernanceContext` from one `ContextResolutionInput` and
   compose their two results into one `ContextResolutionResult`, without re-exposing either
   internal resolver publicly and without introducing a third normative pipeline stage — the
-  Specification defines exactly two (see [Evaluation pipeline](#evaluation-pipeline)).
+  Specification defines exactly two (see [Evaluation pipeline](#evaluation-pipeline)). **Resolved:**
+  this is exactly what `evaluate()` does (see [Reference Evaluator API
+  (implemented)](#reference-evaluator-api-implemented)).
 - **Diagnostics propagation.** [Diagnostics aggregation across Context Resolution's two
-  halves](#deferred-decisions) remains an open question independent of 2.7: `evaluateConvention`
+  halves](#deferred-decisions) was independent of 2.7's other three invariants: `evaluateConvention`
   already recomputes required-attribute completeness directly against `ContextResolutionResult`
   rather than reusing `resolveResourceIdentity`/`resolveGovernanceContext`'s own
-  `ContextResolutionDiagnostic`s. This is a design choice 2.7 may revisit but is not a blocker —
-  the current recompute-based approach already produces a correct, tested `ConventionResult`.
+  `ContextResolutionDiagnostic`s, and 2.7 does not change that. **Resolved (partially, by
+  design):** increment 2.7 maps the remaining diagnostic kind — `protected-value-conflict`,
+  which had no other downstream representation — to `ConventionResult.warnings`; see [Reference
+  Evaluator API (implemented)](#reference-evaluator-api-implemented) and the updated [Deferred
+  decisions](#deferred-decisions) entry.
 
-None of the above is a P0 blocker for beginning increment 2.7; each is a design decision 2.7 must
-make explicitly rather than a missing capability. See
+Each of the above was resolved explicitly by increment 2.7 rather than left as a missing
+capability. See
 [`docs/architecture/convention-evaluation-executability.md`](convention-evaluation-executability.md)
 for the corresponding P0 naming readiness matrix.
 
+## Reference Evaluator API (implemented)
+
+Increment 2.7 implements the first stable public orchestration API for the Reference Evaluator,
+composing the stages implemented by increments 2.2, 2.3, and 2.6 without redesigning any of
+them and without introducing a new processing stage. The Specification still defines exactly two
+processing stages, Context Resolution and Convention Evaluation (see [Evaluation
+pipeline](#evaluation-pipeline)); `evaluate()` orchestrates both, it does not add a third.
+
+**`EvaluateInput`** (see
+[`packages/core/src/evaluator/evaluate-input.ts`](../../packages/core/src/evaluator/evaluate-input.ts))
+resolves the [Inputs and outputs](#inputs-and-outputs) question in favor of a single aggregate
+object, grouping the same four inputs shown in the canonical pipeline diagram
+([`specification/README.md#architecture`](../../specification/README.md#architecture)): a
+`NamingRequest`, the selected `ConventionPack`, the `EvaluationContext`, and the already-selected
+`ResourceDefinition`. All four fields are required and reuse existing domain contracts verbatim —
+`EvaluateInput` composes the Executable Domain Model, it does not extend it. A single object was
+preferred over four positional parameters because these four inputs share no Specification-defined
+ordering (unlike resolution precedence, which does — see
+[`specification/context-resolution.md#resolution-precedence`](../../specification/context-resolution.md#resolution-precedence)),
+and an aggregate object keeps call sites additive per
+[`AGENTS.md#compatibility-and-versioning`](../../AGENTS.md#compatibility-and-versioning).
+
+**`evaluate(input: EvaluateInput): ConventionResult`** (see
+[`packages/core/src/evaluator/evaluate.ts`](../../packages/core/src/evaluator/evaluate.ts)):
+
+1. Builds a `ContextResolutionInput` from `input`'s `naming_request`, `convention_pack`, and
+   `evaluation_context`, and invokes both `resolveResourceIdentity` and
+   `resolveGovernanceContext` — resolving the **Context Resolution orchestration** design
+   invariant from [2.7 readiness and design invariants](#27-readiness-and-design-invariants).
+   Their two results are composed into one `ContextResolutionResult`, exactly as
+   `ConventionEvaluationInput` already expected.
+2. Applies two defensive identity-boundary checks, resolving the **Resource Definition identity
+   boundary** and **Convention Pack identity boundary** design invariants: the Naming Request's
+   selected `convention` (when supplied) must match `convention_pack.id`, and the resolved
+   `resource_identity.functional.resource_type` (when resolved) must match
+   `resource_definition.resource_type`. Each violation is reported as its own
+   `ConventionValidationFailure` — the same shape `evaluateConvention` already uses for
+   required-attribute failures, not a new failure category. Neither check is normatively
+   required by the Specification (Resource Definition selection is "a lookup, not a resolution",
+   per
+   [`specification/context-resolution.md#what-context-resolution-produces`](../../specification/context-resolution.md#what-context-resolution-produces));
+   both are added as defensive validation at the public boundary, catching a caller passing an
+   inconsistent `EvaluateInput` before it reaches Convention Evaluation.
+3. If any identity-boundary check fails, Convention Evaluation is skipped entirely — `evaluateConvention`
+   is never called — and `evaluate` returns a `ConventionResult` directly: the resolved
+   `resource_identity` and `governance_context` (Context Resolution still ran; its output remains
+   informative even when the pairing is inconsistent), `outputs: {}`, `validation: { valid:
+   false, failures }`, and an `explanation` describing which check(s) failed.
+4. Otherwise, builds a `ConventionEvaluationInput` from the resolved context, the supplied
+   `resource_definition`, and the supplied `convention_pack`, and returns `evaluateConvention`'s
+   result unchanged (aside from the diagnostics propagation in step 5).
+5. **Diagnostics propagation**, resolving the corresponding design invariant: of the two
+   `ContextResolutionDiagnostic` kinds Context Resolution can produce (see [Context Resolution:
+   Resource Identity (implemented)](#context-resolution-resource-identity-implemented)),
+   `"unresolved-required-attribute"` is deliberately not propagated, since `evaluateConvention`
+   already independently re-derives that same outcome as a `ConventionValidationFailure` —
+   propagating it too would duplicate one failure across two result fields.
+   `"protected-value-conflict"` has no other downstream representation anywhere in the pipeline,
+   so it is mapped to `ConventionResult.warnings` (`{ message: string }`), an existing,
+   general-purpose extension point already documented as "non-fatal issues detected while
+   generating the result" — composing an existing result field, not inventing a new one. When no
+   `protected-value-conflict` diagnostic occurred, `warnings` is omitted entirely (not set to an
+   empty array), consistent with `exactOptionalPropertyTypes`.
+
+`evaluate` is exported from the package root
+([`packages/core/src/index.ts`](../../packages/core/src/index.ts)), alongside `EvaluateInput` —
+the only two exports Milestone 2.7 adds there. Every other evaluator symbol (Context Resolution,
+Resource Projection, Convention Evaluation Rules, and their contracts) remains internal, exported
+only from [`packages/core/src/evaluator/index.ts`](../../packages/core/src/evaluator/index.ts),
+per [Public API principles](#public-api-principles). Both directions are proven at compile time:
+[`packages/core/test/types/evaluate-fixtures.ts`](../../packages/core/test/types/evaluate-fixtures.ts)
+proves `evaluate`/`EvaluateInput` **are** importable from the package root (the only evaluator
+fixture file proving a positive import), matching the existing pattern of every other evaluator
+fixture file proving its own subject **cannot** be imported from the package root.
+
+`evaluate` is pure, deterministic, and never mutates its input, matching every other stage this
+document describes; it never throws for an expected evaluation outcome — an identity-boundary
+mismatch or a Convention Evaluation validation failure is always represented as an invalid
+`ConventionResult`, never as an exception (see [Validation and
+diagnostics](#validation-and-diagnostics)). Runtime tests, including the five Specification
+naming-rule examples from
+[`specification/convention-pack.md#naming-rule-examples`](../../specification/convention-pack.md#naming-rule-examples),
+live in
+[`packages/core/test/runtime/evaluate.test.mjs`](../../packages/core/test/runtime/evaluate.test.mjs).
+
 ## Deferred decisions
 
-- **Final evaluator function signature** — aggregate input object versus explicit arguments
-  (see [Inputs and outputs](#inputs-and-outputs)). The 2.1 pipeline contracts fix the internal
-  stage boundaries but deliberately do not answer this question — none of them are exported
-  from the package root. `resolveResourceIdentity` (2.2) resolves a narrower question — it
-  reuses `ContextResolutionInput` as-is — without deciding the eventual public `evaluate()`
-  signature. To be decided once a public API is actually needed.
+- **Final evaluator function signature** — **resolved by increment 2.7**: an aggregate input
+  object, `EvaluateInput` (see [Reference Evaluator API
+  (implemented)](#reference-evaluator-api-implemented) and [Inputs and
+  outputs](#inputs-and-outputs)). The 2.1 pipeline contracts fixed the internal stage boundaries
+  without answering this question themselves — none of them are exported from the package root.
+  `resolveResourceIdentity` (2.2) resolved a narrower question — it reuses
+  `ContextResolutionInput` as-is — independently of the eventual public `evaluate()` signature.
 - **Internal error representation** — no exception hierarchy is designed yet; only the working
   assumption that expected evaluation outcomes belong in `ConventionResult` (see [Validation
   and diagnostics](#validation-and-diagnostics)). Increment 2.2 applies the same assumption at
@@ -992,9 +1108,14 @@ for the corresponding P0 naming readiness matrix.
   does not aggregate them, and no type does today. Increment 2.6 does not aggregate them either:
   required-attribute completeness is re-checked independently against `ContextResolutionResult`
   itself, not derived from these diagnostics (see [Convention Evaluation Rules
-  (implemented)](#convention-evaluation-rules-implemented)). Combining Context Resolution's
-  diagnostics — and, later, Convention Evaluation's own — into `ConventionResult.explanation` and
-  `ConventionResult.warnings` remains open for a future increment. Naming rendering and
+  (implemented)](#convention-evaluation-rules-implemented)). **Partially resolved by increment
+  2.7:** `evaluate()` maps `"protected-value-conflict"` diagnostics from both halves to
+  `ConventionResult.warnings` (the one diagnostic kind with no other downstream representation),
+  while deliberately not propagating `"unresolved-required-attribute"` diagnostics, since
+  `evaluateConvention` already reports that same outcome as a `ConventionValidationFailure` — see
+  [Reference Evaluator API (implemented)](#reference-evaluator-api-implemented). Aggregating
+  Convention Evaluation's own future diagnostics (for example, from normalization, once it
+  exists) into `ConventionResult.explanation`/`warnings` remains open. Naming rendering and
   abbreviation application (increment 2.6.2) do not themselves produce any warning-worthy
   condition; normalization remains the rule most likely to need one once it exists.
 - **Full executability status** — the deferred items above are restated, alongside every other

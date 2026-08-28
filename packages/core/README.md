@@ -5,10 +5,13 @@ Specification.
 
 ## Status
 
-This package currently contains only a build-verification placeholder. No domain models,
-Context Resolution, or Convention Evaluation logic have been implemented yet. See
+The Executable Domain Model (Milestone 1) and the Reference Evaluator (Milestone 2) are
+implemented: domain contracts for every core Specification concept, Context Resolution,
+Convention Evaluation (including Specification v1.1 executable naming), and the public
+`evaluate()` orchestration API (Milestone 2.7). Metadata projection, general normalization,
+truncation, hashing, and global uniqueness remain unimplemented. See
 [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md) at the repository root for the monorepo
-architecture, package boundaries, and deferred decisions.
+architecture, package boundaries, milestone history, and deferred decisions.
 
 ### Node.js requirement
 
@@ -18,7 +21,7 @@ full rationale.
 
 ## Intended responsibilities
 
-Once implemented, this package will own:
+This package owns:
 
 - TypeScript domain contracts corresponding to the frozen Specification under
   [`specification/`](../../specification/) (Resource Identity, Governance Context, Naming
@@ -26,8 +29,8 @@ Once implemented, this package will own:
 - Context Resolution.
 - Convention Evaluation.
 - Deterministic validation and Convention Result production.
-- The public Reference Evaluator API consumed by `@lksnext/iac-conventions-catalog`, the
-  CLI, and adapters.
+- The public Reference Evaluator API (`evaluate()`/`EvaluateInput`) consumed by
+  `@lksnext/iac-conventions-catalog`, the CLI, and adapters.
 
 This package must never depend on the AWS SDK, Terraform, CDK, CLI frameworks, filesystem
 state, network services, or any other environment-specific integration.
@@ -35,8 +38,34 @@ state, network services, or any other environment-specific integration.
 ## Usage
 
 ```ts
-import { CORE_PACKAGE_NAME } from "@lksnext/iac-conventions-core";
+import { evaluate, type EvaluateInput } from "@lksnext/iac-conventions-core";
+
+const input: EvaluateInput = {
+  naming_request: {
+    convention: "aws-workload-default",
+    resource_type: "aws_s3_bucket",
+    functional: { service: "ingestion" },
+  },
+  convention_pack: {
+    id: "aws-workload-default",
+    naming_component_order: ["organizational.system", "functional.service", "functional.resource_type"],
+    separator: "-",
+  },
+  evaluation_context: {
+    shared_organizational_context: { system: "telemetry-platform" },
+  },
+  resource_definition: {
+    resource_type: "aws_s3_bucket",
+    platform: "aws",
+  },
+};
+
+const result = evaluate(input);
+// result.outputs.name === "telemetry-platform-ingestion-aws_s3_bucket"
 ```
+
+See [`docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented`](../../docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented)
+for the full API contract and design rationale.
 
 ## Development
 
