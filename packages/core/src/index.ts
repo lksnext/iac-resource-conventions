@@ -3,10 +3,13 @@
 // Exposes the Executable Domain Model: the behavior-free TypeScript representation of
 // the frozen Specification (Resource Identity, Governance Context, Naming Request,
 // Evaluation Context, Resource Definition, Convention Pack, Convention Result — see
-// ./model/index.ts and docs/architecture/executable-domain-model.md). No Context
-// Resolution, Convention Evaluation, naming, validation, or other Reference Evaluator
-// behavior is implemented yet — see IMPLEMENTATION.md at the repository root for the
-// current architecture and deferred decisions.
+// ./model/index.ts and docs/architecture/executable-domain-model.md). Internally, this
+// package also implements Context Resolution (for the sources currently modeled),
+// Resource Projection, and Specification v1.1 executable naming (see
+// ./evaluator/index.ts) — but that Reference Evaluator behavior is intentionally not
+// re-exported from this package root yet, pending the public `evaluate()` API (see
+// IMPLEMENTATION.md at the repository root for the current architecture, milestone
+// status, and deferred decisions).
 
 export type {
   CanonicalResourceIdentityAttribute,

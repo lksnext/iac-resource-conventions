@@ -1,14 +1,19 @@
 // Internal entry point for the Reference Evaluator (Milestone 2.1: Reference
 // Evaluator Pipeline Contracts; Milestone 2.2: Context Resolution — Resource
 // Identity; Milestone 2.3: Context Resolution — Governance Context; Milestone 2.5:
-// Resource Projection; Milestone 2.6: Convention Evaluation Rules).
+// Resource Projection; Milestone 2.6: Convention Evaluation Rules; Milestone 2.6.2:
+// Executable Naming Rules; Milestone 2.6.3: Executable Naming Conformance).
 //
-// Convention Evaluation Rules are implemented only to the extent the frozen
-// Specification and current Executable Domain Model make executable: required-attribute
-// completeness validation. Naming rendering, abbreviation application, normalization,
-// metadata projection, Resource Definition technical-constraint validation, and
-// Placement Constraint validation remain unimplemented, each blocked on a documented
-// Specification or domain-model gap — see
+// Convention Evaluation Rules are implemented to the extent the frozen Specification
+// and current Executable Domain Model make executable: required-attribute
+// completeness validation, and Specification v1.1 executable naming — component
+// ordering, abbreviation, casing, separator joining, optional-component omission, and
+// rejection of a Convention Pack whose `naming_component_order` lists the same
+// canonical attribute reference more than once (see
+// specification/convention-pack.md#naming-projections). Normalization beyond casing,
+// truncation, hashing, metadata projection, Resource Definition technical-constraint
+// validation, and Placement Constraint validation remain unimplemented, each blocked
+// on a documented Specification or domain-model gap — see
 // docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented. A
 // public `evaluate()` function does not exist yet.
 //

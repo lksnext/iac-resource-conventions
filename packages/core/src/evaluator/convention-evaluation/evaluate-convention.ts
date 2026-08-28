@@ -48,20 +48,55 @@ function resolveRequiredAttributeValue(
   return REQUIRED_ATTRIBUTE_ACCESSORS[attribute]?.(context);
 }
 
+/**
+ * Finds every canonical attribute reference that `naming_component_order` lists more
+ * than once, per `specification/convention-pack.md#naming-projections` ("A reference
+ * listed more than once is invalid."). Each duplicated reference is reported exactly
+ * once, in the order its second occurrence is encountered while scanning `order`
+ * left-to-right, so the result — and therefore every `ConventionValidationFailure`
+ * derived from it — is deterministic for a given `order`.
+ */
+function findDuplicateNamingComponentOrderReferences(
+  order: ReadonlyArray<string>,
+): ReadonlyArray<string> {
+  const seen = new Set<string>();
+  const duplicates: string[] = [];
+
+  for (const attribute of order) {
+    if (seen.has(attribute)) {
+      if (!duplicates.includes(attribute)) {
+        duplicates.push(attribute);
+      }
+      continue;
+    }
+    seen.add(attribute);
+  }
+
+  return duplicates;
+}
+
 function explain(
   conventionPack: ConventionPack,
   requiredAttributes: ReadonlyArray<string>,
   missing: ReadonlyArray<string>,
+  duplicateNamingReferences: ReadonlyArray<string>,
 ): string {
-  if (requiredAttributes.length === 0) {
-    return `Convention pack "${conventionPack.id}" declares no required attributes.`;
+  const requiredAttributesSummary =
+    requiredAttributes.length === 0
+      ? `Convention pack "${conventionPack.id}" declares no required attributes.`
+      : missing.length === 0
+        ? `All ${requiredAttributes.length} required attribute(s) declared by convention pack "${conventionPack.id}" were resolved.`
+        : `${missing.length} of ${requiredAttributes.length} required attribute(s) declared by ` +
+          `convention pack "${conventionPack.id}" could not be resolved: ${missing.join(", ")}.`;
+
+  if (duplicateNamingReferences.length === 0) {
+    return requiredAttributesSummary;
   }
-  if (missing.length === 0) {
-    return `All ${requiredAttributes.length} required attribute(s) declared by convention pack "${conventionPack.id}" were resolved.`;
-  }
+
   return (
-    `${missing.length} of ${requiredAttributes.length} required attribute(s) declared by ` +
-    `convention pack "${conventionPack.id}" could not be resolved: ${missing.join(", ")}.`
+    `${requiredAttributesSummary} The naming_component_order declared by convention pack ` +
+    `"${conventionPack.id}" lists the following canonical attribute reference(s) more than ` +
+    `once, so no name was generated: ${duplicateNamingReferences.join(", ")}.`
   );
 }
 
@@ -100,6 +135,15 @@ function explain(
  * `undefined` when the Convention Pack declares no naming components, or when a
  * declared required naming component has no resolved value.
  *
+ * **Implemented rule: duplicate naming component order rejection (Specification
+ * v1.1).** `specification/convention-pack.md#naming-projections` states "A reference
+ * listed more than once is invalid." `findDuplicateNamingComponentOrderReferences`
+ * detects every canonical attribute reference `naming_component_order` declares more
+ * than once. When any are found, `projectResource` and `evaluateName` are never
+ * invoked — so the same canonical attribute is never projected twice into
+ * `outputs.name` — and each duplicated reference is reported as its own
+ * `ConventionValidationFailure`, alongside any unresolved required attributes.
+ *
  * **Deliberately not implemented — the current frozen Specification and Executable
  * Domain Model do not yet define the concrete rule, only its concept in prose (see
  * `docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented`
@@ -130,24 +174,37 @@ function explain(
 export function evaluateConvention(input: ConventionEvaluationInput): ConventionResult {
   const { resolved_context: resolvedContext, convention_pack: conventionPack } = input;
   const requiredAttributes = conventionPack.required_attributes ?? [];
-  const projectedResource = projectResource(resolvedContext.resource_identity, conventionPack);
-  const name = evaluateName(projectedResource, conventionPack);
+  const namingComponentOrder = conventionPack.naming_component_order ?? [];
+  const duplicateNamingReferences =
+    findDuplicateNamingComponentOrderReferences(namingComponentOrder);
+
+  const name =
+    duplicateNamingReferences.length === 0
+      ? evaluateName(
+          projectResource(resolvedContext.resource_identity, conventionPack),
+          conventionPack,
+        )
+      : undefined;
 
   const missing = requiredAttributes.filter(
     (attribute) => resolveRequiredAttributeValue(resolvedContext, attribute) === undefined,
   );
 
+  const failures: ConventionValidationFailure[] = [
+    ...missing.map(
+      (attribute): ConventionValidationFailure => ({
+        message: `Required attribute "${attribute}" declared by convention pack "${conventionPack.id}" has no resolved value.`,
+      }),
+    ),
+    ...duplicateNamingReferences.map(
+      (attribute): ConventionValidationFailure => ({
+        message: `naming_component_order declared by convention pack "${conventionPack.id}" lists canonical attribute reference "${attribute}" more than once.`,
+      }),
+    ),
+  ];
+
   const validation: ConventionValidation =
-    missing.length === 0
-      ? { valid: true }
-      : {
-          valid: false,
-          failures: missing.map(
-            (attribute): ConventionValidationFailure => ({
-              message: `Required attribute "${attribute}" declared by convention pack "${conventionPack.id}" has no resolved value.`,
-            }),
-          ),
-        };
+    failures.length === 0 ? { valid: true } : { valid: false, failures };
 
   const outputs: ConventionOutputs = name === undefined ? {} : { name };
 
@@ -156,6 +213,6 @@ export function evaluateConvention(input: ConventionEvaluationInput): Convention
     governance_context: resolvedContext.governance_context,
     outputs,
     validation,
-    explanation: explain(conventionPack, requiredAttributes, missing),
+    explanation: explain(conventionPack, requiredAttributes, missing, duplicateNamingReferences),
   };
 }

@@ -43,3 +43,13 @@ gpgsign
 # .devcontainer/devcontainer.json
 Anson
 charliermarsh
+
+# Unicode Default Case Conversion conformance test fixtures
+# (packages/core/test/runtime/naming-evaluation.test.mjs) — real-world non-ASCII words
+# demonstrating one-to-many case mappings (German ß -> "SS", Turkish İ -> "i" + U+0307),
+# used as evidence that casing follows ECMAScript's Default Case Conversion algorithm,
+# not the strictly one-to-one "Unicode simple case mapping".
+straße
+STRASSE
+İstanbul
+stanbul
