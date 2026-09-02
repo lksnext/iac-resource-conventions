@@ -115,7 +115,8 @@ The repository is organized around the Specification-first architecture describe
 ├── .github/          # GitHub configuration
 ├── specification/    # The Specification (single source of truth)
 ├── packages/         # Implementation monorepo packages (npm workspaces)
-│   └── core/         # @lksnext/iac-conventions-core — domain contracts and Reference Evaluator
+│   ├── core/         # @lksnext/iac-conventions-core — domain contracts and Reference Evaluator
+│   └── catalog/      # @lksnext/iac-conventions-catalog — static Resource Definition Catalog
 ├── scripts/          # Repository automation scripts
 ├── IMPLEMENTATION.md # Implementation monorepo architecture
 ├── CONTRIBUTING.md
@@ -130,7 +131,6 @@ The following areas are introduced incrementally as the project develops and may
 exist. See [`IMPLEMENTATION.md`](IMPLEMENTATION.md) for the full package boundary and
 dependency rules:
 
-- `packages/catalog/` — executable Resource Definitions and Convention Packs.
 - `packages/cli/` — command-line adapter.
 - `packages/adapters/terraform/` — Terraform adapter.
 - `packages/adapters/cdk/` — AWS CDK adapter.

@@ -30,6 +30,12 @@ This is the **implementation foundation** only. As of this writing:
   bump.
 - `packages/core` exists as a minimal, non-domain-specific placeholder that proves the
   workspace, TypeScript configuration, and build/typecheck scripts work end to end.
+- `packages/catalog` (`@lksnext/iac-conventions-catalog`) exists, holding a static,
+  immutable Resource Definition Catalog (Milestone 3.1): a `getResourceDefinition` /
+  `listResourceTypes` lookup API over one deliberately minimal `aws_s3_bucket` entry, used
+  only to prove the catalog's package and API boundary. See [Milestones](#milestones) below
+  and
+  [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md).
 - [Biome](https://biomejs.dev/) is configured as the canonical formatter and linter for
   TypeScript, JavaScript, JSON, and JSONC across the whole repository (see
   [Formatting and linting](#formatting-and-linting)). ESLint and Prettier are not used.
@@ -59,9 +65,9 @@ This is the **implementation foundation** only. As of this writing:
   projection, general normalization, `allowed_characters` grammar, Placement Constraint
   validation, truncation, hashing, global uniqueness, CLI behavior, and adapter integration
   remain unimplemented.
-- `packages/catalog`, `packages/cli`, and `packages/adapters/*` do not exist yet — they
-  are planned (see [Planned packages](#planned-packages)) and must only be created when
-  a concrete task needs them, per the repository's incremental-evolution principle (see
+- `packages/cli` and `packages/adapters/*` do not exist yet — they are planned (see
+  [Planned packages](#planned-packages)) and must only be created when a concrete task
+  needs them, per the repository's incremental-evolution principle (see
   [`AGENTS.md`](AGENTS.md#repository-evolution)).
 
 ## Milestones
@@ -298,6 +304,36 @@ This is the **implementation foundation** only. As of this writing:
   - Deferred: see
     [`docs/architecture/reference-evaluator.md#deferred-decisions`](docs/architecture/reference-evaluator.md#deferred-decisions).
 
+- **Milestone 3 — Resource Definition Catalog.** A static, immutable catalog answering "given
+  a canonical `ResourceType`, which `ResourceDefinition` describes it?", strictly outside
+  `evaluate()` (see
+  [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md)).
+  Planned increments (this split is not mandatory; a later increment may reshape 3.2–3.4 if
+  repository analysis suggests a better one):
+  - **3.1 — Catalog Architecture & Foundation.**
+  - **3.2 — AWS Resource Definitions — Initial Slice** (planned): research and add a small,
+    authoritatively sourced first AWS slice.
+  - **3.3 — Catalog Validation & Coverage** (planned): broaden test coverage as the catalog
+    grows.
+  - **3.4 — Additional Providers** (planned): Azure, Kubernetes, or other provider catalogs.
+  - Completed increment: **3.1 — Catalog Architecture & Foundation** (a new workspace package,
+    `packages/catalog/` (`@lksnext/iac-conventions-catalog`), depending on `core` and never the
+    reverse, proven by
+    [`packages/catalog/test/runtime/dependency-direction.test.mjs`](packages/catalog/test/runtime/dependency-direction.test.mjs).
+    Exposes a minimal, static lookup API — `getResourceDefinition(resourceType)` and
+    `listResourceTypes()` — over an immutable `ResourceType -> ResourceDefinition` map built
+    from plain `ResourceDefinition` values (no `CatalogResourceDefinition` subtype, no class, no
+    mutable registry). Contains exactly one entry, `aws_s3_bucket`, deliberately declaring no
+    `rendering_constraints`, `identity_constraints`, or `placement_constraints`, since this
+    increment's purpose is to prove the package and API boundary, not to research provider
+    technical constraints (deferred to 3.2). An end-to-end integration test
+    ([`packages/catalog/test/runtime/integration.test.mjs`](packages/catalog/test/runtime/integration.test.mjs))
+    proves the intended `resource_type -> catalog lookup -> ResourceDefinition -> evaluate() ->
+    ConventionResult` flow, with the catalog lookup performed explicitly by the caller before
+    invoking `core`'s `evaluate()` — `evaluate()` itself was not modified. No Specification file
+    changed). See
+    [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md).
+
 ## Package Naming Policy
 
 The GitHub repository name, npm scope, package family, and package suffix are four
@@ -361,11 +397,19 @@ publishing organization (`@lksnext`), not restate the repository name.
 
 ```text
 packages/
-└── core/               # @lksnext/iac-conventions-core (exists)
+├── core/               # @lksnext/iac-conventions-core (exists)
+│   ├── package.json
+│   ├── README.md
+│   ├── tsconfig.json
+│   └── src/
+│       └── index.ts
+└── catalog/            # @lksnext/iac-conventions-catalog (exists)
     ├── package.json
     ├── README.md
     ├── tsconfig.json
     └── src/
+        ├── aws/
+        │   └── s3-bucket.ts
         └── index.ts
 ```
 
@@ -376,7 +420,6 @@ requires them:
 
 ```text
 packages/
-├── catalog/            # @lksnext/iac-conventions-catalog (planned)
 ├── cli/                # @lksnext/iac-conventions-cli (planned)
 └── adapters/
     ├── terraform/       # @lksnext/iac-conventions-terraform (planned)
@@ -786,13 +829,18 @@ depend on `core` and, optionally, `catalog`, but never on each other or on `cli`
 including no circular dependencies and no deep imports into another package's internal
 `src/` files, is the architectural contract for this implementation monorepo.
 
-Automated enforcement of these rules (a dependency graph tool, circular-dependency
-detection, deep-import checks) is intentionally **not** introduced yet: only
-`packages/core/` exists today (see [Planned packages](#planned-packages)), so there is
-no meaningful multi-package dependency graph for such a tool to validate.
-Architecture enforcement will be introduced once the implementation contains multiple
-packages with meaningful dependency relationships. Until then, the documented package
-dependency direction above is the architectural contract, and code review is the
+Automated enforcement of these rules through a dedicated dependency graph tool (a
+circular-dependency detector, deep-import checks) is intentionally **not** introduced
+yet: `packages/catalog/` (see [Planned packages](#planned-packages)) is the first
+package with a real dependency on another package, and its direction is instead proven
+by [`packages/catalog/test/runtime/dependency-direction.test.mjs`](packages/catalog/test/runtime/dependency-direction.test.mjs)
+— a plain Node.js test scanning package manifests and import specifiers, the same
+approach [`packages/core/test/runtime/model-independence.test.mjs`](packages/core/test/runtime/model-independence.test.mjs)
+already used for the model/evaluator boundary within `core`. A dedicated tool such as
+dependency-cruiser remains deferred until the package graph grows enough (`cli` and
+adapters depending on both `core` and `catalog`) that hand-written scans like this one
+stop scaling. Until then, the documented package dependency direction above is the
+architectural contract, and code review is the
 enforcement mechanism.
 
 ## Dependency security validation
