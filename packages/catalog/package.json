@@ -1,0 +1,30 @@
+{
+  "name": "@lksnext/iac-conventions-catalog",
+  "version": "0.1.0",
+  "description": "Static Resource Definition catalog for the iac-resource-conventions Specification.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@lksnext/iac-conventions-core": "^0.1.0"
+  },
+  "scripts": {
+    "build": "npm run build -w @lksnext/iac-conventions-core && tsc -p tsconfig.json",
+    "typecheck": "npm run build -w @lksnext/iac-conventions-core && tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test test/runtime/catalog.test.mjs test/runtime/dependency-direction.test.mjs test/runtime/integration.test.mjs"
+  }
+}
