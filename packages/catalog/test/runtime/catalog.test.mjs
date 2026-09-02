@@ -1,6 +1,8 @@
 // Runtime tests for the Resource Definition Catalog's lookup API and definition
-// integrity (Milestone 3.1: Catalog Architecture & Contracts). See
-// docs/architecture/resource-definition-catalog.md and
+// integrity (Milestone 3.1: Catalog Architecture & Contracts; strengthened by
+// Milestone 3.3: Catalog Validation & Model Conformance). See
+// docs/architecture/resource-definition-catalog.md,
+// docs/architecture/resource-definition-catalog-conformance.md, and
 // specification/resource-definition.md.
 //
 // `getResourceDefinition`/`listResourceTypes` are imported from the built package root
@@ -123,5 +125,54 @@ test("no catalog entry declares max_length without length_unit, or vice versa", 
       hasLengthUnit,
       `${resourceType}: max_length and length_unit must be declared together`,
     );
+  }
+});
+
+// --- Milestone 3.3: additional catalog integrity invariants --------------------------
+
+test("no catalog entry declares an empty resource_type", () => {
+  for (const resourceType of listResourceTypes()) {
+    assert.ok(resourceType.length > 0, "resource_type must not be an empty string");
+  }
+});
+
+test("no two catalog entries share the same resource_type", () => {
+  const resourceTypes = listResourceTypes();
+  assert.equal(
+    new Set(resourceTypes).size,
+    resourceTypes.length,
+    "listResourceTypes must contain no duplicate resource_type",
+  );
+});
+
+test("no catalog entry declares an empty placement_constraints string", () => {
+  for (const resourceType of listResourceTypes()) {
+    const { placement_constraints } = getResourceDefinition(resourceType);
+
+    if (placement_constraints === undefined) {
+      continue;
+    }
+    for (const constraint of placement_constraints) {
+      assert.ok(
+        constraint.trim().length > 0,
+        `${resourceType}: placement_constraints must not contain an empty string`,
+      );
+    }
+  }
+});
+
+test("every catalog entry with identity_constraints declares uniqueness_scope whenever unique is true", () => {
+  for (const resourceType of listResourceTypes()) {
+    const { identity_constraints } = getResourceDefinition(resourceType);
+
+    if (identity_constraints?.unique !== true) {
+      continue;
+    }
+    assert.equal(
+      typeof identity_constraints.uniqueness_scope,
+      "string",
+      `${resourceType}: unique: true must be paired with a uniqueness_scope`,
+    );
+    assert.ok(identity_constraints.uniqueness_scope.length > 0);
   }
 });

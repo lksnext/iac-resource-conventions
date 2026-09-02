@@ -31,9 +31,13 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  *   grammar to state the condition in a way a machine could check (see
  *   `specification/resource-definition.md#out-of-scope-for-this-document`, which
  *   defers "a formal schema or grammar for expressing Placement Constraints"). The two
- *   statements below are recorded as separate array entries for that reason: this
- *   catalog cannot express "regional, except X" as a single structured rule, only as
- *   two independent descriptive strings a human (or a future adapter) must reconcile.
+ *   statements below are worded (Milestone 3.3) so that the general rule explicitly
+ *   names its own exception and the exception explicitly names what it overrides,
+ *   reducing (without eliminating) the risk that a reader treats them as two
+ *   independent, simultaneously applicable constraints rather than one conditional
+ *   relationship — this catalog still cannot express "regional, except X" as a single
+ *   structured rule, only as two cross-referencing descriptive strings a human (or a
+ *   future adapter) must reconcile.
  * - **Uniqueness** — no uniqueness or identity constraint is documented by AWS for
  *   certificates beyond their ARN, which ACM itself assigns (not user-supplied);
  *   `identity_constraints` is therefore omitted entirely rather than guessed.
@@ -43,7 +47,7 @@ export const AWS_ACM_CERTIFICATE: ResourceDefinition = deepFreeze({
   platform: "aws",
   category: "security",
   placement_constraints: [
-    "regional; location chosen by the deployment",
-    "must be us-east-1 when associated with a CloudFront distribution",
+    "regional; the deployment chooses the Region, except when associated with a CloudFront distribution",
+    "when associated with a CloudFront distribution, the Region must be us-east-1, overriding the general regional rule above",
   ],
 });

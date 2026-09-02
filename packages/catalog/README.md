@@ -4,18 +4,22 @@ Static Resource Definition catalog for the `iac-resource-conventions` Specificat
 
 ## Status
 
-Milestone 3.2: a first, intentionally small, evidence-backed AWS Resource Definition
-slice — `aws_s3_bucket`, `aws_iam_role`, `aws_lambda_function`, and
+Milestone 3.2 added a first, intentionally small, evidence-backed AWS Resource
+Definition slice — `aws_s3_bucket`, `aws_iam_role`, `aws_lambda_function`, and
 `aws_acm_certificate`. Every technical constraint recorded for these four resource
 types is sourced from authoritative AWS documentation (cited in a provenance comment
 next to each definition, under `src/aws/`); no fact is guessed or inferred from
-Terraform provider documentation. This is still a deliberately incomplete slice, not
-broad AWS coverage — see
+Terraform provider documentation. Milestone 3.3 validated that slice: every fact was
+classified by evidence quality (no `Unsupported` fact was found), `aws_s3_bucket` was
+scoped explicitly to general purpose buckets only, and catalog integrity tests were
+strengthened. This is still a deliberately incomplete slice, not broad AWS coverage —
+see
 [`docs/architecture/resource-definition-catalog.md`](../../docs/architecture/resource-definition-catalog.md)
-for the full architecture, research findings, and the model gaps this milestone
-uncovered (for example, no `min_length` field, no separate `path` identifier
-component, and `placement_constraints`' free-form-only representation of conditional
-rules).
+for the full architecture and
+[`docs/architecture/resource-definition-catalog-conformance.md`](../../docs/architecture/resource-definition-catalog-conformance.md)
+for the per-fact conformance matrix and the model gaps this milestone found (for
+example, no `min_length` field, no separate `path` identifier component, and
+`placement_constraints`' free-form-only representation of conditional rules).
 
 ## Intended responsibilities
 

@@ -187,6 +187,16 @@ documentation, and not from memory. Provenance is recorded only as a source comm
 never as a runtime field on `ResourceDefinition`, since the Specification does not
 define provenance as domain data.
 
+Milestone 3.3 reviewed every fact below for evidence quality, corrected the three
+findings it produced (an explicit general-purpose-only scope for `aws_s3_bucket`, an
+Explicit-vs-Derived reclassification for `aws_lambda_function`'s uniqueness scope, and
+clearer conditional wording for `aws_acm_certificate`'s placement constraints), and
+formalized the provenance and freshness policy this section already followed in
+practice. See
+[`docs/architecture/resource-definition-catalog-conformance.md`](resource-definition-catalog-conformance.md)
+for the full per-fact conformance matrix, evidence classification, prioritized model
+gaps, support-status vocabulary, and coverage reporting — not duplicated here.
+
 ### Selected slice and rationale
 
 | Resource type | Why selected |
@@ -255,8 +265,11 @@ need for a resource type whose valid characters are not single-byte ASCII.
   and an exact expected `listResourceTypes()` list (not merely "already sorted"), so a
   missing registration is caught.
 - **Definition integrity** — the same file: catalog key equals
-  `definition.resource_type` for every entry, every entry declares a `platform`, and
-  `max_length`/`length_unit` are declared together or not at all.
+  `definition.resource_type` for every entry, every entry declares a `platform`,
+  `max_length`/`length_unit` are declared together or not at all, no entry declares an
+  empty `resource_type` or a duplicate one, no `placement_constraints` entry is an
+  empty string, and `identity_constraints.unique: true` is always paired with a
+  `uniqueness_scope` (Milestone 3.3).
 - **Integration** —
   [`test/runtime/integration.test.mjs`](../../packages/catalog/test/runtime/integration.test.mjs):
   an end-to-end `resource_type -> catalog lookup -> ResourceDefinition -> evaluate() ->
@@ -269,8 +282,11 @@ need for a resource type whose valid characters are not single-byte ASCII.
 
 ## Future evolution
 
-- **Milestone 3.3 — Catalog Validation & Coverage** — broaden AWS coverage and/or add
-  validation tooling; not started by this document.
+- **Milestone 3.3 — Catalog Validation & Model Conformance** — complete; see
+  [`docs/architecture/resource-definition-catalog-conformance.md`](resource-definition-catalog-conformance.md)
+  for the full conformance review, prioritized model gaps, and recommended next action
+  (a future Specification v1.2 — Executable Resource Constraints evolution, proposed in
+  scope only, not implemented).
 - **Additional providers** — an `azure/` or `kubernetes/` directory, created only once a
   concrete task needs one.
 - **Tree-shakeable subpaths** — once the catalog grows large enough that a consumer

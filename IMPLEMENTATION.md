@@ -312,9 +312,9 @@ This is the **implementation foundation** only. As of this writing:
   repository analysis suggests a better one):
   - **3.1 — Catalog Architecture & Foundation.**
   - **3.2 — AWS Resource Definitions — Initial Slice.**
-  - **3.3 — Catalog Validation & Coverage** (planned): broaden test coverage as the catalog
-    grows.
+  - **3.3 — Catalog Validation & Model Conformance.**
   - **3.4 — Additional Providers** (planned): Azure, Kubernetes, or other provider catalogs.
+    Not activated by 3.3 — see 3.3's own recommended next action below.
   - Completed increment: **3.1 — Catalog Architecture & Foundation** (a new workspace package,
     `packages/catalog/` (`@lksnext/iac-conventions-catalog`), depending on `core` and never the
     reverse, proven by
@@ -350,6 +350,31 @@ This is the **implementation foundation** only. As of this writing:
     modified and still performs no catalog lookup. See
     [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md)
     for the full findings.
+  - Completed increment: **3.3 — Catalog Validation & Model Conformance** (classified every
+    fact in all four AWS entries as Explicit, Derived, or an explicit absence — no
+    `Unsupported` fact was found. Made three evidence-driven corrections without changing any
+    catalog value: scoped `aws_s3_bucket` explicitly and permanently to general purpose
+    buckets only, since AWS's `CreateBucket` API can also produce a directory bucket with a
+    materially different namespace/grammar (a future directory-bucket entry would need its own
+    `ResourceType`, never a conditional branch); reclassified `aws_lambda_function`'s
+    `uniqueness_scope` evidence as Derived, not Explicit, citing `ResourceConflictException`
+    and the `FunctionArn` shape; reworded `aws_acm_certificate`'s two `placement_constraints`
+    strings so each names the other, reducing the risk they are read as independent facts
+    rather than one conditional rule. Strengthened `aws_iam_role`'s `global: true` provenance
+    to cite the Specification's own precise `global` definition rather than endpoint existence
+    alone. Added catalog integrity tests: no empty `resource_type`, no duplicate
+    `resource_type`, no empty `placement_constraints` string, and `unique: true` always paired
+    with a `uniqueness_scope`. Documented, without implementing, further model gaps (a
+    `min_length` field, a secondary identifier component, a conditional-constraint mechanism,
+    an executable character grammar, a structured `uniqueness_scope` vocabulary, and reserved
+    name patterns) and a three-tier support-status vocabulary (Cataloged / Naming-executable /
+    Partially modeled). No Specification file changed, no new AWS/Azure/Kubernetes resource
+    added, no new dependency added. Recommended a future Specification v1.2 —
+    Executable Resource Constraints evolution (scope proposal only, not implemented) as the
+    next action, over expanding AWS coverage further, since every one of the four current
+    entries independently hit the same set of gaps. See
+    [`docs/architecture/resource-definition-catalog-conformance.md`](docs/architecture/resource-definition-catalog-conformance.md)
+    for the full conformance matrix and findings.)
 
 ## Package Naming Policy
 
