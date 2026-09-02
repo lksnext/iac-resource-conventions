@@ -16,6 +16,10 @@ controltower
 # IaC / cloud domain terminology not in the bundled aws/k8s/terraform dictionaries
 multitenancy
 
+# AWS S3's own reserved bucket-name prefix (docs.aws.amazon.com bucket naming rules),
+# cited verbatim in packages/catalog/src/aws/s3-bucket.ts
+sthree
+
 # General technical/software terms
 transpilable
 subcomponent

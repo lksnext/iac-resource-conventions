@@ -40,3 +40,29 @@ test("integration: a catalog-looked-up ResourceDefinition can be passed to evalu
 
   assert.equal(result.outputs.name, "telemetry-platform-ingestion-aws_s3_bucket");
 });
+
+test("integration: a catalog definition's max_length/length_unit constrains evaluate()'s validation", () => {
+  const resourceDefinition = getResourceDefinition("aws_s3_bucket");
+  assert.ok(resourceDefinition, "expected the catalog to know aws_s3_bucket");
+  assert.equal(resourceDefinition.rendering_constraints.max_length, 63);
+  assert.equal(resourceDefinition.rendering_constraints.length_unit, "code_points");
+
+  const result = evaluate({
+    naming_request: {
+      convention: "test-pack",
+      resource_type: "aws_s3_bucket",
+      functional: { service: "a".repeat(70) },
+    },
+    convention_pack: {
+      id: "test-pack",
+      naming_component_order: ["functional.service"],
+      separator: "",
+    },
+    evaluation_context: {},
+    resource_definition: resourceDefinition,
+  });
+
+  assert.deepEqual(result.validation.failures, [
+    { message: "name exceeds max_length of 63 characters" },
+  ]);
+});

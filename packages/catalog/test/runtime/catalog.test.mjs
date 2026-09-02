@@ -39,13 +39,47 @@ test("a returned ResourceDefinition cannot be mutated by the caller", () => {
   });
 });
 
+test("a returned ResourceDefinition's nested rendering_constraints cannot be mutated", () => {
+  const definition = getResourceDefinition("aws_s3_bucket");
+
+  assert.throws(() => {
+    definition.rendering_constraints.max_length = 1;
+  });
+  assert.equal(definition.rendering_constraints.max_length, 63);
+});
+
+test("a returned ResourceDefinition's nested identity_constraints cannot be mutated", () => {
+  const definition = getResourceDefinition("aws_iam_role");
+
+  assert.throws(() => {
+    definition.identity_constraints.global = false;
+  });
+  assert.equal(definition.identity_constraints.global, true);
+});
+
+test("a returned ResourceDefinition's placement_constraints array cannot be mutated", () => {
+  const definition = getResourceDefinition("aws_acm_certificate");
+  const originalLength = definition.placement_constraints.length;
+
+  assert.throws(() => {
+    definition.placement_constraints.push("fabricated constraint");
+  });
+  assert.equal(definition.placement_constraints.length, originalLength);
+
+  assert.throws(() => {
+    definition.placement_constraints[0] = "fabricated constraint";
+  });
+});
+
 // --- Listing --------------------------------------------------------------------------
 
-test("listResourceTypes returns every catalog entry in lexical order", () => {
-  const resourceTypes = listResourceTypes();
-
-  assert.deepEqual(resourceTypes, [...resourceTypes].sort());
-  assert.ok(resourceTypes.includes("aws_s3_bucket"));
+test("listResourceTypes returns exactly the expected catalog entries in lexical order", () => {
+  assert.deepEqual(listResourceTypes(), [
+    "aws_acm_certificate",
+    "aws_iam_role",
+    "aws_lambda_function",
+    "aws_s3_bucket",
+  ]);
 });
 
 test("listResourceTypes is deterministic across repeated calls", () => {

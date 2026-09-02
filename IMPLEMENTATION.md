@@ -308,11 +308,10 @@ This is the **implementation foundation** only. As of this writing:
   a canonical `ResourceType`, which `ResourceDefinition` describes it?", strictly outside
   `evaluate()` (see
   [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md)).
-  Planned increments (this split is not mandatory; a later increment may reshape 3.2–3.4 if
+  Planned increments (this split is not mandatory; a later increment may reshape 3.3–3.4 if
   repository analysis suggests a better one):
   - **3.1 — Catalog Architecture & Foundation.**
-  - **3.2 — AWS Resource Definitions — Initial Slice** (planned): research and add a small,
-    authoritatively sourced first AWS slice.
+  - **3.2 — AWS Resource Definitions — Initial Slice.**
   - **3.3 — Catalog Validation & Coverage** (planned): broaden test coverage as the catalog
     grows.
   - **3.4 — Additional Providers** (planned): Azure, Kubernetes, or other provider catalogs.
@@ -331,8 +330,26 @@ This is the **implementation foundation** only. As of this writing:
     proves the intended `resource_type -> catalog lookup -> ResourceDefinition -> evaluate() ->
     ConventionResult` flow, with the catalog lookup performed explicitly by the caller before
     invoking `core`'s `evaluate()` — `evaluate()` itself was not modified. No Specification file
-    changed). See
-    [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md).
+    changed).
+  - Completed increment: **3.2 — AWS Resource Definitions — Initial Slice** (upgraded
+    `aws_s3_bucket` and added three new entries — `aws_iam_role`, `aws_lambda_function`,
+    `aws_acm_certificate` — every technical constraint sourced from authoritative AWS
+    documentation, cited in a provenance comment next to each definition under
+    `packages/catalog/src/aws/`, never from Terraform provider documentation or from memory.
+    Replaced Milestone 3.1's two-level `Object.freeze` with an internal recursive `deepFreeze`
+    helper ([`packages/catalog/src/internal/deep-freeze.ts`](packages/catalog/src/internal/deep-freeze.ts)),
+    since a definition with nested `rendering_constraints`/`identity_constraints`/
+    `placement_constraints` needs more than a two-level freeze to be genuinely immutable.
+    `listResourceTypes()` now derives from a single source-of-truth registration map with no
+    duplicated resource-type array. Found and documented three Specification/model gaps without
+    fixing them: no `min_length` field (Amazon S3 documents a 3-character minimum); no separate
+    identifier component for IAM's `path` (distinct from a role's own name); and
+    `placement_constraints`' flat `ReadonlyArray<string>` shape can only describe a conditional
+    rule (ACM certificate + CloudFront's `us-east-1` requirement) as two independent descriptive
+    strings, not a structured condition. No Specification file changed; `evaluate()` was not
+    modified and still performs no catalog lookup. See
+    [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md)
+    for the full findings.
 
 ## Package Naming Policy
 
@@ -532,10 +549,16 @@ packages/core/tsconfig.json
   supports source-mapped debugging.
 
 Each package's `tsconfig.json` extends the base and only adds its own `rootDir`/
-`outDir` and `include`. Project references (`composite`/`tsc -b`) are intentionally not
-configured yet — with a single package there is nothing to compose a build graph from;
-introduce them when `catalog` (or another package that depends on `core`) is created and
-cross-package incremental builds become useful.
+`outDir` and `include`. Project references (`composite`/`tsc -b`) remain intentionally not
+configured: `packages/catalog/` now depends on `core` (Milestone 3.1), but its own `build`/
+`typecheck` scripts already build `core` first explicitly (`npm run build -w
+@lksnext/iac-conventions-core && tsc -p tsconfig.json`), which works correctly regardless of
+npm workspaces' alphabetical build ordering and needs no incremental build graph to do so.
+With only two packages and one dependency edge, project references would add `composite`
+configuration and a `tsc -b` invocation for a build-ordering problem the explicit script
+prefix already solves; introduce them when a third package joins the dependency graph, or
+when incremental cross-package build time becomes an observed problem this explicit-ordering
+approach does not scale to.
 
 ## Package API and exports
 
@@ -1157,7 +1180,10 @@ The following are intentionally **not** decided in this task:
   speculatively — `npm pack --dry-run` inside a specific package directory remains the
   ad hoc way to inspect tarball contents until a real, documented release process
   exists (see [Versioning and publication](#versioning-and-publication) above).
-- **Project references / `tsc -b`** — deferred until a second package depends on `core`.
+- **Project references / `tsc -b`** — still deferred; see
+  [`#typescript-configuration`](#typescript-configuration) for the current reasoning now that
+  `catalog` depends on `core` (an explicit build-script ordering already solves the only
+  problem project references would address, with just one dependency edge).
 - **Binary packaging for the CLI** — deferred until the CLI package exists and a concrete
   distribution need is identified.
 - **`fixtures/` creation** — the directory layout is documented above but not created;

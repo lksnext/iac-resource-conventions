@@ -113,11 +113,22 @@ package contents (packages/catalog/src/**)
 ```
 
 The catalog is a plain object literal built from imported `ResourceDefinition` constants,
-`Object.freeze`d at two levels: the top-level `ResourceType -> ResourceDefinition` map,
-and each individual `ResourceDefinition` value. Freezing only the outer map would leave
-a returned `ResourceDefinition` object itself mutable by a caller; both need to be frozen
-for the catalog to be immutable in more than name. There is no class, no constructor, and
-no mutable singleton — the catalog is exactly the module's own exports.
+recursively frozen by an internal `deepFreeze` helper
+([`src/internal/deep-freeze.ts`](../../packages/catalog/src/internal/deep-freeze.ts)),
+not only `Object.freeze`d at the top level. Milestone 3.1's two-level freeze (outer map,
+individual `ResourceDefinition` value) was sufficient only because its one entry had no
+nested object or array field; once a definition gained a nested
+`rendering_constraints`, `identity_constraints`, or `placement_constraints` value (as
+every Milestone 3.2 entry does), a shallow freeze would leave `definition
+.rendering_constraints.max_length = 1` or `definition.placement_constraints.push(...)`
+silently succeeding. `deepFreeze` is applied once at each individual definition's own
+definition site (for example, `AWS_S3_BUCKET`) and again to the outer
+`ResourceType -> ResourceDefinition` map itself, since the map is a distinct value from
+any entry it contains. `deepFreeze` is internal-only (not exported), has no dependency,
+and handles plain objects and arrays only — `ResourceDefinition` values contain no
+`Map`, `Set`, `Date`, class instance, or circular reference, so support for those was not
+added. There is no class, no constructor, and no mutable singleton — the catalog is
+exactly the module's own exports.
 
 ## Public API
 
@@ -148,12 +159,16 @@ subtype, and no class.
 ```text
 packages/catalog/src/
     aws/
+        acm-certificate.ts
+        iam-role.ts
+        lambda-function.ts
         s3-bucket.ts
+    internal/
+        deep-freeze.ts
     index.ts
 ```
 
-Only `aws/` exists, because the catalog currently contains exactly one, deliberately
-minimal, AWS entry (see
+Only `aws/` exists, because the catalog currently contains only a small AWS slice (see
 [Definition provenance and modeling findings](#definition-provenance-and-modeling-findings)
 below). No `azure/` or `kubernetes/` directory exists yet, and no `providers/base/`,
 `providers/common/`, or `providers/generic/` grouping was introduced — none has a
@@ -163,33 +178,70 @@ definition, per this repository's incremental-evolution principle (see
 
 ## Definition provenance and modeling findings
 
-Milestone 3.1's purpose is to prove the package and API boundary, not to research
-provider technical constraints — so it deliberately includes exactly one entry,
-`aws_s3_bucket`:
+Milestone 3.2 added the catalog's first authoritative AWS slice: `aws_s3_bucket`
+(upgraded from Milestone 3.1's minimal entry), `aws_iam_role`, `aws_lambda_function`,
+and `aws_acm_certificate`. Every technical constraint below is sourced from official
+AWS documentation (`docs.aws.amazon.com`), cited in a provenance comment next to each
+definition under `packages/catalog/src/aws/` — not from Terraform provider
+documentation, and not from memory. Provenance is recorded only as a source comment,
+never as a runtime field on `ResourceDefinition`, since the Specification does not
+define provenance as domain data.
 
-```ts
-{ resource_type: "aws_s3_bucket", platform: "aws" }
-```
+### Selected slice and rationale
 
-This entry declares no `rendering_constraints`, `identity_constraints`, or
-`placement_constraints`. Encoding a maximum length, an allowed-character rule, a
-uniqueness scope, or a Placement Constraint (for example, "regional, location chosen by
-the deployment", per
-[`specification/resource-definition.md#s3-bucket`](../../specification/resource-definition.md#s3-bucket))
-without first verifying it against authoritative AWS documentation and choosing a
-`length_unit` from evidence would fabricate a technical constraint this catalog does
-not yet have — exactly what
-[`specification/resource-definition.md#rendering-constraints`](../../specification/resource-definition.md#rendering-constraints)
-and [`specification/README.md#length-unit-clarification`](../../specification/README.md#length-unit-clarification)
-warn against. Researching and adding real, sourced constraints — and testing whether the
-current conceptual model can faithfully represent a conditional Placement Constraint
-such as "an ACM Certificate must be in `us-east-1` when associated with a CloudFront
-Distribution" — is Milestone 3.2's job, not this one's.
+| Resource type | Why selected |
+| --- | --- |
+| `aws_s3_bucket` | Globally unique name across an entire AWS partition; tests `identity_constraints.unique`/`uniqueness_scope` at their broadest scope, and exposes a genuine minimum-length gap (see below). |
+| `aws_iam_role` | A single `iam.amazonaws.com` endpoint is listed for every commercial Region ([AWS General Reference](https://docs.aws.amazon.com/general/latest/gr/iam-service.html)), and role quotas are account-scoped, not per-Region — direct evidence for `identity_constraints.global: true`, matching the Specification's own IAM Role illustrative example. |
+| `aws_lambda_function` | A "normal" regional, account-scoped resource, for contrast with the global/partition-scoped entries above. |
+| `aws_acm_certificate` | `RequestCertificate` never accepts a user-supplied name — only `DomainName` — so this entry declares no `rendering_constraints` at all, the first catalog entry to omit the field entirely. It is also the Specification's own conditional-placement illustrative example: regional, but must be `us-east-1` when associated with a CloudFront distribution ([source](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html)). |
 
-Every future concrete definition must record its authoritative source (for example, an
-AWS documentation page) in a source comment next to the definition, the same way this
-document records the reasoning above; provenance is not added as a runtime field on
-`ResourceDefinition`, since the Specification does not define provenance as domain data.
+`aws_dynamodb_table`, `aws_cloudfront_distribution`, and `aws_sqs_queue` were considered
+and not added: the four resources above already cover global-partition-unique,
+account-scoped-global, regional-with-no-conditional-rule, and no-name/
+conditional-placement cases without redundancy.
+
+### Length-unit findings
+
+Every character AWS documents as valid for these four resource types' names is
+single-byte ASCII (lowercase letters/digits/periods/hyphens for S3; alphanumeric plus a
+small symbol set for IAM; letters/digits/hyphens/underscores for Lambda). Unicode code
+points and UTF-8 bytes therefore coincide for every conforming name, so `code_points` was
+chosen for all three `rendering_constraints`-bearing entries, for consistency with the
+Reference Evaluator's own default choice (see
+[`specification/README.md#length-unit-clarification`](../../specification/README.md#length-unit-clarification)).
+No entry required `utf8_bytes`; this catalog's evidence base does not yet demonstrate the
+need for a resource type whose valid characters are not single-byte ASCII.
+
+### Model gaps found (documented, not fixed here)
+
+- **No `min_length` field** — Amazon S3 documents a 3-character minimum bucket-name
+  length ([source](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html)),
+  but `ResourceRenderingConstraints` only has `max_length`. This is a genuine,
+  evidence-backed gap: `aws_s3_bucket` cannot fully represent AWS's own documented
+  constraint. Not added speculatively — a future Specification/model change would need
+  to define units, defaulting, and interaction with `max_length` the way the existing
+  `length_unit` clarification did.
+- **No secondary identifier component (`path`)** — IAM separately limits a role's
+  `path` to 512 characters, and states the combined `path` + role name must not exceed
+  64 characters when used with the Switch Role console feature
+  ([source](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html)).
+  `ResourceDefinition` has no concept of a secondary, independently-constrained
+  identifier component distinct from the resource's own rendered name; `aws_iam_role`
+  models only the 64-character role-name limit, not `path`.
+- **`placement_constraints` cannot express a conditional rule structurally** —
+  `aws_acm_certificate` needs two independent descriptive strings ("regional; location
+  chosen by the deployment" and "must be us-east-1 when associated with a CloudFront
+  distribution") to describe one conditional rule, because `placement_constraints` is a
+  flat `ReadonlyArray<string>` with no grammar for conditions
+  (per [`specification/resource-definition.md#out-of-scope-for-this-document`](../../specification/resource-definition.md#out-of-scope-for-this-document)).
+  Convention Evaluation cannot execute or validate this relationship today (see
+  [`docs/architecture/convention-evaluation-executability.md`](convention-evaluation-executability.md)),
+  and this milestone did not change that — the two strings remain descriptive only.
+- **No `rendering_constraints` at all for a real resource type** —
+  `aws_acm_certificate` is the first catalog entry to omit `rendering_constraints`
+  entirely, since ACM certificates have no user-supplied name. This confirms the field's
+  optionality is load-bearing, not merely a type-level nicety.
 
 ## Testing strategy
 
@@ -198,7 +250,10 @@ document records the reasoning above; provenance is not added as a runtime field
   dependency direction, no provider SDK dependency, no cross-package import.
 - **Lookup** —
   [`test/runtime/catalog.test.mjs`](../../packages/catalog/test/runtime/catalog.test.mjs):
-  known/unknown lookup, determinism, immutability, lexical listing order.
+  known/unknown lookup, determinism, immutability (including deep immutability of
+  nested `rendering_constraints`, `identity_constraints`, and `placement_constraints`),
+  and an exact expected `listResourceTypes()` list (not merely "already sorted"), so a
+  missing registration is caught.
 - **Definition integrity** — the same file: catalog key equals
   `definition.resource_type` for every entry, every entry declares a `platform`, and
   `max_length`/`length_unit` are declared together or not at all.
@@ -206,21 +261,22 @@ document records the reasoning above; provenance is not added as a runtime field
   [`test/runtime/integration.test.mjs`](../../packages/catalog/test/runtime/integration.test.mjs):
   an end-to-end `resource_type -> catalog lookup -> ResourceDefinition -> evaluate() ->
   ConventionResult` flow, with the lookup performed explicitly before calling
-  `evaluate()`.
+  `evaluate()`, plus a case proving a real catalog definition's `max_length`/
+  `length_unit` constrains `evaluate()`'s validation output. Non-executable constraints
+  (`allowed_characters`, `placement_constraints`) are asserted as present only at the
+  catalog level, never exercised through `evaluate()` (see
+  [`docs/architecture/convention-evaluation-executability.md`](convention-evaluation-executability.md)).
 
 ## Future evolution
 
-- **Milestone 3.2** — research and add a first real AWS Resource Definition slice, with
-  authoritative sources for every technical constraint, and use it to test whether the
-  current conceptual `placement_constraints` and `allowed_characters` fields can
-  faithfully represent real provider rules (see [Specification
-  gaps](../../specification/resource-definition.md#out-of-scope-for-this-document)).
+- **Milestone 3.3 — Catalog Validation & Coverage** — broaden AWS coverage and/or add
+  validation tooling; not started by this document.
 - **Additional providers** — an `azure/` or `kubernetes/` directory, created only once a
   concrete task needs one.
 - **Tree-shakeable subpaths** — once the catalog grows large enough that a consumer
   might want, for example, "AWS definitions only", a subpath export (for example,
   `@lksnext/iac-conventions-catalog/aws`) could be added without breaking the existing
-  root export. Not implemented yet, since the current single-entry catalog does not
+  root export. Not implemented yet, since the current four-entry catalog does not
   justify it.
 
 See [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md#milestones)

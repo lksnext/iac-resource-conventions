@@ -232,9 +232,11 @@ for the full API contract, design rationale, and current capability scope.
 - ✓ Implementation monorepo architecture (see [`IMPLEMENTATION.md`](IMPLEMENTATION.md)).
 - ✓ Executable Domain Model (Milestone 1 — complete; see
   [`IMPLEMENTATION.md`](IMPLEMENTATION.md#milestones)).
-- Reference Evaluator (Milestone 2 — in progress; the public `evaluate()` API is now
-  available, see [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md)).
-- Resource Definition catalog
+- ✓ Reference Evaluator (Milestone 2 — complete for Specification v1.1's executable scope; the
+  public `evaluate()` API is available, see
+  [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md)).
+- Resource Definition Catalog (Milestone 3 — in progress; an initial AWS slice is implemented,
+  see [`packages/catalog/README.md`](packages/catalog/README.md)).
 - Executable Convention Packs
 - Contract Tests
 
