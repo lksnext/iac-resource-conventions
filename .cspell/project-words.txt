@@ -58,3 +58,8 @@ straße
 STRASSE
 İstanbul
 stanbul
+
+# Milestone 3.3 catalog conformance review terminology
+# (docs/architecture/resource-definition-catalog-conformance.md)
+globality
+executably
