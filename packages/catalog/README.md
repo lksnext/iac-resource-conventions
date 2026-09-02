@@ -4,14 +4,18 @@ Static Resource Definition catalog for the `iac-resource-conventions` Specificat
 
 ## Status
 
-Milestone 3.1: catalog architecture and package/API boundary foundation. The catalog
-currently contains a single, deliberately minimal `ResourceDefinition` (`aws_s3_bucket`),
-added only to prove the catalog's public API and its integration with
-`@lksnext/iac-conventions-core`'s `evaluate()`. Broader, researched provider coverage is
-deferred to Milestone 3.2. See [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md) at the
-repository root and
+Milestone 3.2: a first, intentionally small, evidence-backed AWS Resource Definition
+slice — `aws_s3_bucket`, `aws_iam_role`, `aws_lambda_function`, and
+`aws_acm_certificate`. Every technical constraint recorded for these four resource
+types is sourced from authoritative AWS documentation (cited in a provenance comment
+next to each definition, under `src/aws/`); no fact is guessed or inferred from
+Terraform provider documentation. This is still a deliberately incomplete slice, not
+broad AWS coverage — see
 [`docs/architecture/resource-definition-catalog.md`](../../docs/architecture/resource-definition-catalog.md)
-for the full architecture, milestone roadmap, and deferred decisions.
+for the full architecture, research findings, and the model gaps this milestone
+uncovered (for example, no `min_length` field, no separate `path` identifier
+component, and `placement_constraints`' free-form-only representation of conditional
+rules).
 
 ## Intended responsibilities
 
@@ -27,6 +31,11 @@ This package must never:
 - Depend on a cloud provider SDK, Terraform, CDK, or any other environment-specific
   integration.
 - Expose a mutable runtime registry.
+
+Every catalog entry is deeply immutable at runtime (not only its top-level fields, but
+any nested `rendering_constraints`, `identity_constraints`, or `placement_constraints`
+object or array) via an internal `deepFreeze` helper — see
+`src/internal/deep-freeze.ts`.
 
 ## Usage
 
