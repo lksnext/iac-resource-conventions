@@ -46,8 +46,10 @@ object or array) via an internal `deepFreeze` helper — see
 Every catalog entry is checked by an internal, unexported validator
 (`src/internal/validate-resource-definition.ts`) during `npm test`, so a Resource
 Definition PR that introduces malformed data (for example, `min_length` greater than
-`max_length`, an empty character set, or a mismatched catalog key) fails tests before
-merge. This checks structural conformance only, never provider truth — see
+`max_length`, a non-integer or `NaN`/`Infinity` length bound, an unsupported
+`length_unit`, an empty character set, or a mismatched catalog key) fails tests before
+merge. This checks structural conformance only, never provider truth, and is not a
+general-purpose runtime schema validator — see
 [`docs/architecture/resource-definition-catalog.md#catalog-conformance-validation`](../../docs/architecture/resource-definition-catalog.md#catalog-conformance-validation).
 
 ## Usage

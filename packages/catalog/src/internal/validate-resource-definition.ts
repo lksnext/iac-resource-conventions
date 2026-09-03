@@ -15,14 +15,17 @@
 // catalog source written in this package (for example, `ResourceRenderingConstraints`'s
 // four-way length union). This validator exists for the invariants TypeScript cannot
 // express at all (`min_length <= max_length`, a non-empty character set, exactly one
-// code point per literal, a valid Placement Constraint operator/value shape) and to
-// catch a definition that reaches this validator via untyped or generated input (for
-// example, a future catalog-generation workflow), not only hand-written TypeScript
-// source.
+// code point per literal, a valid Placement Constraint operator/value shape) and for
+// defensive conformance checks on malformed values that reach this validator via
+// untyped or generated input (for example, a future catalog-generation workflow), not
+// only hand-written TypeScript source. It is not a general-purpose runtime schema
+// validator for arbitrary unknown JSON: it checks a fixed, mechanically verifiable set
+// of Specification v1.2 invariants, not every possible malformed object shape.
 
 import type {
   CanonicalResourceIdentityAttribute,
   ResourceDefinition,
+  ResourceNameLengthUnit,
 } from "@lksnext/iac-conventions-core";
 
 /**
@@ -74,8 +77,41 @@ const CHARACTER_CLASSES = new Set([
   "ascii_digits",
 ]);
 
+/**
+ * The closed `length_unit` vocabulary (Specification v1.2; see
+ * `specification/resource-definition.md#rendering-constraints`), duplicated here as a
+ * runtime set for the same reason as {@link CANONICAL_RESOURCE_IDENTITY_ATTRIBUTES}:
+ * `ResourceNameLengthUnit` (imported above) is a compile-time-only literal union, core
+ * exposes no runtime constant for it, and expanding core's public API solely for this
+ * internal catalog validator is not justified.
+ */
+const LENGTH_UNITS: ReadonlySet<ResourceNameLengthUnit> = new Set(["code_points", "utf8_bytes"]);
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
+}
+
+/**
+ * `min_length` is normatively a non-negative integer (see
+ * `specification/resource-definition.md#minimum-length`), so `NaN`, `Infinity`,
+ * negative values, and fractions are all rejected.
+ */
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+/**
+ * `max_length` is measured in a discrete `length_unit` (code points or UTF-8 bytes) and
+ * shares that unit with `min_length`, but Specification v1.2 does not state, the same
+ * explicit way it does for `min_length`, that `max_length` itself must be an integer
+ * (see `specification/resource-definition.md#minimum-length`). This check therefore
+ * only rejects what every reading of "length" agrees is invalid — `NaN`, `Infinity`,
+ * `-Infinity`, and negative values — without silently tightening `max_length` to
+ * require `Number.isInteger` (see the completion report for this documented
+ * Specification gap).
+ */
+function isNonNegativeFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
 function validateCharacterSet(
@@ -244,18 +280,21 @@ export function validateResourceDefinition(
     const hasMaxLength = rendering.max_length !== undefined;
     const hasLengthUnit = rendering.length_unit !== undefined;
 
-    if (hasMinLength && (typeof rendering.min_length !== "number" || rendering.min_length < 0)) {
+    const validMinLength = hasMinLength && isNonNegativeInteger(rendering.min_length);
+    const validMaxLength = hasMaxLength && isNonNegativeFiniteNumber(rendering.max_length);
+
+    if (hasMinLength && !validMinLength) {
       issues.push({
         resource_type: String(resourceType),
         path: "rendering_constraints.min_length",
-        message: "must be a non-negative number",
+        message: "must be a non-negative integer",
       });
     }
-    if (hasMaxLength && (typeof rendering.max_length !== "number" || rendering.max_length < 0)) {
+    if (hasMaxLength && !validMaxLength) {
       issues.push({
         resource_type: String(resourceType),
         path: "rendering_constraints.max_length",
-        message: "must be a non-negative number",
+        message: "must be a non-negative finite number",
       });
     }
     if ((hasMinLength || hasMaxLength) && !hasLengthUnit) {
@@ -265,12 +304,17 @@ export function validateResourceDefinition(
         message: "must be declared whenever min_length or max_length is declared",
       });
     }
+    if (hasLengthUnit && !LENGTH_UNITS.has(rendering.length_unit as ResourceNameLengthUnit)) {
+      issues.push({
+        resource_type: String(resourceType),
+        path: "rendering_constraints.length_unit",
+        message: `"${String(rendering.length_unit)}" is not "code_points" or "utf8_bytes"`,
+      });
+    }
     if (
-      hasMinLength &&
-      hasMaxLength &&
-      typeof rendering.min_length === "number" &&
-      typeof rendering.max_length === "number" &&
-      rendering.min_length > rendering.max_length
+      validMinLength &&
+      validMaxLength &&
+      (rendering.min_length as number) > (rendering.max_length as number)
     ) {
       issues.push({
         resource_type: String(resourceType),

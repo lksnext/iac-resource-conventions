@@ -317,6 +317,7 @@ This is the **implementation foundation** only. As of this writing:
   - **3.2 — AWS Resource Definitions — Initial Slice.**
   - **3.3 — Catalog Validation & Model Conformance.**
   - **3.3.2 — Catalog Conformance Automation.**
+  - **3.3.3 — Catalog Conformance Numeric & Unit Hygiene.**
   - **3.4 — Additional Providers** (planned): Azure, Kubernetes, or other provider catalogs.
     Not activated by 3.3 — see 3.3's own recommended next action below.
   - Completed increment: **3.1 — Catalog Architecture & Foundation** (a new workspace package,
@@ -405,6 +406,34 @@ This is the **implementation foundation** only. As of this writing:
     outside this validator's scope and continues to be reviewed per
     [`docs/architecture/resource-definition-catalog-conformance.md`](docs/architecture/resource-definition-catalog-conformance.md),
     which this increment does not replace.)
+  - Completed increment: **3.3.3 — Catalog Conformance Numeric & Unit Hygiene** (a
+    post-implementation review of 3.3.2 found the validator's numeric bound checks
+    (`typeof value === "number" && value >= 0`) incorrectly accepted `NaN`, `Infinity`,
+    `-Infinity`, and fractions for `min_length`/`max_length`, since none of those values
+    satisfy JavaScript's `< 0` comparison. `min_length` now requires
+    `Number.isInteger(value) && value >= 0`, per Specification v1.2's explicit
+    "`min_length` is a non-negative integer" text
+    ([`specification/resource-definition.md#minimum-length`](specification/resource-definition.md#minimum-length)).
+    `max_length` now requires `Number.isFinite(value) && value >= 0` — `NaN`,
+    `Infinity`, `-Infinity`, and negative values are rejected, but a fraction is
+    deliberately **not** rejected, since the Specification states integer semantics
+    explicitly only for `min_length`, never for `max_length` itself, even though both
+    bounds share one `length_unit`. This asymmetry is recorded as a documented
+    normative gap rather than silently resolved by assuming symmetry (per this
+    increment's own instructions to STOP and report, rather than tighten, a genuinely
+    ambiguous numeric requirement). Also added a narrow runtime check that a declared
+    `length_unit` is one of the closed `code_points`/`utf8_bytes` vocabulary, using a
+    small internal `Set` in the catalog validator (the same pattern already used for the
+    canonical Resource Identity attribute vocabulary) rather than expanding `core`'s
+    public API. `min_length <= max_length` is now compared only once both bounds are
+    independently confirmed valid, so a malformed bound never produces a misleading
+    secondary range issue. New fixtures in
+    [`packages/catalog/test/runtime/conformance.test.mjs`](packages/catalog/test/runtime/conformance.test.mjs)
+    cover negative/fractional/`NaN`/`Infinity` bounds, valid `0`/positive-integer
+    bounds, an unsupported `length_unit`, and deterministic issue ordering. All four
+    current AWS catalog entries remain conformant with zero issues. No Specification
+    file changed, no evaluator behavior changed, no new `ResourceType` or dependency
+    added.)
 
 Milestone 3.3 is complete; **Specification v1.2 — Executable Resource Constraints** is
 now the active Specification evolution (see

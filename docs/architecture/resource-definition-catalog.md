@@ -296,15 +296,28 @@ exported from [`src/index.ts`](../../packages/catalog/src/index.ts) — and retu
 than throwing, so a single malformed definition reports every problem at once, in
 deterministic field-declaration order. There is no severity, code, or diagnostic
 framework: every issue in this increment blocks publication/tests, so a taxonomy would
-carry no decision either way.
+carry no decision either way. This provides defensive conformance checks for malformed
+values that reach the static catalog validation boundary, including a possible future
+generated/imported catalog pipeline — it is **not** a general-purpose runtime schema
+validator for arbitrary unknown JSON (see [What is automated](#what-is-automated)
+below for its exact, fixed invariant set).
 
 ### What is automated
 
 - `resource_type`/`platform` are non-empty; `category`, when declared, is non-empty.
 - `identity_constraints.uniqueness_scope` is declared, and non-empty, whenever `unique`
   is `true`.
-- `min_length`/`max_length` are non-negative; either bound requires `length_unit`;
-  `min_length <= max_length` when both are declared.
+- `min_length`, when declared, is a non-negative integer (Specification v1.2 states
+  this explicitly) — `NaN`, `Infinity`, negative values, and fractions are all
+  rejected. `max_length`, when declared, is a non-negative finite number — `NaN`,
+  `Infinity`, `-Infinity`, and negative values are rejected, but a fraction is **not**
+  rejected, since the Specification does not state, the same explicit way it does for
+  `min_length`, that `max_length` itself must be an integer (a documented normative gap;
+  see Milestone 3.3.3 in [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)). Either bound
+  requires `length_unit`; a declared `length_unit` must be `code_points` or
+  `utf8_bytes`; `min_length <= max_length` when both are declared and independently
+  valid (an invalid bound never produces a misleading `min_length <= max_length`
+  issue).
 - `character_constraints`/`starts_with`/`ends_with` each declare a non-empty allowed
   set, use only recognized character classes, and every literal is exactly one Unicode
   code point.
