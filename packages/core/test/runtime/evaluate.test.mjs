@@ -179,7 +179,7 @@ test(
     );
     assert.equal(result.validation.valid, false);
     assert.deepEqual(result.validation.failures, [
-      { message: "name exceeds max_length of 24 characters" },
+      { message: "name exceeds max_length of 24 characters", code: "max-length" },
     ]);
   },
 );

@@ -93,9 +93,9 @@ The catalog does **not**:
 - access cloud provider APIs, inspect live infrastructure, or discover resources
   dynamically;
 - validate deployed infrastructure;
-- perform Placement Constraint evaluation (Placement Constraints remain conceptual —
-  see [Definition provenance and modeling findings](#definition-provenance-and-modeling-findings)
-  below);
+- perform Context Resolution or Convention Evaluation (those remain `core`'s
+  responsibility; `core` evaluates the structured v1.2 constraints carried by a
+  catalog definition);
 - expose a mutable runtime registry — there is no `registerResourceDefinition` or
   `unregisterResourceDefinition`, since no current consumer needs one, and a static
   catalog keeps lookup deterministic and testable.
@@ -225,29 +225,15 @@ need for a resource type whose valid characters are not single-byte ASCII.
 
 ### Model gaps found (documented, not fixed here)
 
-- **No `min_length` field** — Amazon S3 documents a 3-character minimum bucket-name
-  length ([source](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html)),
-  but `ResourceRenderingConstraints` only has `max_length`. This is a genuine,
-  evidence-backed gap: `aws_s3_bucket` cannot fully represent AWS's own documented
-  constraint. Not added speculatively — a future Specification/model change would need
-  to define units, defaulting, and interaction with `max_length` the way the existing
-  `length_unit` clarification did.
 - **No secondary identifier component (`path`)** — IAM separately limits a role's
-  `path` to 512 characters, and states the combined `path` + role name must not exceed
-  64 characters when used with the Switch Role console feature
-  ([source](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html)).
-  `ResourceDefinition` has no concept of a secondary, independently-constrained
-  identifier component distinct from the resource's own rendered name; `aws_iam_role`
-  models only the 64-character role-name limit, not `path`.
-- **`placement_constraints` cannot express a conditional rule structurally** —
-  `aws_acm_certificate` needs two independent descriptive strings ("regional; location
-  chosen by the deployment" and "must be us-east-1 when associated with a CloudFront
-  distribution") to describe one conditional rule, because `placement_constraints` is a
-  flat `ReadonlyArray<string>` with no grammar for conditions
-  (per [`specification/resource-definition.md#out-of-scope-for-this-document`](../../specification/resource-definition.md#out-of-scope-for-this-document)).
-  Convention Evaluation cannot execute or validate this relationship today (see
-  [`docs/architecture/convention-evaluation-executability.md`](convention-evaluation-executability.md)),
-  and this milestone did not change that — the two strings remain descriptive only.
+  `path` to 512 characters and the combined `path` + role name to 64 characters for
+  one console workflow. `ResourceDefinition` has no concept of a secondary,
+  independently-constrained identifier; `aws_iam_role` models only the role-name
+  limit, not `path`.
+- **ACM/CloudFront cross-resource relationship** — v1.2 adds structured placement
+  rules for canonical Resource Identity subjects, but no canonical attribute represents
+  a certificate's association with a CloudFront distribution. ACM's entries therefore
+  remain statement-only and are not evaluated as conditional rules.
 - **No `rendering_constraints` at all for a real resource type** —
   `aws_acm_certificate` is the first catalog entry to omit `rendering_constraints`
   entirely, since ACM certificates have no user-supplied name. This confirms the field's
@@ -275,18 +261,16 @@ need for a resource type whose valid characters are not single-byte ASCII.
   an end-to-end `resource_type -> catalog lookup -> ResourceDefinition -> evaluate() ->
   ConventionResult` flow, with the lookup performed explicitly before calling
   `evaluate()`, plus a case proving a real catalog definition's `max_length`/
-  `length_unit` constrains `evaluate()`'s validation output. Non-executable constraints
-  (`allowed_characters`, `placement_constraints`) are asserted as present only at the
-  catalog level, never exercised through `evaluate()` (see
+  `length_unit` constrains `evaluate()`'s validation output. Structured rendering and
+  placement constraints are exercised by core evaluator tests; statement-only catalog
+  placement entries remain descriptive (see
   [`docs/architecture/convention-evaluation-executability.md`](convention-evaluation-executability.md)).
 
 ## Future evolution
 
 - **Milestone 3.3 — Catalog Validation & Model Conformance** — complete; see
   [`docs/architecture/resource-definition-catalog-conformance.md`](resource-definition-catalog-conformance.md)
-  for the full conformance review, prioritized model gaps, and recommended next action
-  (a future Specification v1.2 — Executable Resource Constraints evolution, proposed in
-  scope only, not implemented).
+  for the full conformance review and the remaining IAM path and ACM relationship gaps.
 - **Additional providers** — an `azure/` or `kubernetes/` directory, created only once a
   concrete task needs one.
 - **Tree-shakeable subpaths** — once the catalog grows large enough that a consumer

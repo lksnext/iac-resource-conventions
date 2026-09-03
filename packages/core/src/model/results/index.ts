@@ -4,5 +4,6 @@ export type {
   ConventionResult,
   ConventionValidation,
   ConventionValidationFailure,
+  ConventionValidationFailureCode,
   ConventionWarning,
 } from "./convention-result.js";

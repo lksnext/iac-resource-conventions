@@ -33,8 +33,14 @@ export type {
   NamingCasing,
 } from "./conventions/index.js";
 export type {
+  PlacementConstraint,
+  PlacementConstraintCondition,
+  PlacementConstraintOperator,
+  PlacementConstraintRule,
   ResourceDefinition,
   ResourceIdentityConstraints,
+  ResourceNameCharacterClass,
+  ResourceNameCharacterSet,
   ResourceNameLengthUnit,
   ResourceRenderingConstraints,
 } from "./definitions/index.js";
@@ -58,5 +64,6 @@ export type {
   ConventionResult,
   ConventionValidation,
   ConventionValidationFailure,
+  ConventionValidationFailureCode,
   ConventionWarning,
 } from "./results/index.js";

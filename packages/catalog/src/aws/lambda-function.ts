@@ -29,21 +29,27 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  * - **Length** — `FunctionName`'s description states: "The length constraint applies
  *   only to the full ARN. If you specify only the function name, it is limited to 64
  *   characters in length." Modeled as `max_length: 64` (the bare-name case, since
- *   this catalog models a resource's own rendered name, not its ARN). Evidence:
- *   Explicit.
+ *   this catalog models a resource's own rendered name, not its ARN). The
+ *   request-time pattern's `+` quantifier (see below) requires at least one
+ *   character, modeled as `min_length: 1` (Specification v1.2 closes the previously
+ *   documented `min_length` model gap; see
+ *   `docs/architecture/resource-definition-catalog-conformance.md#min_length-gap`).
+ *   Evidence: Explicit.
  * - **Length unit** — the request-time `FunctionName` pattern
  *   (`[a-zA-Z0-9-_]+` for the bare-name segment) is entirely single-byte ASCII, so
  *   `code_points` and `utf8_bytes` coincide; `code_points` is used for the same
  *   reason as `aws_s3_bucket` (see `./s3-bucket.ts`). This is a repository
  *   implementation choice, not an AWS-defined code-point semantic.
  * - **Allowed characters** — the request-time pattern's bare-name segment allows only
- *   letters, digits, hyphens, and underscores (no period), recorded as free
- *   descriptive text. Evidence: Explicit — and, notably, the *only* one of this
- *   catalog's four current entries backed by a literal, AWS-published regular
- *   expression rather than prose alone, making it the strongest current evidence that
- *   an executable allowed-character grammar (see
- *   `docs/architecture/resource-definition-catalog-conformance.md#allowed-character-model-gap`)
- *   is feasible for at least some resource types. Note: the *response* `FunctionName`
+ *   letters, digits, hyphens, and underscores (no period). Modeled executably as
+ *   `character_constraints` (`ascii_letters` + `ascii_digits` classes, plus the `-`
+ *   and `_` literals), directly from the literal, AWS-published regular expression
+ *   `[a-zA-Z0-9-_]+` — the *only* one of this catalog's four current entries backed
+ *   by a pattern rather than prose alone. Specification v1.2 closes the previously
+ *   documented allowed-character-model gap (see
+ *   `docs/architecture/resource-definition-catalog-conformance.md#allowed-character-model-gap`).
+ *   The pattern imposes no additional first/last-character rule, so no `starts_with`/
+ *   `ends_with` is modeled. Evidence: Explicit. Note: the *response* `FunctionName`
  *   pattern additionally allows a period, and `FunctionArn`/response length
  *   constraints differ (256 characters); this Resource Definition models the value a
  *   caller supplies at creation time, not the ARN or the value AWS may echo back.
@@ -60,9 +66,14 @@ export const AWS_LAMBDA_FUNCTION: ResourceDefinition = deepFreeze({
     global: false,
   },
   rendering_constraints: {
+    min_length: 1,
     max_length: 64,
     length_unit: "code_points",
-    allowed_characters: "letters, digits, hyphens, and underscores only",
+    allowed_characters_description: "letters, digits, hyphens, and underscores only",
+    character_constraints: {
+      classes: ["ascii_letters", "ascii_digits"],
+      literals: ["-", "_"],
+    },
   },
-  placement_constraints: ["regional; location chosen by the deployment"],
+  placement_constraints: [{ statement: "regional; location chosen by the deployment" }],
 });

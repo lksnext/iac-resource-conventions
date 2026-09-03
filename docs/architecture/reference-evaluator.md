@@ -844,15 +844,14 @@ named concept:
 | Separators and casing | [`specification/convention-pack.md#separator`](../../specification/convention-pack.md#separator), [`specification/convention-pack.md#casing`](../../specification/convention-pack.md#casing) | **Yes** — implemented by `evaluateName` via `separator` and `applyCasing` |
 | Truncation and hashing | *(none — not named as structured data anywhere)* | No — no field or normative rule defines any of these |
 | Metadata projection (Tags, Labels, Annotations) | [`specification/convention-result.md#conceptual-contents`](../../specification/convention-result.md#conceptual-contents) | No — `ConventionPack` has no metadata projection mapping field at all |
-| Resource Definition technical-constraint validation (`max_length`) | [`ResourceDefinition.rendering_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | **Yes** — implemented by `maxLengthFailure` (increment 2.7.1), once a rendered name exists |
-| Resource Definition technical-constraint validation (`allowed_characters`) | [`ResourceDefinition.rendering_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | No — free text, not a defined grammar |
-| Placement Constraint validation | [`ResourceDefinition.placement_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | No — documented as free-form prose with no formal grammar |
+| Resource Definition technical-constraint validation (`min_length`, `max_length`, character/boundary/reserved constraints) | [`ResourceDefinition.rendering_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | **Yes** — implemented by `validateRenderingConstraints`, once a rendered name exists |
+| Placement Constraint validation | [`ResourceDefinition.placement_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | **Yes within v1.2 limits** — implemented by `validatePlacementConstraints` for structured rules over canonical Resource Identity attributes; statement-only entries and ACM/CloudFront remain descriptive |
 | Collision / uniqueness handling | [`ResourceDefinition.identity_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | No — proving uniqueness needs an external registry, which the evaluator must not consult |
 
-Required-attribute completeness and executable naming are now implemented; `max_length`
-validation is now implemented too (increment 2.7.1 — see the "max_length validation (increment
-2.7.1)" subsection below). Truncation, hashing, metadata projection,
-`allowed_characters` validation, Placement Constraints, and collision handling remain the cited
+Required-attribute completeness, executable naming, and the v1.2 Resource Definition
+constraint families are implemented. Truncation, hashing, metadata projection,
+interpretation of the descriptive `allowed_characters_description` field, the ACM/CloudFront
+cross-resource relationship, and collision handling remain the cited
 blocking gaps. Each is also documented as a "deliberately not implemented" case directly in
 [`evaluate-convention.ts`](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts).
 
@@ -896,8 +895,8 @@ validation (for example, normalization or truncation) remains unimplemented. `re
 and `governance_context` are copied through from the `ContextResolutionResult` unchanged.
 `resource_definition` is accepted on the input and is now also consulted for `max_length`
 validation (see the "max_length validation (increment 2.7.1)" subsection below);
-`allowed_characters` validation remains
-deferred, since it is free text, not a defined grammar.
+Structured character constraints are executable; the descriptive
+`allowed_characters_description` field remains non-executable because it is free text.
 
 **Naming conformance (increment 2.6.3).** `evaluateConvention` rejects a selected Convention Pack
 whose `naming_component_order` lists the same canonical attribute reference more than once (per

@@ -128,6 +128,21 @@ test("no catalog entry declares max_length without length_unit, or vice versa", 
   }
 });
 
+test("no catalog entry declares min_length without length_unit", () => {
+  for (const resourceType of listResourceTypes()) {
+    const { rendering_constraints } = getResourceDefinition(resourceType);
+
+    if (rendering_constraints === undefined || rendering_constraints.min_length === undefined) {
+      continue;
+    }
+    assert.equal(
+      rendering_constraints.length_unit !== undefined,
+      true,
+      `${resourceType}: min_length must be paired with length_unit`,
+    );
+  }
+});
+
 // --- Milestone 3.3: additional catalog integrity invariants --------------------------
 
 test("no catalog entry declares an empty resource_type", () => {
@@ -145,7 +160,7 @@ test("no two catalog entries share the same resource_type", () => {
   );
 });
 
-test("no catalog entry declares an empty placement_constraints string", () => {
+test("no catalog entry declares an empty placement_constraints statement", () => {
   for (const resourceType of listResourceTypes()) {
     const { placement_constraints } = getResourceDefinition(resourceType);
 
@@ -154,9 +169,102 @@ test("no catalog entry declares an empty placement_constraints string", () => {
     }
     for (const constraint of placement_constraints) {
       assert.ok(
-        constraint.trim().length > 0,
-        `${resourceType}: placement_constraints must not contain an empty string`,
+        constraint.statement.trim().length > 0,
+        `${resourceType}: placement_constraints statements must not be empty`,
       );
+    }
+  }
+});
+
+test("catalog rendering constraints satisfy v1.2 value invariants", () => {
+  for (const resourceType of listResourceTypes()) {
+    const { rendering_constraints: constraints } = getResourceDefinition(resourceType);
+
+    if (constraints === undefined) {
+      continue;
+    }
+
+    if (constraints.min_length !== undefined && constraints.max_length !== undefined) {
+      assert.ok(
+        constraints.min_length <= constraints.max_length,
+        `${resourceType}: min_length must not exceed max_length`,
+      );
+    }
+
+    for (const characterSet of [
+      constraints.character_constraints,
+      constraints.starts_with,
+      constraints.ends_with,
+    ]) {
+      if (characterSet === undefined) {
+        continue;
+      }
+      assert.ok(
+        (characterSet.classes?.length ?? 0) + (characterSet.literals?.length ?? 0) > 0,
+        `${resourceType}: executable character sets must not be empty`,
+      );
+      for (const literal of characterSet.literals ?? []) {
+        assert.equal(
+          [...literal].length,
+          1,
+          `${resourceType}: character-set literals must contain exactly one code point`,
+        );
+      }
+    }
+
+    for (const prefix of constraints.forbidden_prefixes ?? []) {
+      assert.ok(prefix.length > 0, `${resourceType}: forbidden prefixes must not be empty`);
+    }
+    for (const suffix of constraints.forbidden_suffixes ?? []) {
+      assert.ok(suffix.length > 0, `${resourceType}: forbidden suffixes must not be empty`);
+    }
+  }
+});
+
+test("every catalog entry's placement_constraints rule, when declared, uses a valid operator shape", () => {
+  const validOperators = new Set(["equals", "present", "absent"]);
+
+  function assertValidOperatorShape(operatorHolder, label) {
+    assert.ok(
+      validOperators.has(operatorHolder.operator),
+      `${label}: operator must be one of "equals", "present", or "absent"`,
+    );
+    if (operatorHolder.operator === "equals") {
+      assert.equal(
+        typeof operatorHolder.value,
+        "string",
+        `${label}: "equals" must carry a string value`,
+      );
+    } else {
+      assert.equal(
+        operatorHolder.value,
+        undefined,
+        `${label}: "present"/"absent" must not carry a value`,
+      );
+    }
+  }
+
+  for (const resourceType of listResourceTypes()) {
+    const { placement_constraints } = getResourceDefinition(resourceType);
+
+    for (const constraint of placement_constraints ?? []) {
+      if (constraint.rule === undefined) {
+        continue;
+      }
+      assert.equal(
+        typeof constraint.rule.subject,
+        "string",
+        `${resourceType}: rule subject must be a string`,
+      );
+      assertValidOperatorShape(constraint.rule, `${resourceType} rule`);
+      if (constraint.rule.condition !== undefined) {
+        assert.equal(
+          typeof constraint.rule.condition.subject,
+          "string",
+          `${resourceType}: rule condition subject must be a string`,
+        );
+        assertValidOperatorShape(constraint.rule.condition, `${resourceType} rule condition`);
+      }
     }
   }
 });
