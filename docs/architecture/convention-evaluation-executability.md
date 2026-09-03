@@ -50,18 +50,34 @@ updated rows below).
 > **Executable**; only the narrative sections further below, written before 2.6.2,
 > still describe the pre-implementation gap analysis and are retained as historical
 > record.
+>
+> **Status update (Specification v1.2):** [Specification v1.2 — Executable Resource
+> Constraints](../../specification/README.md#specification-v12-executable-resource-constraints)
+> has since normatively defined `min_length`, structured `character_constraints`,
+> `starts_with`/`ends_with`, `forbidden_prefixes`/`forbidden_suffixes`, and structured
+> Placement Constraints (with the ACM/CloudFront condition itself remaining explicitly
+> non-executable — see
+> [`resource-definition.md#the-conditional-input-problem`](../../specification/resource-definition.md#the-conditional-input-problem)).
+> This is **Specification-only**: no evaluator code and no catalog code changed. The
+> rows below affected by this addition are therefore marked **Specification defined;
+> implementation pending** (a new classification, distinct from **Executable**), not
+> **Executable** — see [Executability classification](#executability-classification)
+> below for the distinction, and
+> [Specification v1.2 readiness](#specification-v12-readiness) further below for the
+> full list of affected rows.
 
 ## Executability classification
 
 | Classification | Meaning |
 | --- | --- |
 | **Executable** | The Specification and current domain model define enough information for deterministic implementation without inventing semantics. Demonstrated by working, tested evaluator code. |
+| **Specification defined; implementation pending** | The Specification now defines the concept's full operational semantics deterministically, but no public TypeScript domain contract and no evaluator code implement it yet. Distinct from **Modelled but not executable**, where a domain model contract already exists but the Specification's own semantics are still incomplete. |
 | **Modelled but not executable** | A domain model contract represents the concept's shape, but its operational semantics (algorithm, grammar, matching rule) are not sufficiently defined to execute deterministically. |
 | **Conceptual only** | The Specification describes the capability in prose, but no executable contract represents it at all, or the contract that exists carries no operational content. |
 | **External** | Correct evaluation requires information the deterministic core evaluator cannot itself obtain (for example, a live uniqueness registry). |
 | **Deferred** | The concept is intentionally postponed to a future Specification or implementation milestone, and is already documented as such in an architecture decision. |
 
-Only these five classifications are used below; every one is needed by at least one row
+Only these six classifications are used below; every one is needed by at least one row
 of the matrix.
 
 ## Primary executability matrix
@@ -98,13 +114,17 @@ implementation file and whether runtime tests exist. "—" means no code exists.
 | Casing | [convention-pack.md#casing](../../specification/convention-pack.md#casing) | `ConventionPack.casing` / `NamingCasing` | `applyCasing` ([apply-casing.ts](../../packages/core/src/evaluator/convention-evaluation/naming/apply-casing.ts)) | Executable | Closed `preserve` / `lower` / `upper` vocabulary; applied after abbreviation | — |
 | Normalization (Convention Pack rule) | [convention-pack.md#responsibilities](../../specification/convention-pack.md#responsibilities) ("Normalization rules") | Not modelled (see `ConventionPack`'s own doc comment) | — | Conceptual only | No operations, order, Unicode handling, or interaction with casing/abbreviation/truncation is defined | Specification |
 | Normalization (Resource Definition rule) | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.normalization: string` | — | Modelled but not executable | Free text ("for example, lower-casing, character substitution, or truncation rules"), not a machine-executable instruction set | Specification |
-| Allowed characters | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.allowed_characters: string` | — | Modelled but not executable | Free text, not a defined grammar or regular expression; a string must not be assumed to be a regex. Milestone 3.3's catalog review found one entry (`aws_lambda_function`) whose provider documentation happens to publish a literal regex for this exact constraint, the strongest current evidence that an executable grammar is feasible for at least some resource types (see [`resource-definition-catalog-conformance.md#allowed-character-model-gap`](resource-definition-catalog-conformance.md#allowed-character-model-gap)) | Specification |
+| Allowed characters (descriptive) | [resource-definition.md#character-constraints](../../specification/resource-definition.md#character-constraints) | `ResourceRenderingConstraints.allowed_characters: string` | — | Modelled but not executable | Free text. Specification v1.2 renamed this concept's *descriptive* half to `allowed_characters_description`, unchanged in meaning; the TypeScript field itself has not been renamed yet (Specification-only change — see [Specification v1.2 readiness](#specification-v12-readiness)) | Specification (renamed); Executable Domain Model (rename pending) |
+| Allowed characters (structured, `character_constraints`) | [resource-definition.md#character-constraints](../../specification/resource-definition.md#character-constraints) | Not modelled yet | — | Specification defined; implementation pending | Specification v1.2 normatively defines a closed character-class-and-literal model (deliberately not a regex — see [resource-definition.md#regex-decision](../../specification/resource-definition.md#regex-decision)); no `character_constraints` TypeScript field or evaluator check exists yet | Executable Domain Model / Reference Evaluator |
+| Start/end constraints (`starts_with`/`ends_with`) | [resource-definition.md#startend-constraints](../../specification/resource-definition.md#startend-constraints) | Not modelled yet | — | Specification defined; implementation pending | Fully defined normatively (same character-set model as `character_constraints`); no TypeScript field or evaluator check exists yet | Executable Domain Model / Reference Evaluator |
+| Reserved prefixes/suffixes (`forbidden_prefixes`/`forbidden_suffixes`) | [resource-definition.md#reserved-prefixes-and-suffixes](../../specification/resource-definition.md#reserved-prefixes-and-suffixes) | Not modelled yet | — | Specification defined; implementation pending | Fully defined normatively (exact-match, case-sensitive); no TypeScript field or evaluator check exists yet | Executable Domain Model / Reference Evaluator |
 | Abbreviations | [convention-pack.md#abbreviations](../../specification/convention-pack.md#abbreviations) | `ConventionPack.abbreviations` (nested mapping keyed by canonical Resource Identity attribute reference and exact resolved value) | `applyAbbreviation` ([apply-abbreviation.ts](../../packages/core/src/evaluator/convention-evaluation/naming/apply-abbreviation.ts)) | Executable | Exact match only; missing mapping preserves the original value; applied before casing | — |
 | Generated name output | [convention-result.md#convention-outputs](../../specification/convention-result.md#convention-outputs) | `ConventionOutputs.name` | `evaluateName` ([evaluate-name.ts](../../packages/core/src/evaluator/convention-evaluation/naming/evaluate-name.ts)) | Executable | Populated only when naming components exist and all required naming components resolve | — |
 | Prefixes | *(not named anywhere in the Specification)* | — | — | Conceptual only | Not mentioned in `convention-pack.md#naming-projections` or elsewhere | Specification |
 | Suffixes | *(not named anywhere in the Specification)* | — | — | Conceptual only | Same as prefixes | Specification |
 | Component length | *(not named anywhere in the Specification)* | — | — | Conceptual only | Only total-name length is named (via Resource Definition); no per-component length concept exists | Specification |
-| Total-name length | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.max_length: number` | `maxLengthFailure` ([evaluate-convention.ts](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts)) | Executable | Implemented in increment 2.7.1; measured according to the Resource Definition's own declared `length_unit` since increment 2.7.2, a normative closed `code_points` / `utf8_bytes` vocabulary (see [Length and truncation](#length-and-truncation)); only applies when a name was generated and `max_length` is declared; an over-length name is reported invalid and retained untruncated. No `min_length` field exists to enforce a documented provider minimum (evidenced by Milestone 3.3's catalog review — see [`resource-definition-catalog-conformance.md#min_length-gap`](resource-definition-catalog-conformance.md#min_length-gap)) | Reference Evaluator |
+| Total-name length (`max_length`) | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.max_length: number` | `maxLengthFailure` ([evaluate-convention.ts](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts)) | Executable | Implemented in increment 2.7.1; measured according to the Resource Definition's own declared `length_unit` since increment 2.7.2, a normative closed `code_points` / `utf8_bytes` vocabulary (see [Length and truncation](#length-and-truncation)); only applies when a name was generated and `max_length` is declared; an over-length name is reported invalid and retained untruncated | Reference Evaluator |
+| Minimum-name length (`min_length`) | [resource-definition.md#minimum-length](../../specification/resource-definition.md#minimum-length) | Not modelled yet | — | Specification defined; implementation pending | Specification v1.2 normatively defines `min_length`, sharing `length_unit` with `max_length` (evidenced by Milestone 3.3's catalog review — see [`resource-definition-catalog-conformance.md#min_length-gap`](resource-definition-catalog-conformance.md#min_length-gap)); no TypeScript field or evaluator check exists yet | Executable Domain Model / Reference Evaluator |
 | Truncation | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) (implied by "truncation rules" example under normalization) | — | — | Conceptual only | Whether truncation is permitted, what is truncated, priority between components, direction, preservation requirements, and warning behavior are all undefined; a `max_length` constraint is not permission to truncate | Specification |
 | Deterministic hashing | *(not named in `specification/`; named only as deferred behavior in [executable-domain-model-traceability.md#deferred-behavior](executable-domain-model-traceability.md#deferred-behavior))* | — | — | Conceptual only | No trigger, source material, algorithm, encoding, output length, placement, separator, or collision semantics is defined anywhere, including in the Specification itself | Specification |
 | Collision handling | [resource-definition.md#identity-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceIdentityConstraints.unique`, `.uniqueness_scope` | — | External | Local determinism (same input → same name) is already guaranteed by Context Resolution and Resource Projection; proving global uniqueness needs a live registry the evaluator must not consult (see [Uniqueness and collision handling](#uniqueness-and-collision-handling)) | External system |
@@ -127,9 +147,11 @@ implementation file and whether runtime tests exist. "—" means no code exists.
 | Capability | Specification source | Domain model | Evaluator | Status | Missing executable semantics | Likely owner |
 | --- | --- | --- | --- | --- | --- | --- |
 | Technical constraints (`max_length`) | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.max_length` | `maxLengthFailure` ([evaluate-convention.ts](../../packages/core/src/evaluator/convention-evaluation/evaluate-convention.ts)) | Executable | Implemented in increment 2.7.1 (see [Length and truncation](#length-and-truncation)) | Reference Evaluator |
-| Technical constraints (`allowed_characters`) | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.allowed_characters` | — | Modelled but not executable | Free text, no grammar | Specification |
+| Technical constraints (`allowed_characters` / `character_constraints`) | [resource-definition.md#character-constraints](../../specification/resource-definition.md#character-constraints) | `ResourceRenderingConstraints.allowed_characters` (descriptive, not yet renamed) | — | Modelled but not executable (descriptive field) / Specification defined; implementation pending (structured field) | Free text for the descriptive field; a fully-defined, not-yet-implemented structured field for `character_constraints` | Specification (done) / Executable Domain Model, Reference Evaluator (pending) |
+| Technical constraints (`min_length`) | [resource-definition.md#minimum-length](../../specification/resource-definition.md#minimum-length) | Not modelled yet | — | Specification defined; implementation pending | See the Naming table's `min_length` row above | Executable Domain Model / Reference Evaluator |
+| Technical constraints (`starts_with`/`ends_with`, `forbidden_prefixes`/`forbidden_suffixes`) | [resource-definition.md#startend-constraints](../../specification/resource-definition.md#startend-constraints), [resource-definition.md#reserved-prefixes-and-suffixes](../../specification/resource-definition.md#reserved-prefixes-and-suffixes) | Not modelled yet | — | Specification defined; implementation pending | See the corresponding Naming table rows above | Executable Domain Model / Reference Evaluator |
 | Normalization constraints | [resource-definition.md#rendering-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceRenderingConstraints.normalization` | — | Modelled but not executable | Free text | Specification |
-| Placement Constraints | [resource-definition.md#placement-constraints](../../specification/resource-definition.md#placement-constraints) | `ResourceDefinition.placement_constraints: ReadonlyArray<string>` | — | Modelled but not executable | Free-form prose; [resource-definition.md#out-of-scope-for-this-document](../../specification/resource-definition.md#out-of-scope-for-this-document) explicitly defers "a formal schema or grammar for expressing Placement Constraints" | Specification |
+| Placement Constraints | [resource-definition.md#structured-placement-constraints-specification-v12](../../specification/resource-definition.md#structured-placement-constraints-specification-v12) | `ResourceDefinition.placement_constraints: ReadonlyArray<string>` (not yet migrated to the v1.2 `PlacementConstraint` shape) | — | Modelled but not executable (current TypeScript shape) / Specification defined; implementation pending (v1.2 structured `rule`, where evaluable) | Specification v1.2 defines a `statement`/optional-`rule` shape with a closed `equals`/`present`/`absent` operator vocabulary, evaluable only from existing canonical Resource Identity/Governance Context attributes; the ACM/CloudFront condition itself remains explicitly non-executable, since no canonical relationship attribute exists (see [`resource-definition.md#the-conditional-input-problem`](../../specification/resource-definition.md#the-conditional-input-problem)) | Specification (done, within its own stated limits) / Executable Domain Model, Reference Evaluator (structured shape and evaluation pending) |
 | Resource-specific constraints (general) | [resource-definition.md](../../specification/resource-definition.md) | `ResourceDefinition` (Partially implemented, per traceability matrix) | — | Modelled but not executable | See the three rows above | Specification |
 | Uniqueness constraints | [resource-definition.md#identity-constraints](../../specification/resource-definition.md#responsibilities) | `ResourceIdentityConstraints` | — | External (global) / Executable (local determinism only) | See "Uniqueness and collision handling" above | External system |
 
@@ -810,3 +832,43 @@ is elevated to P0 by this review, and none is implemented here. This clears the
 naming-specific precondition for beginning increment 2.7; see
 [`docs/architecture/reference-evaluator.md#27-readiness-and-design-invariants`](reference-evaluator.md#27-readiness-and-design-invariants)
 for the separate, non-naming design invariants 2.7 must still resolve.
+
+## Specification v1.2 outcome
+
+Milestone 3.3 (see
+[`resource-definition-catalog-conformance.md`](resource-definition-catalog-conformance.md))
+recommended closing the P1 technical-constraint and Placement Constraint grammar gaps
+this document's own [Prioritization](#prioritization) section named above. [Specification
+v1.2: Executable Resource Constraints](../../specification/README.md#specification-v12-executable-resource-constraints)
+adopted that recommendation, defining `min_length`, structured `character_constraints`
+(deliberately not a regex grammar; see
+[`resource-definition.md#regex-decision`](../../specification/resource-definition.md#regex-decision)),
+`starts_with`/`ends_with`, `forbidden_prefixes`/`forbidden_suffixes`, and structured
+Placement Constraints, normatively, in `specification/resource-definition.md`.
+
+This is a **Specification-only** change: no evaluator code, no catalog code, and no
+public TypeScript domain contract changed. Accordingly, none of the rows this document
+updates for Specification v1.2 read **Executable** — they read **Specification defined;
+implementation pending**, a status distinct from **Executable** precisely because no
+working, tested evaluator code demonstrates the semantics yet (see [Executability
+classification](#executability-classification) above).
+
+### Specification v1.2 readiness
+
+| Capability | Normatively specified | Domain model updated | Evaluator updated | Tested |
+| --- | --- | --- | --- | --- |
+| `min_length` | Yes ([resource-definition.md#minimum-length](../../specification/resource-definition.md#minimum-length)) | No | No | No |
+| `character_constraints` | Yes ([resource-definition.md#character-constraints](../../specification/resource-definition.md#character-constraints)) | No | No | No |
+| `allowed_characters` → `allowed_characters_description` rename | Yes ([resource-definition.md#allowed_characters-migration](../../specification/resource-definition.md#allowed_characters-migration)) | No | No | No |
+| `starts_with` / `ends_with` | Yes ([resource-definition.md#startend-constraints](../../specification/resource-definition.md#startend-constraints)) | No | No | No |
+| `forbidden_prefixes` / `forbidden_suffixes` | Yes ([resource-definition.md#reserved-prefixes-and-suffixes](../../specification/resource-definition.md#reserved-prefixes-and-suffixes)) | No | No | No |
+| Structured Placement Constraints (`statement`/`rule`) | Yes, within the stated limits ([resource-definition.md#structured-placement-constraints-specification-v12](../../specification/resource-definition.md#structured-placement-constraints-specification-v12)) | No | No | No |
+| `ConventionValidationFailure.code` | Yes ([resource-definition.md#validation-behavior-and-failure-semantics-specification-v12](../../specification/resource-definition.md#validation-behavior-and-failure-semantics-specification-v12)) | No | No | No |
+| ACM/CloudFront conditional Placement Constraint | Explicitly **not** specified as executable (stated blocker; see [resource-definition.md#the-conditional-input-problem](../../specification/resource-definition.md#the-conditional-input-problem)) | N/A | N/A | N/A |
+
+Every row above with normatively specified semantics is implementation-ready but
+unimplemented; a future increment (not scoped here) would add the corresponding
+domain-model fields and Reference Evaluator checks. The ACM/CloudFront row is not a gap
+in this readiness list — it is a documented Specification limitation that a future
+Specification version, not an implementation increment, must resolve (a canonical
+resource-to-resource relationship model).

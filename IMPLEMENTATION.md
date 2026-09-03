@@ -28,13 +28,16 @@ This is the **implementation foundation** only. As of this writing:
   repository instead of one per package. The Dev Container and CI both resolve Node via
   a floating `lts` pointer, so they always satisfy this floor without a manual version
   bump.
-- `packages/core` exists as a minimal, non-domain-specific placeholder that proves the
-  workspace, TypeScript configuration, and build/typecheck scripts work end to end.
+- `packages/core` (`@lksnext/iac-conventions-core`) implements the Executable Domain Model
+  (every central Specification concept as a behavior-free public TypeScript contract) and
+  the Reference Evaluator's Context Resolution and Convention Evaluation, composed into the
+  public `evaluate()` function and its `EvaluateInput` contract (Milestones 1–2; see
+  [Milestones](#milestones) below).
 - `packages/catalog` (`@lksnext/iac-conventions-catalog`) exists, holding a static,
-  immutable Resource Definition Catalog (Milestone 3.1): a `getResourceDefinition` /
-  `listResourceTypes` lookup API over one deliberately minimal `aws_s3_bucket` entry, used
-  only to prove the catalog's package and API boundary. See [Milestones](#milestones) below
-  and
+  immutable Resource Definition Catalog validated against authoritative AWS documentation
+  (Milestones 3.1–3.3): a `getResourceDefinition` / `listResourceTypes` lookup API over
+  four AWS entries (`aws_s3_bucket`, `aws_iam_role`, `aws_lambda_function`,
+  `aws_acm_certificate`). See [Milestones](#milestones) below and
   [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md).
 - [Biome](https://biomejs.dev/) is configured as the canonical formatter and linter for
   TypeScript, JavaScript, JSON, and JSONC across the whole repository (see
@@ -375,6 +378,25 @@ This is the **implementation foundation** only. As of this writing:
     entries independently hit the same set of gaps. See
     [`docs/architecture/resource-definition-catalog-conformance.md`](docs/architecture/resource-definition-catalog-conformance.md)
     for the full conformance matrix and findings.)
+
+Milestone 3.3 is complete; **Specification v1.2 — Executable Resource Constraints** is
+now the active Specification evolution (see
+[`specification/README.md#specification-v12-executable-resource-constraints`](specification/README.md#specification-v12-executable-resource-constraints)),
+acting on 3.3's own recommendation. This is a Specification-only design change: it does
+not expand AWS catalog coverage, and Milestone 3.4 — Additional Providers is **not**
+activated by it. Once merged, the planned follow-up implementation increments (not
+scoped or started here) are, in order:
+
+- **Executable Resource Constraint Model** — add the Specification v1.2 fields
+  (`min_length`, `character_constraints`, `starts_with`/`ends_with`,
+  `forbidden_prefixes`/`forbidden_suffixes`, the migrated `PlacementConstraint` shape,
+  and `ConventionValidationFailure.code`) to the public TypeScript domain model under
+  `packages/core/src/model/`, with no evaluator behavior yet.
+- **Resource Constraint Evaluation** — implement the corresponding Reference Evaluator
+  checks, in the deterministic order
+  [`resource-definition.md#constraint-validation-order-specification-v12`](specification/resource-definition.md#constraint-validation-order-specification-v12)
+  defines, and update the four AWS catalog entries per the [Catalog impact
+  plan](specification/resource-definition.md#catalog-impact-plan-non-normative).
 
 ## Package Naming Policy
 

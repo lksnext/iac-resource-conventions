@@ -224,8 +224,9 @@ for the full API contract, design rationale, and current capability scope.
 
 ### Phase 1
 
-- ✓ Specification — frozen as v1.0, additively extended by v1.1 — Executable Naming
-  (see [`specification/README.md`](specification/README.md#specification-status)).
+- ✓ Specification — frozen as v1.0, additively extended by v1.1 — Executable Naming,
+  and by v1.2 — Executable Resource Constraints (in development; see
+  [`specification/README.md`](specification/README.md#specification-status)).
 
 ### Phase 2
 

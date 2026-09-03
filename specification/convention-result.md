@@ -28,7 +28,12 @@ Convention Result conceptually consists of:
   constraints declared by the resource's Resource Definition — including its technical
   constraints, uniqueness, normalization, and Placement Constraints (see
   [`resource-definition.md`](./resource-definition.md#placement-constraints)) — and the
-  Specification.
+  Specification. As of Specification v1.2, a validation failure produced by one of the
+  executable Resource Definition constraints defined in
+  [`resource-definition.md#executable-resource-constraints-specification-v12`](./resource-definition.md#executable-resource-constraints-specification-v12)
+  carries an optional, stable, machine-readable `code` (see
+  [`resource-definition.md#validation-behavior-and-failure-semantics-specification-v12`](./resource-definition.md#validation-behavior-and-failure-semantics-specification-v12)
+  for the closed vocabulary), alongside its existing human-readable message.
 - **Explanation** — a human-readable account of how the result was derived, useful for
   troubleshooting and auditing convention decisions.
 - **Warnings** — non-fatal issues detected while generating the result (for example, a
