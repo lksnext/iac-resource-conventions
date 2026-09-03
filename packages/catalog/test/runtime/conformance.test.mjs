@@ -70,6 +70,99 @@ test("a length bound declared without length_unit is reported", () => {
   ]);
 });
 
+// --- Negative fixtures: numeric bound hygiene ------------------------------------------
+
+for (const min_length of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+  test(`min_length: ${min_length} is reported as not a non-negative integer`, () => {
+    const issues = validateResourceDefinition(
+      fixture({ rendering_constraints: { min_length, length_unit: "code_points" } }),
+    );
+    assert.deepEqual(issues, [
+      {
+        resource_type: "test_resource",
+        path: "rendering_constraints.min_length",
+        message: "must be a non-negative integer",
+      },
+    ]);
+  });
+}
+
+for (const max_length of [-1, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+  test(`max_length: ${max_length} is reported as not a non-negative finite number`, () => {
+    const issues = validateResourceDefinition(
+      fixture({ rendering_constraints: { max_length, length_unit: "code_points" } }),
+    );
+    assert.deepEqual(issues, [
+      {
+        resource_type: "test_resource",
+        path: "rendering_constraints.max_length",
+        message: "must be a non-negative finite number",
+      },
+    ]);
+  });
+}
+
+test("min_length: 0 and a positive integer are both valid", () => {
+  assert.deepEqual(
+    validateResourceDefinition(
+      fixture({ rendering_constraints: { min_length: 0, length_unit: "code_points" } }),
+    ),
+    [],
+  );
+  assert.deepEqual(
+    validateResourceDefinition(
+      fixture({ rendering_constraints: { min_length: 3, length_unit: "code_points" } }),
+    ),
+    [],
+  );
+});
+
+test("max_length: 1.5 is not rejected — Specification v1.2 does not normatively require max_length to be an integer", () => {
+  const issues = validateResourceDefinition(
+    fixture({ rendering_constraints: { max_length: 1.5, length_unit: "code_points" } }),
+  );
+  assert.deepEqual(issues, []);
+});
+
+test("an unsupported length_unit value is reported", () => {
+  const issues = validateResourceDefinition(
+    fixture({ rendering_constraints: { max_length: 10, length_unit: "characters" } }),
+  );
+  assert.deepEqual(issues, [
+    {
+      resource_type: "test_resource",
+      path: "rendering_constraints.length_unit",
+      message: '"characters" is not "code_points" or "utf8_bytes"',
+    },
+  ]);
+});
+
+test("code_points and utf8_bytes remain valid length_unit values", () => {
+  for (const length_unit of ["code_points", "utf8_bytes"]) {
+    assert.deepEqual(
+      validateResourceDefinition(
+        fixture({ rendering_constraints: { max_length: 10, length_unit } }),
+      ),
+      [],
+    );
+  }
+});
+
+test("min > max is not reported when either bound is not itself a valid comparable number", () => {
+  const issues = validateResourceDefinition(
+    fixture({
+      rendering_constraints: { min_length: Number.NaN, max_length: 5, length_unit: "code_points" },
+    }),
+  );
+  assert.deepEqual(issues, [
+    {
+      resource_type: "test_resource",
+      path: "rendering_constraints.min_length",
+      message: "must be a non-negative integer",
+    },
+  ]);
+});
+
 test("an empty character_constraints allowed set is reported", () => {
   const issues = validateResourceDefinition(
     fixture({ rendering_constraints: { character_constraints: {} } }),
@@ -287,4 +380,25 @@ test("a multiply-malformed definition reports every issue in deterministic field
 test("validateResourceDefinition is deterministic across repeated calls", () => {
   const definition = fixture({ rendering_constraints: { max_length: 10 } });
   assert.deepEqual(validateResourceDefinition(definition), validateResourceDefinition(definition));
+});
+
+test("invalid min_length, invalid max_length, invalid length_unit, and min > max are reported in that field-declaration order", () => {
+  const issues = validateResourceDefinition(
+    fixture({
+      rendering_constraints: {
+        min_length: 1.5,
+        max_length: Number.NaN,
+        length_unit: "characters",
+      },
+    }),
+  );
+
+  assert.deepEqual(
+    issues.map((issue) => issue.path),
+    [
+      "rendering_constraints.min_length",
+      "rendering_constraints.max_length",
+      "rendering_constraints.length_unit",
+    ],
+  );
 });
