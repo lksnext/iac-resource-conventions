@@ -316,6 +316,7 @@ This is the **implementation foundation** only. As of this writing:
   - **3.1 — Catalog Architecture & Foundation.**
   - **3.2 — AWS Resource Definitions — Initial Slice.**
   - **3.3 — Catalog Validation & Model Conformance.**
+  - **3.3.2 — Catalog Conformance Automation.**
   - **3.4 — Additional Providers** (planned): Azure, Kubernetes, or other provider catalogs.
     Not activated by 3.3 — see 3.3's own recommended next action below.
   - Completed increment: **3.1 — Catalog Architecture & Foundation** (a new workspace package,
@@ -378,6 +379,32 @@ This is the **implementation foundation** only. As of this writing:
     entries independently hit the same set of gaps. See
     [`docs/architecture/resource-definition-catalog-conformance.md`](docs/architecture/resource-definition-catalog-conformance.md)
     for the full conformance matrix and findings.)
+  - Completed increment: **3.3.2 — Catalog Conformance Automation** (turns 3.3's ad hoc
+    catalog integrity assertions into one reusable, internal, unexported validator —
+    `validateResourceDefinition`/`validateCatalogEntries` under
+    [`packages/catalog/src/internal/validate-resource-definition.ts`](packages/catalog/src/internal/validate-resource-definition.ts)
+    — that mechanically checks a static `ResourceDefinition`'s structural conformance to
+    Specification v1.2 (length-bound pairing and ordering, character-set/reserved-pattern
+    shape, `PlacementConstraint` operator/subject shape, catalog key/`resource_type`/
+    duplicate-registration invariants), returning every issue found rather than throwing
+    on the first one, in deterministic field-declaration order. This is catalog quality
+    infrastructure, not Reference Evaluator behavior: `evaluate()` was not touched, no new
+    `ResourceType` or provider was added, and no Specification file changed. Duplicate
+    character-set/reserved-pattern entries remain deliberately unrejected, since
+    Specification v1.2 states they have no effect rather than prohibiting them.
+    `packages/catalog/test/runtime/conformance.test.mjs` proves all four current AWS
+    entries pass with zero issues and exercises 14 negative fixtures; the now-redundant
+    invariant assertions previously duplicated in
+    [`packages/catalog/test/runtime/catalog.test.mjs`](packages/catalog/test/runtime/catalog.test.mjs)
+    were removed in favor of this single validator, and it now runs as part of the
+    existing `npm test`/`npm run validate` pipeline (see the catalog architecture
+    document's
+    [Catalog Conformance Validation](docs/architecture/resource-definition-catalog.md#catalog-conformance-validation)
+    section) — no new script or CI job was added, since that pipeline already gates every
+    pull request. Provider factual truth (evidence quality, currency, provenance) remains
+    outside this validator's scope and continues to be reviewed per
+    [`docs/architecture/resource-definition-catalog-conformance.md`](docs/architecture/resource-definition-catalog-conformance.md),
+    which this increment does not replace.)
 
 Milestone 3.3 is complete; **Specification v1.2 — Executable Resource Constraints** is
 now the active Specification evolution (see
