@@ -119,6 +119,15 @@ Convention Pack catalog (Option B) can add a second, optional input mode (for ex
 one, since the current contract's `convention_pack` field would simply become optional
 once an alternative resolution path exists.
 
+**Milestone 4.2 update:** `@lksnext/iac-conventions-catalog` now exposes
+`getConventionPack`/`listConventionPackIds` (see
+[`docs/architecture/convention-pack-catalog.md`](convention-pack-catalog.md)), the
+Option B catalog this section anticipated. This milestone deliberately does **not**
+change the CLI's JSON contract or `CliEvaluateInput` shape: `convention_pack` remains
+required, full-object JSON, exactly as decided above, so a future `convention` string
+resolved via `getConventionPack` remains a genuinely additive, non-breaking change
+rather than one made under this milestone's more limited scope.
+
 ## Resource Definition lookup
 
 Unlike `ConventionPack`, `ResourceDefinition` lookup already has an explicit catalog.
@@ -217,14 +226,17 @@ The CLI does not, and must not:
 
 Recommended roadmap (see `IMPLEMENTATION.md`'s Milestone 4 entry):
 
-- **4.2 — Stable Evaluate JSON Contract**: harden and document the `evaluate` JSON
+- **4.2 — Executable Convention Pack Catalog**: complete; see
+  [`docs/architecture/convention-pack-catalog.md`](convention-pack-catalog.md).
+- **4.3 — Stable Evaluate JSON Contract**: harden and document the `evaluate` JSON
   input/output contract (error taxonomy, schema, versioning) once real usage
   feedback exists.
-- **4.3 — Terraform External Integration**: add a Terraform-specific transport mode
+- **4.4 — Terraform External Integration**: add a Terraform-specific transport mode
   compatible with `data "external"`'s string-only protocol.
-- **4.4 — First Alpha Release**: publication readiness across `core`, `catalog`, and
+- **4.5 — First Alpha Release**: publication readiness across `core`, `catalog`, and
   `cli`.
 
-A `catalog` subcommand (for example, to list known `ResourceType`s) and an executable
-Convention Pack catalog are both plausible future additions, but neither is implemented
-in this milestone.
+A `catalog` subcommand (for example, to list known `ResourceType`s or
+`ConventionPackId`s) and a `convention` string input resolved through
+`getConventionPack` are both plausible future additions, but neither is implemented in
+this milestone.

@@ -59,9 +59,10 @@ echo '{
 ```
 
 `naming_request.resource_type` is required — it is used to look up the
-`ResourceDefinition` from `@lksnext/iac-conventions-catalog`. `convention_pack` must be
-supplied in full: the repository has a Resource Definition Catalog but no executable
-Convention Pack catalog yet (see
+`ResourceDefinition` from `@lksnext/iac-conventions-catalog`. `convention_pack` must
+still be supplied in full: `@lksnext/iac-conventions-catalog` now also exposes an
+executable Convention Pack catalog (`getConventionPack`), but the CLI's JSON contract
+is unchanged by that addition (see
 [`docs/architecture/cli.md#convention-pack-source-decision`](../../docs/architecture/cli.md#convention-pack-source-decision)).
 
 ## Output
