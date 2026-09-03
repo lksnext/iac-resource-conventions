@@ -33,12 +33,16 @@ This is the **implementation foundation** only. As of this writing:
   the Reference Evaluator's Context Resolution and Convention Evaluation, composed into the
   public `evaluate()` function and its `EvaluateInput` contract (Milestones 1–2; see
   [Milestones](#milestones) below).
-- `packages/catalog` (`@lksnext/iac-conventions-catalog`) exists, holding a static,
-  immutable Resource Definition Catalog validated against authoritative AWS documentation
-  (Milestones 3.1–3.3): a `getResourceDefinition` / `listResourceTypes` lookup API over
-  four AWS entries (`aws_s3_bucket`, `aws_iam_role`, `aws_lambda_function`,
-  `aws_acm_certificate`). See [Milestones](#milestones) below and
-  [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md).
+- `packages/catalog` (`@lksnext/iac-conventions-catalog`) exists, holding two static,
+  immutable artifact catalogs: a Resource Definition Catalog validated against
+  authoritative AWS documentation (Milestones 3.1–3.3) — a `getResourceDefinition` /
+  `listResourceTypes` lookup API over four AWS entries (`aws_s3_bucket`, `aws_iam_role`,
+  `aws_lambda_function`, `aws_acm_certificate`) — and an executable Convention Pack
+  Catalog (Milestone 4.2) — a `getConventionPack` / `listConventionPackIds` lookup API
+  over one pack, `aws-workload-default`. See [Milestones](#milestones) below,
+  [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md),
+  and
+  [`docs/architecture/convention-pack-catalog.md`](docs/architecture/convention-pack-catalog.md).
 - `packages/cli` (`@lksnext/iac-conventions-cli`) exists (Milestone 4.1), holding the
   `iac-conventions` command-line adapter foundation: one command, `evaluate`, that reads
   a JSON `naming_request`/`convention_pack`/`evaluation_context` on stdin, looks up the
@@ -464,11 +468,12 @@ scoped or started here) are, in order:
   by developers and, later, Terraform, through a new command-line adapter package.
   Recommended roadmap:
   - **4.1 CLI Package Foundation.**
-  - **4.2 Stable Evaluate JSON Contract** (planned): harden and document the `evaluate`
+  - **4.2 Executable Convention Pack Catalog.**
+  - **4.3 Stable Evaluate JSON Contract** (planned): harden and document the `evaluate`
     JSON input/output contract once real usage feedback exists.
-  - **4.3 Terraform External Integration** (planned): a Terraform-specific transport
+  - **4.4 Terraform External Integration** (planned): a Terraform-specific transport
     mode compatible with `data "external"`'s string-only protocol.
-  - **4.4 First Alpha Release** (planned): publication readiness across `core`,
+  - **4.5 First Alpha Release** (planned): publication readiness across `core`,
     `catalog`, and `cli`.
   - Completed increment: **4.1 — CLI Package Foundation** (a new workspace package,
     `packages/cli/` (`@lksnext/iac-conventions-cli`), depending on `core` and `catalog`
@@ -495,7 +500,7 @@ scoped or started here) are, in order:
     HashiCorp's documentation and confirmed it requires string-only JSON values in both
     directions, so the CLI's current generic, nested `ConventionResult` JSON output is
     deliberately not wrapped or flattened for Terraform in this milestone — that
-    transport adapter is deferred to 4.3. Added `@types/node` as a root **development**
+    transport adapter is deferred to 4.4. Added `@types/node` as a root **development**
     dependency (type declarations only) since this is the first package whose source
     uses Node built-ins directly. `packages/cli/test/runtime/cli.test.mjs` spawns the
     built `dist/cli.js` as a child process (not only internal command functions) and
@@ -506,6 +511,57 @@ scoped or started here) are, in order:
     Terraform-specific naming behavior was implemented. See
     [`docs/architecture/cli.md`](docs/architecture/cli.md) for the full architecture
     and every design-gate rationale.)
+  - Completed increment: **4.2 — Executable Convention Pack Catalog** (`catalog` adds a
+    second, separate artifact family alongside Resource Definitions: a static,
+    deep-frozen `ConventionPackId -> ConventionPack` map, `getConventionPack`, and
+    `listConventionPackIds`, mirroring the existing `ResourceDefinition` map/lookup
+    pattern exactly, in `packages/catalog/src/index.ts` — no generic
+    `CatalogEntry<T>`/`ArtifactRegistry<T>` abstraction was introduced. Ships one
+    executable pack, `AWS_WORKLOAD_DEFAULT`
+    (`packages/catalog/src/convention-packs/aws-workload-default.ts`), mapped
+    field-by-field from `specification/convention-packs/aws-workload-default.md`: its
+    naming projection (`naming_component_order`, `separator`, `casing`,
+    `abbreviations`) is reproduced verbatim from the artifact's own YAML example;
+    `required_attributes` and `override_policy` are mapped from the artifact's prose;
+    `identity_defaults.deployment.platform` is set to `"aws"`, the one concrete default
+    value the artifact states in prose ("platform — defaults to aws"); the artifact
+    provides no concrete Governance Profile or tag-key mapping, so
+    `governance_defaults` and `context_authority_rules` are intentionally omitted
+    rather than invented. Adds an internal, unexported conformance validator,
+    `packages/catalog/src/internal/validate-convention-pack.ts`, mirroring
+    `validate-resource-definition.ts`'s pattern (returns every violation, never only
+    the first): a `naming_component_order`/`abbreviations` reference outside the
+    closed 12-item canonical Resource Identity vocabulary or referenced more than
+    once, an unsupported `casing` value, an unrecognized `context_authority_rules`
+    Evaluation Context source, an empty `required_attributes`/override-policy string,
+    an attribute listed as both overridable and protected, and catalog registration
+    identity (key equals `id`, no duplicate `id`) — but deliberately does **not**
+    restrict `required_attributes`/`override_policy` lists to the closed canonical
+    vocabulary, since the Specification allows those lists to reference Governance
+    Context attributes too. Extracted the previously `validate-resource-definition.ts`
+    - local canonical Resource Identity attribute vocabulary into a new shared
+    `packages/catalog/src/internal/canonical-attributes.ts`, reused by both
+    validators, rather than duplicating it a second time. Reuses the existing
+    `deepFreeze` helper as-is; no second freeze implementation was added. Adds
+    `test/runtime/convention-pack-catalog.test.mjs` (lookup, immutability, listing,
+    registration identity, and field-by-field fidelity assertions against the
+    artifact's literal values, without parsing the Markdown file itself),
+    `test/runtime/convention-pack-conformance.test.mjs` (validator unit tests), and
+    extends `test/runtime/integration.test.mjs` with a
+    `getConventionPack -> getResourceDefinition -> evaluate() -> ConventionResult`
+    end-to-end test (using `aws_iam_role`, not `aws_s3_bucket`, since
+    `aws-workload-default`'s naming component order always includes
+    `functional.resource_type` verbatim, and `aws_s3_bucket`'s own
+    `character_constraints` forbid the underscore literally present in
+    `"aws_s3_bucket"` — a real, but unrelated, S3 naming-rule finding this test does
+    not need to exercise). `@lksnext/iac-conventions-cli`'s `evaluate` JSON input
+    contract is deliberately **unchanged**: `convention_pack` remains required,
+    full-object JSON, exactly as Milestone 4.1 decided — a future `convention` string
+    resolved via `getConventionPack` remains a purely additive CLI change, not made
+    under this milestone's scope. No Terraform integration, no CLI contract change, no
+    new Resource Definition provider coverage, and no Specification modification. See
+    [`docs/architecture/convention-pack-catalog.md`](docs/architecture/convention-pack-catalog.md)
+    for the full architecture.)
 
 ## Package Naming Policy
 

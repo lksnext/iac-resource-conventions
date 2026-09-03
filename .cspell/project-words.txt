@@ -78,3 +78,12 @@ resourcetype
 # Non-Goals (specification/README.md#specification-v12-non-goals)
 PCRE
 Rego
+
+# Milestone 4.2 Convention Pack Catalog terminology
+# (docs/architecture/convention-pack-catalog.md,
+# packages/catalog/src/internal/validate-convention-pack.ts) — "representability" is a
+# real word (the quality of being representable), just not in the bundled dictionaries.
+representability
+# Markdown anchor slug for "Specification/runtime fidelity", derived mechanically from
+# heading text (the "/" is dropped by GitHub's slug algorithm), not itself a prose word.
+specificationruntime

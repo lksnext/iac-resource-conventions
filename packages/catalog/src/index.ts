@@ -1,17 +1,29 @@
 // Public entry point for @lksnext/iac-conventions-catalog.
 //
-// A static, immutable Resource Definition Catalog (Milestone 3.1): given a canonical
-// `ResourceType`, callers look up the `ResourceDefinition` that describes it, then pass
-// that definition explicitly to `@lksnext/iac-conventions-core`'s `evaluate()`. The
-// catalog performs no evaluation itself — see
-// docs/architecture/resource-definition-catalog.md for the full architecture and
-// package boundary rationale.
+// A static, immutable catalog of two separate artifact families (Milestone 3.1:
+// Resource Definitions; Milestone 4.2: Convention Packs), each with its own lookup
+// API, keyed by its own identifier:
+//
+//   ResourceType       -> getResourceDefinition -> ResourceDefinition
+//   ConventionPackId   -> getConventionPack     -> ConventionPack
+//
+// A caller passes both, alongside a NamingRequest and EvaluationContext, to
+// @lksnext/iac-conventions-core's evaluate(). The catalog performs no evaluation
+// itself — see docs/architecture/resource-definition-catalog.md and
+// docs/architecture/convention-pack-catalog.md for the full architecture and package
+// boundary rationale.
 
-import type { ResourceDefinition, ResourceType } from "@lksnext/iac-conventions-core";
+import type {
+  ConventionPack,
+  ConventionPackId,
+  ResourceDefinition,
+  ResourceType,
+} from "@lksnext/iac-conventions-core";
 import { AWS_ACM_CERTIFICATE } from "./aws/acm-certificate.js";
 import { AWS_IAM_ROLE } from "./aws/iam-role.js";
 import { AWS_LAMBDA_FUNCTION } from "./aws/lambda-function.js";
 import { AWS_S3_BUCKET } from "./aws/s3-bucket.js";
+import { AWS_WORKLOAD_DEFAULT } from "./convention-packs/aws-workload-default.js";
 import { deepFreeze } from "./internal/deep-freeze.js";
 
 /**
@@ -54,4 +66,37 @@ export function getResourceDefinition(resourceType: ResourceType): ResourceDefin
  */
 export function listResourceTypes(): ReadonlyArray<ResourceType> {
   return Object.keys(resourceDefinitions).sort();
+}
+
+/**
+ * Every executable Convention Pack, keyed by its own `id` (enforced by
+ * `test/runtime/convention-pack-catalog.test.mjs`'s identity-invariant test, the same
+ * pattern as `resourceDefinitions` above). Deliberately a separate map, not merged
+ * with `resourceDefinitions` into one generic registry: Resource Definitions and
+ * Convention Packs are distinct Specification concepts, keyed by different identifier
+ * types (`ResourceType` versus `ConventionPackId`), and combining them would obscure
+ * that distinction for no current benefit (see
+ * docs/architecture/convention-pack-catalog.md#package-ownership).
+ */
+const conventionPacks: Readonly<Record<ConventionPackId, ConventionPack>> = deepFreeze({
+  [AWS_WORKLOAD_DEFAULT.id]: AWS_WORKLOAD_DEFAULT,
+});
+
+/**
+ * Looks up the {@link ConventionPack} for a `conventionPackId`.
+ *
+ * Returns `undefined` for an unknown id rather than throwing, consistent with
+ * {@link getResourceDefinition}: an unknown Convention Pack id is an expected,
+ * recoverable outcome for a caller, not an exceptional condition.
+ */
+export function getConventionPack(conventionPackId: ConventionPackId): ConventionPack | undefined {
+  return conventionPacks[conventionPackId];
+}
+
+/**
+ * Lists every `ConventionPackId` known to the catalog, in lexical order, consistent
+ * with {@link listResourceTypes}.
+ */
+export function listConventionPackIds(): ReadonlyArray<ConventionPackId> {
+  return Object.keys(conventionPacks).sort();
 }

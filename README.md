@@ -116,7 +116,7 @@ The repository is organized around the Specification-first architecture describe
 ├── specification/    # The Specification (single source of truth)
 ├── packages/         # Implementation monorepo packages (npm workspaces)
 │   ├── core/         # @lksnext/iac-conventions-core — domain contracts and Reference Evaluator
-│   ├── catalog/      # @lksnext/iac-conventions-catalog — static Resource Definition Catalog
+│   ├── catalog/      # @lksnext/iac-conventions-catalog — static Resource Definition & Convention Pack catalogs
 │   └── cli/          # @lksnext/iac-conventions-cli — command-line adapter (foundation)
 ├── scripts/          # Repository automation scripts
 ├── IMPLEMENTATION.md # Implementation monorepo architecture
@@ -215,8 +215,9 @@ for the full API contract, design rationale, and current capability scope.
   — Specification-concept-to-public-contract traceability matrix.
 - [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md) —
   architecture for the Reference Evaluator (Milestone 2).
+- [`docs/architecture/convention-pack-catalog.md`](docs/architecture/convention-pack-catalog.md)
+  — architecture for the executable Convention Pack Catalog (Milestone 4.2).
 - [`docs/`](docs/) — further reference documentation (planned).
-- Convention Packs — planned.
 - Reference Documentation — planned.
 - Examples — planned.
 
@@ -238,7 +239,9 @@ for the full API contract, design rationale, and current capability scope.
   [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md)).
 - Resource Definition Catalog (Milestone 3 — in progress; an initial AWS slice is implemented,
   see [`packages/catalog/README.md`](packages/catalog/README.md)).
-- Executable Convention Packs
+- ✓ Executable Convention Packs (Milestone 4.2 — complete; a first pack,
+  `aws-workload-default`, is implemented, see
+  [`docs/architecture/convention-pack-catalog.md`](docs/architecture/convention-pack-catalog.md)).
 - Contract Tests
 - CLI (Milestone 4 — in progress; the command-line foundation is implemented, see
   [`packages/cli/README.md`](packages/cli/README.md)).

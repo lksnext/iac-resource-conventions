@@ -27,6 +27,7 @@ import type {
   ResourceDefinition,
   ResourceNameLengthUnit,
 } from "@lksnext/iac-conventions-core";
+import { CANONICAL_RESOURCE_IDENTITY_ATTRIBUTES } from "./canonical-attributes.js";
 
 /**
  * One static ResourceDefinition conformance problem. `resource_type` identifies which
@@ -42,33 +43,6 @@ export interface CatalogConformanceIssue {
   readonly path: string;
   readonly message: string;
 }
-
-/**
- * The closed canonical Resource Identity attribute vocabulary (Specification v1.1; see
- * specification/resource-identity.md#canonical-attribute-references), duplicated here
- * as a runtime array. `CanonicalResourceIdentityAttribute` (imported above) is a
- * compile-time-only literal union; core exposes no runtime array of its members, and
- * this validator is the only place in the repository that needs one. Exposing a public
- * runtime constant from core solely for this internal catalog validator would expand
- * core's public API for a single, internal, non-evaluator consumer, so the vocabulary
- * is kept as a small, internal, catalog-only runtime list instead (see
- * docs/architecture/resource-definition-catalog.md#catalog-conformance-validation).
- */
-const CANONICAL_RESOURCE_IDENTITY_ATTRIBUTES: ReadonlySet<CanonicalResourceIdentityAttribute> =
-  new Set([
-    "organizational.organization",
-    "organizational.business_unit",
-    "organizational.system",
-    "organizational.tenant",
-    "deployment.platform",
-    "deployment.deployment_scope",
-    "deployment.environment",
-    "deployment.location",
-    "deployment.instance",
-    "functional.service",
-    "functional.component",
-    "functional.resource_type",
-  ]);
 
 const CHARACTER_CLASSES = new Set([
   "ascii_lowercase",

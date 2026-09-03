@@ -7,11 +7,21 @@
 // packages/core/test/runtime/evaluate.test.mjs already calls it, with an explicitly
 // looked-up `resource_definition`. This proves catalog lookup happens outside
 // `evaluate()`, per docs/architecture/resource-definition-catalog.md.
+//
+// Milestone 4.2 extends this with a second flow proving a caller no longer needs to
+// construct a ConventionPack by hand:
+//
+//   convention id -> catalog lookup -> ConventionPack
+//   resource_type -> catalog lookup -> ResourceDefinition
+//     -> evaluate() -> ConventionResult
+//
+// Both lookups happen outside `evaluate()`, using only this package's public API — see
+// docs/architecture/convention-pack-catalog.md#cli-relationship.
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { evaluate } from "@lksnext/iac-conventions-core";
-import { getResourceDefinition } from "../../dist/index.js";
+import { getConventionPack, getResourceDefinition } from "../../dist/index.js";
 
 test("integration: a catalog-looked-up ResourceDefinition can be passed to evaluate()", () => {
   const resourceDefinition = getResourceDefinition("aws_s3_bucket");
@@ -65,4 +75,35 @@ test("integration: a catalog definition's max_length/length_unit constrains eval
   assert.deepEqual(result.validation.failures, [
     { message: "name exceeds max_length of 63 characters", code: "max-length" },
   ]);
+});
+
+test("integration: a catalog-looked-up ConventionPack and ResourceDefinition can both be passed to evaluate()", () => {
+  const conventionPack = getConventionPack("aws-workload-default");
+  assert.ok(conventionPack, "expected the catalog to know aws-workload-default");
+
+  // aws_iam_role, not aws_s3_bucket, is used here: aws-workload-default's
+  // naming_component_order always includes functional.resource_type verbatim (per its
+  // own worked example in specification/convention-packs/aws-workload-default.md), and
+  // aws_s3_bucket's own character_constraints forbid the underscore in
+  // "aws_s3_bucket" itself — a real, but unrelated, S3 naming-rule finding this test
+  // does not need to exercise. aws_iam_role's character_constraints allow underscores.
+  const resourceDefinition = getResourceDefinition("aws_iam_role");
+  assert.ok(resourceDefinition, "expected the catalog to know aws_iam_role");
+
+  const result = evaluate({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_iam_role",
+      functional: { service: "ingestion" },
+    },
+    convention_pack: conventionPack,
+    evaluation_context: {
+      shared_organizational_context: { system: "telemetry-platform" },
+      shared_deployment_context: { environment: "production" },
+    },
+    resource_definition: resourceDefinition,
+  });
+
+  assert.equal(result.outputs.name, "telemetry-platform-ingestion-prod-aws_iam_role");
+  assert.equal(result.validation.valid, true);
 });

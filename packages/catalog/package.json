@@ -25,6 +25,6 @@
   "scripts": {
     "build": "npm run build -w @lksnext/iac-conventions-core && tsc -p tsconfig.json",
     "typecheck": "npm run build -w @lksnext/iac-conventions-core && tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test test/runtime/catalog.test.mjs test/runtime/conformance.test.mjs test/runtime/dependency-direction.test.mjs test/runtime/integration.test.mjs"
+    "test": "npm run build && node --test test/runtime/catalog.test.mjs test/runtime/conformance.test.mjs test/runtime/convention-pack-catalog.test.mjs test/runtime/convention-pack-conformance.test.mjs test/runtime/dependency-direction.test.mjs test/runtime/integration.test.mjs"
   }
 }
