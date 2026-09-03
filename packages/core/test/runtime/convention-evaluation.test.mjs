@@ -12,8 +12,8 @@
 // Fixtures are neutral and fictional. They exercise required-attribute completeness
 // validation only: no `naming_component_order` is declared, so naming rendering never
 // produces `outputs.name` here (see ./naming-evaluation.test.mjs for those runtime
-// tests). Normalization, metadata (tags/labels/annotations) generation, and Resource
-// Definition constraint validation remain unimplemented in this increment (see
+// tests). Normalization and metadata (tags/labels/annotations) generation remain
+// outside the executable v1.2 constraint families (see
 // ../../src/evaluator/convention-evaluation/evaluate-convention.ts).
 
 import assert from "node:assert/strict";
@@ -198,7 +198,7 @@ test(
     assert.equal(result.outputs.name, "aws_s3_bucket");
     assert.equal(result.validation.valid, false);
     assert.deepEqual(result.validation.failures, [
-      { message: "name exceeds max_length of 12 characters" },
+      { message: "name exceeds max_length of 12 characters", code: "max-length" },
     ]);
   },
 );
@@ -238,6 +238,7 @@ test("an over-length name composes with an unrelated missing-required-attribute 
   assert.equal(result.validation.failures.length, 2);
   assert.deepEqual(result.validation.failures[1], {
     message: "name exceeds max_length of 12 characters",
+    code: "max-length",
   });
 });
 
@@ -310,7 +311,7 @@ test(
     assert.equal(utf8BytesResult.outputs.name, utf8Bytes.name);
     assert.equal(utf8BytesResult.validation.valid, false);
     assert.deepEqual(utf8BytesResult.validation.failures, [
-      { message: "name exceeds max_length of 12 characters" },
+      { message: "name exceeds max_length of 12 characters", code: "max-length" },
     ]);
   },
 );
@@ -341,12 +342,146 @@ test(
     assert.deepEqual(result.validation.failures, [
       {
         message:
-          "Resource Definition declares max_length without a recognized length_unit " +
-          '("code_points" or "utf8_bytes"); length cannot be measured deterministically.',
+          "Resource Definition declares min_length or max_length without a recognized " +
+          'length_unit ("code_points" or "utf8_bytes"); length cannot be measured ' +
+          "deterministically.",
       },
     ]);
   },
 );
+
+test("v1.2 rendering failures follow the normative family and declaration order", () => {
+  const result = evaluateConvention(
+    baseInput({
+      convention_pack: {
+        id: "test-pack",
+        naming_component_order: ["functional.resource_type"],
+      },
+      resource_definition: {
+        resource_type: "aws_s3_bucket",
+        platform: "aws",
+        rendering_constraints: {
+          min_length: 5,
+          max_length: 10,
+          length_unit: "code_points",
+          character_constraints: { classes: ["ascii_lowercase"] },
+          starts_with: { classes: ["ascii_lowercase"] },
+          ends_with: { classes: ["ascii_digits"] },
+          forbidden_prefixes: ["aws", "aws_s3"],
+          forbidden_suffixes: ["ket", "bucket"],
+        },
+      },
+    }),
+  );
+
+  assert.deepEqual(
+    result.validation.failures.map(({ code }) => code),
+    [
+      "max-length",
+      "character-constraint",
+      "ends-with",
+      "forbidden-prefix",
+      "forbidden-prefix",
+      "forbidden-suffix",
+      "forbidden-suffix",
+    ],
+  );
+});
+
+test("character constraints union ASCII classes and single-code-point literals", () => {
+  const valid = evaluateConvention(
+    baseInput({
+      convention_pack: {
+        id: "test-pack",
+        naming_component_order: ["functional.resource_type"],
+      },
+      resource_definition: {
+        resource_type: "test",
+        platform: "aws",
+        rendering_constraints: {
+          character_constraints: {
+            classes: ["ascii_lowercase", "ascii_digits"],
+            literals: ["_"],
+          },
+        },
+      },
+    }),
+  );
+  assert.deepEqual(valid.validation, { valid: true });
+
+  const invalid = evaluateConvention(
+    baseInput({
+      convention_pack: {
+        id: "test-pack",
+        naming_component_order: ["functional.resource_type"],
+      },
+      resource_definition: {
+        resource_type: "test",
+        platform: "aws",
+        rendering_constraints: {
+          character_constraints: { classes: ["ascii_lowercase"] },
+        },
+      },
+    }),
+  );
+  assert.deepEqual(invalid.validation.failures, [
+    {
+      message: "name contains a code point outside the allowed character_constraints set",
+      code: "character-constraint",
+    },
+  ]);
+});
+
+test("placement rules support equals, present, absent, and conditional skipping", () => {
+  const result = evaluateConvention(
+    baseInput({
+      resource_definition: {
+        resource_type: "test",
+        platform: "aws",
+        placement_constraints: [
+          {
+            statement: "system must be telemetry-platform",
+            rule: { subject: "organizational.system", operator: "equals", value: "other" },
+          },
+          {
+            statement: "tenant must be present",
+            rule: { subject: "organizational.tenant", operator: "present" },
+          },
+          {
+            statement: "location must be absent",
+            rule: { subject: "deployment.location", operator: "absent" },
+          },
+          {
+            statement: "conditional rule skipped",
+            rule: {
+              subject: "functional.resource_type",
+              operator: "equals",
+              value: "other",
+              condition: {
+                subject: "organizational.system",
+                operator: "equals",
+                value: "other",
+              },
+            },
+          },
+        ],
+      },
+    }),
+  );
+
+  assert.deepEqual(result.validation.failures, [
+    {
+      message:
+        'resolved Resource Identity does not satisfy the Placement Constraint rule for "organizational.system"',
+      code: "placement",
+    },
+    {
+      message:
+        'resolved Resource Identity does not satisfy the Placement Constraint rule for "organizational.tenant"',
+      code: "placement",
+    },
+  ]);
+});
 
 test("measureLength is deterministic: repeated evaluation of the same input is identical", () => {
   const { input } = partyPopperInput({ length_unit: "code_points" });

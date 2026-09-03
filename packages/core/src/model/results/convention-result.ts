@@ -71,10 +71,30 @@ export interface ConventionValidation {
   readonly failures?: ReadonlyArray<ConventionValidationFailure>;
 }
 
+/**
+ * The closed, optional failure-code vocabulary introduced by Specification v1.2, one
+ * value per executable Resource Definition constraint family (see
+ * `specification/resource-definition.md#validation-behavior-and-failure-semantics-specification-v12`).
+ * A `ConventionValidationFailure` produced for a reason this vocabulary does not cover
+ * (for example, required-attribute completeness) carries no `code`.
+ */
+export type ConventionValidationFailureCode =
+  | "min-length"
+  | "max-length"
+  | "character-constraint"
+  | "starts-with"
+  | "ends-with"
+  | "forbidden-prefix"
+  | "forbidden-suffix"
+  | "placement";
+
 /** A single constraint violation found while validating a Convention Result. */
 export interface ConventionValidationFailure {
   /** A human-readable description of the violated constraint. */
   readonly message: string;
+
+  /** A stable, machine-readable discriminator for the violated constraint, when defined. */
+  readonly code?: ConventionValidationFailureCode;
 }
 
 /** A single non-fatal issue detected while generating a Convention Result. */

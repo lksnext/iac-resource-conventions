@@ -37,11 +37,10 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  *   `specification/resource-definition.md#s3-bucket`'s own illustrative example.
  *   Evidence: Explicit.
  * - **Length** — "Bucket names must be between 3 (min) and 63 (max) characters
- *   long." Only `max_length` (63) is modeled: `ResourceRenderingConstraints` has no
- *   `min_length` field (see `docs/architecture/resource-definition-catalog.md`'s
- *   Milestone 3.2 findings) — a genuine, evidence-backed model gap, not invented here.
- *   Evidence: Explicit (for `max_length`); the unrepresented minimum remains a
- *   documented gap, not a false claim.
+ *   long." Modeled as `min_length: 3`, `max_length: 63` (Specification v1.2 closes
+ *   the previously documented `min_length` model gap; see
+ *   `docs/architecture/resource-definition-catalog-conformance.md#min_length-gap`).
+ *   Evidence: Explicit.
  * - **Length unit** — every valid character (see below) is single-byte ASCII, so
  *   Unicode code points and UTF-8 bytes coincide for any conforming name; `code_points`
  *   is used for consistency with the Reference Evaluator's own default choice (see
@@ -50,16 +49,20 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  *   semantic — AWS itself only defines an ASCII character grammar.
  * - **Allowed characters** — "Bucket names can consist only of lowercase letters,
  *   numbers, periods (.), and hyphens (-)... must begin and end with a letter or
- *   number." Recorded as free descriptive text per
- *   `specification/resource-definition.md#rendering-constraints` (not a regular
- *   expression or executable grammar — see
- *   `docs/architecture/convention-evaluation-executability.md#allowed-characters`).
- *   Evidence: Explicit, but not executable.
- * - **Reserved prefixes/suffixes** (for example, `xn--`, `sthree-`, `-s3alias`) exist
- *   but have no representation in the current model beyond `allowed_characters`' free
- *   text; no grammar or reserved-pattern field is defined
- *   (see `specification/resource-definition.md#out-of-scope-for-this-document`). Not
- *   modeled as a separate field — documented as a gap only.
+ *   number." Modeled executably as `character_constraints` (`ascii_lowercase` +
+ *   `ascii_digits` classes, plus the `.` and `-` literals) and `starts_with`/
+ *   `ends_with` (`ascii_lowercase` + `ascii_digits`, since a bucket name must begin
+ *   and end with a letter or number, never a period or hyphen). Specification v1.2
+ *   closes the previously documented allowed-character-model gap (see
+ *   `docs/architecture/resource-definition-catalog-conformance.md#allowed-character-model-gap`).
+ *   Evidence: Explicit.
+ * - **Reserved prefixes/suffixes** — "Bucket names must not start with the prefix
+ *   `xn--`", "must not start with the prefix `sthree-`", and "must not end with the
+ *   suffix `-s3alias`." Modeled executably as `forbidden_prefixes`/
+ *   `forbidden_suffixes`. Specification v1.2 closes the previously documented
+ *   reserved-pattern gap (see
+ *   `docs/architecture/resource-definition-catalog-conformance.md#reserved-pattern-gap`).
+ *   Evidence: Explicit.
  */
 export const AWS_S3_BUCKET: ResourceDefinition = deepFreeze({
   resource_type: "aws_s3_bucket",
@@ -71,9 +74,18 @@ export const AWS_S3_BUCKET: ResourceDefinition = deepFreeze({
     global: false,
   },
   rendering_constraints: {
+    min_length: 3,
     max_length: 63,
     length_unit: "code_points",
-    allowed_characters: "lowercase letters, digits, periods, and hyphens only",
+    allowed_characters_description: "lowercase letters, digits, periods, and hyphens only",
+    character_constraints: {
+      classes: ["ascii_lowercase", "ascii_digits"],
+      literals: [".", "-"],
+    },
+    starts_with: { classes: ["ascii_lowercase", "ascii_digits"] },
+    ends_with: { classes: ["ascii_lowercase", "ascii_digits"] },
+    forbidden_prefixes: ["xn--", "sthree-"],
+    forbidden_suffixes: ["-s3alias"],
   },
-  placement_constraints: ["regional; location chosen by the deployment"],
+  placement_constraints: [{ statement: "regional; location chosen by the deployment" }],
 });

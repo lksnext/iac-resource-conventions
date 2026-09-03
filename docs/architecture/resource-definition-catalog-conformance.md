@@ -50,10 +50,11 @@ detail.
 | Not global; regional | [Bucket naming rules](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html) — Region chosen at creation | `identity_constraints.global: false` | Explicit | No (globality not validated; see [Globality model](#globality-model-review)) | Correct |
 | Unique within scope | Same source — "must be unique" | `identity_constraints.unique: true` | Explicit | No (uniqueness is External per [`convention-evaluation-executability.md`](convention-evaluation-executability.md)) | Correct |
 | Uniqueness scope: partition | Same source — "unique across all AWS accounts in all the AWS Regions within a partition" | `identity_constraints.uniqueness_scope: "partition"` | Explicit, **for general purpose buckets only** | No | See [S3 namespace finding](#s3-namespace-finding-and-resourcetype-boundary) — P0 |
-| max_length: 63 | Same source — "between 3 (min) and 63 (max)" | `rendering_constraints.max_length` | Explicit | Yes (`maxLengthFailure`) | Correct; minimum (3) unrepresentable — see [min_length gap](#min_length-gap) |
+| min_length: 3, max_length: 63 | Same source — "between 3 (min) and 63 (max)" | `rendering_constraints.min_length`, `.max_length` | Explicit | Yes | Correct; both bounds use `length_unit: "code_points"` |
 | length_unit: code_points | n/a — chosen because all valid characters are single-byte ASCII | `rendering_constraints.length_unit` | N/A (implementation representation, not a provider fact) | Yes | Correct; see [Length-unit policy](#length-unit-policy) |
-| Allowed characters (lowercase letters, digits, `.`, `-`) | Same source, verbatim | `rendering_constraints.allowed_characters` | Explicit | No (free text; see [Allowed-character model gap](#allowed-character-model-gap)) | Correct as documentation, not enforceable |
-| Reserved prefixes/suffixes (`xn--`, `sthree-`, `-s3alias`, and others) | Same source | *(no field)* | Explicit | No | Documented gap, not modeled — see [Reserved-pattern gap](#reserved-pattern-gap) |
+| Allowed characters (lowercase letters, digits, `.`, `-`) | Same source, verbatim | `rendering_constraints.character_constraints`, `.starts_with`, `.ends_with` | Explicit | Yes | Structured ASCII classes/literals and boundary checks |
+| Reserved prefixes/suffixes (`xn--`, `sthree-`, `-s3alias`, and others) | Same source | `rendering_constraints.forbidden_prefixes`, `.forbidden_suffixes` | Explicit | Yes | Explicitly documented patterns are executable; directory-bucket-only patterns remain out of scope |
+| Reserved prefixes/suffixes (`xn--`, `sthree-`, `-s3alias`, and others) | Same source | `rendering_constraints.forbidden_prefixes`, `.forbidden_suffixes` | Explicit | Yes | Explicitly documented patterns are executable; directory-bucket-only patterns remain out of scope |
 | Placement: regional, location chosen by deployment | Same source | `placement_constraints` | Explicit | No (Placement Constraint evaluation is out of scope for this milestone) | Correct; matches the Specification's own S3 illustrative example |
 
 ### `aws_iam_role`
@@ -66,7 +67,7 @@ detail.
 | Unique within account, case-insensitive | [IAM/STS quotas](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html) — "must be unique within the account. They aren't distinguished by case." | `identity_constraints.unique: true`, `uniqueness_scope: "account"` | Explicit | No | Correct; case-insensitivity itself has no model field — P2, non-misleading |
 | max_length: 64 | Same source — "Role name: 64 characters" | `rendering_constraints.max_length` | Explicit | Yes | Correct |
 | length_unit: code_points | n/a — ASCII-only allowed characters | `rendering_constraints.length_unit` | N/A (implementation representation) | Yes | Correct |
-| Allowed characters (alphanumeric plus `+ = , . @ _ -`) | Same source, verbatim | `rendering_constraints.allowed_characters` | Explicit | No | Correct as documentation only |
+| Allowed characters (alphanumeric plus `+ = , . @ _ -`) | Same source, verbatim | `rendering_constraints.character_constraints` | Explicit | Yes | Structured ASCII classes/literals; no regex semantics are introduced |
 | `path` (512-char secondary identifier, distinct from role name) | Same source | *(no field)* | Explicit | No | Documented gap, not modeled — P1, see [Path and secondary-identifier gap](#path-and-secondary-identifier-gap) |
 | Placement: global within account scope | Same source (derived) | `placement_constraints` | Derived (mechanical restatement of `global: true`) | No | Correct; matches the Specification's own IAM Role illustrative example |
 
@@ -81,7 +82,7 @@ detail.
 | Uniqueness scope: account, region | No single AWS sentence states this exact scope | `identity_constraints.uniqueness_scope: "account, region"` | **Derived** — from the regional endpoint plus the account/Region segments embedded in `FunctionArn`, together with `ResourceConflictException` | No | Milestone 3.3 correction: reclassified from an unstated "assumed precise" scope to an explicitly labeled Derived one; value unchanged since it is the minimum statement the evidence supports (see [Lambda uniqueness finding](#lambda-uniqueness-finding)) |
 | max_length: 64 (bare name) | Same source — "limited to 64 characters in length" | `rendering_constraints.max_length` | Explicit | Yes | Correct |
 | length_unit: code_points | n/a — ASCII-only pattern | `rendering_constraints.length_unit` | N/A (implementation representation) | Yes | Correct |
-| Allowed characters (letters, digits, `-`, `_`) | Same source — literal regex `[a-zA-Z0-9-_]+` for the bare-name segment | `rendering_constraints.allowed_characters` | Explicit — and the only current entry backed by a literal AWS-published regex, not prose alone | No (still recorded as free text; see [Allowed-character model gap](#allowed-character-model-gap)) | Correct; strongest current evidence an executable grammar is feasible |
+| Allowed characters (letters, digits, `-`, `_`) | Same source — literal regex `[a-zA-Z0-9-_]+` for the bare-name segment | `rendering_constraints.character_constraints` | Explicit — and the only current entry backed by a literal AWS-published regex, not prose alone | Yes | Correct; represented without introducing regex semantics |
 | Placement: regional, no conditional rule | Same source (regional endpoint) | `placement_constraints` | Explicit | No | Correct |
 
 ### `aws_acm_certificate`
@@ -207,14 +208,9 @@ definition's source comment (Milestone 3.3).
 
 ## min_length gap
 
-At least two current entries have a documented AWS minimum name length that
-`ResourceRenderingConstraints` cannot represent: S3 general purpose buckets (3
-characters) and (per Lambda's own `FunctionName` length constraint text) a minimum of 1
-character for the bare name. **Priority: P1.** This is not misleading today — the
-current catalog does not claim a false minimum, it simply cannot state the true one —
-but it should be resolved before further catalog growth makes the omission more
-noticeable across more resource types. See [Specification v1.2
-recommendation](#specification-v12-recommendation).
+Specification v1.2 closes this gap. S3 now declares `min_length: 3` and Lambda declares
+`min_length: 1`, both sharing the existing `length_unit` with `max_length`; the Reference
+Evaluator reports `min-length` failures without transforming generated names.
 
 ## Path and secondary-identifier gap
 
@@ -227,26 +223,21 @@ would misrepresent AWS's own documented rule.
 
 ## Allowed-character model gap
 
-`allowed_characters` is a plain descriptive `string` for all four current entries; it is
-useful only as human-readable documentation today (see
+`allowed_characters_description` remains a plain descriptive `string`, useful only as
+human-readable documentation today (see
 [`convention-evaluation-executability.md#allowed-characters`](convention-evaluation-executability.md#allowed-characters)).
-A future executable constraint model would need, at minimum: a closed set of character
-classes or an explicit pattern representation, begins-with/ends-with rules (seen in both
-S3 variants), and a way to distinguish a resource type whose grammar is genuinely
-regex-shaped (Lambda's bare `FunctionName`, evidenced by a literal AWS-published regex)
-from one only ever described in prose (S3, IAM). **Priority: P1** — useful before
-meaningful catalog expansion, not urgent today since no current fact is misrepresented by
-staying free-text. No regex semantics are introduced opportunistically in this
-milestone.
+A closed `ResourceNameCharacterSet` now provides executable ASCII classes and literals,
+with separate begins-with/ends-with sets. The evaluator deliberately does not interpret
+the descriptive field as a regular expression. This gap is **resolved for the structured
+v1.2 fields**; regex-shaped provider rules remain out of scope.
 
 ## Reserved-pattern gap
 
-S3 general purpose and directory buckets both document reserved name prefixes/suffixes
-(`xn--`, `sthree-`, `-s3alias`, and, for directory buckets specifically, additional
-prefixes/suffixes). No current field represents "this exact string, or pattern, is
-reserved and always invalid regardless of `allowed_characters`." **Priority: P2** —
-deferred; no current entry claims a reserved pattern is available, so nothing is
-misleading, only incomplete.
+S3 general purpose bucket reserved prefixes/suffixes (`xn--`, `sthree-`, `-s3alias`) are
+now represented by exact, case-sensitive v1.2 fields and validated by the evaluator.
+Directory-bucket-only patterns remain intentionally unrepresented because `aws_s3_bucket`
+permanently covers general purpose buckets only. This gap is resolved for the current
+catalog scope.
 
 ## Conditional-constraint requirements gap
 

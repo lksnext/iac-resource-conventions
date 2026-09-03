@@ -37,9 +37,15 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  *   implementation choice, not an AWS-defined code-point semantic.
  * - **Allowed characters** — "Names of users, groups, roles, ... must be
  *   alphanumeric, including the following common characters: plus (+), equals (=),
- *   comma (,), period (.), at (@), underscore (_), and hyphen (-)." Recorded as free
- *   descriptive text (not an executable grammar). Evidence: Explicit, but not
- *   executable.
+ *   comma (,), period (.), at (@), underscore (_), and hyphen (-)." Modeled
+ *   executably as `character_constraints` (`ascii_letters` + `ascii_digits` classes,
+ *   plus the `+`, `=`, `,`, `.`, `@`, `_`, and `-` literals). Specification v1.2
+ *   closes the previously documented allowed-character-model gap (see
+ *   `docs/architecture/resource-definition-catalog-conformance.md#allowed-character-model-gap`).
+ *   No first/last-character rule is documented, so no `starts_with`/`ends_with` is
+ *   modeled, and no minimum length is documented, so no `min_length` is modeled (see
+ *   `docs/architecture/resource-definition-catalog-conformance.md#min_length-gap`,
+ *   which remains open for this resource type). Evidence: Explicit.
  * - **Path (gap, not modeled)** — IAM separately limits a role's `path` to 512
  *   characters, and states "If you intend to use a role with the Switch Role feature
  *   in the AWS Management Console, then the combined Path and RoleName can't exceed
@@ -61,7 +67,12 @@ export const AWS_IAM_ROLE: ResourceDefinition = deepFreeze({
   rendering_constraints: {
     max_length: 64,
     length_unit: "code_points",
-    allowed_characters: "alphanumeric characters plus '+', '=', ',', '.', '@', '_', and '-'",
+    allowed_characters_description:
+      "alphanumeric characters plus '+', '=', ',', '.', '@', '_', and '-'",
+    character_constraints: {
+      classes: ["ascii_letters", "ascii_digits"],
+      literals: ["+", "=", ",", ".", "@", "_", "-"],
+    },
   },
-  placement_constraints: ["global within the deployment scope (AWS account)"],
+  placement_constraints: [{ statement: "global within the deployment scope (AWS account)" }],
 });

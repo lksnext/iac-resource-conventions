@@ -124,9 +124,9 @@ export const resourceDefinition: ResourceDefinition = {
   rendering_constraints: {
     max_length: 63,
     length_unit: "code_points",
-    allowed_characters: "lowercase letters, digits, and hyphens",
+    allowed_characters_description: "lowercase letters, digits, and hyphens",
   },
-  placement_constraints: ["regional; location chosen by the deployment"],
+  placement_constraints: [{ statement: "regional; location chosen by the deployment" }],
 };
 
 export const conventionPack: ConventionPack = {

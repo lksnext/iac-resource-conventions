@@ -63,6 +63,6 @@ test("integration: a catalog definition's max_length/length_unit constrains eval
   });
 
   assert.deepEqual(result.validation.failures, [
-    { message: "name exceeds max_length of 63 characters" },
+    { message: "name exceeds max_length of 63 characters", code: "max-length" },
   ]);
 });

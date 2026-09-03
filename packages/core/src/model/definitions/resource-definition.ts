@@ -1,4 +1,6 @@
 import type { Platform, ResourceType } from "../common/identifiers.js";
+import type { PlacementConstraint } from "./placement-constraint.js";
+import type { ResourceNameCharacterSet } from "./resource-name-character-set.js";
 import type { ResourceNameLengthUnit } from "./resource-name-length-unit.js";
 
 /**
@@ -35,10 +37,12 @@ export interface ResourceDefinition {
 
   /**
    * The valid deployment topology for this resource type, including how it must relate
-   * to resources it depends on. Represented as free-form descriptive statements because
-   * the Specification does not yet define a formal grammar for Placement Constraints.
+   * to resources it depends on. Each entry always carries a human-readable `statement`;
+   * `rule` is present only when the constraint can be evaluated from Resource Identity
+   * alone (see `./placement-constraint.js` and
+   * `specification/resource-definition.md#structured-placement-constraints-specification-v12`).
    */
-  readonly placement_constraints?: ReadonlyArray<string>;
+  readonly placement_constraints?: ReadonlyArray<PlacementConstraint>;
 }
 
 /**
@@ -65,36 +69,76 @@ export interface ResourceIdentityConstraints {
  * Rendering constraints for a resource type: how a valid representation of it must be
  * generated. The Specification names these categories in prose but defines no concrete
  * schema for their values; fields stay close to plain, descriptive types rather than
- * inventing a rendering grammar the Specification does not define.
+ * inventing a rendering grammar the Specification does not define, except for the
+ * structured, executable Specification v1.2 constraint families below.
  *
- * `max_length` and `length_unit` are declared together, or not at all: Specification
- * v1.1's clarified `max_length` semantics (see
- * `specification/resource-definition.md#rendering-constraints`) require every Resource
- * Definition that declares a maximum name length to also declare the unit it counts,
- * from the closed {@link ResourceNameLengthUnit} vocabulary, so that two independently
- * conforming Reference Evaluator implementations measure the same generated name the
- * same way. This union makes the invalid "`max_length` without `length_unit`" state
- * unrepresentable, rather than merely undocumented.
+ * `min_length` and `max_length` share exactly one `length_unit`: whenever either bound
+ * is declared, `length_unit` must also be declared, from the closed
+ * {@link ResourceNameLengthUnit} vocabulary, so that two independently conforming
+ * Reference Evaluator implementations measure the same generated name the same way
+ * (see `specification/resource-definition.md#minimum-length`). This four-way union
+ * makes "a bound without `length_unit`" unrepresentable, rather than merely
+ * undocumented. `min_length <= max_length`, when both are declared, is a value-level
+ * invariant this union cannot express; it is checked by catalog integrity tests
+ * instead (see `packages/catalog/test/runtime/catalog.test.mjs`).
  */
 export type ResourceRenderingConstraints = {
-  /** Allowed characters or casing rule imposed by the underlying platform, described as free text. */
-  readonly allowed_characters?: string;
+  /**
+   * Allowed characters or casing rule imposed by the underlying platform, described as
+   * free text. Purely illustrative; never interpreted as an executable grammar — see
+   * {@link ResourceRenderingConstraints.character_constraints} for the executable
+   * representation.
+   */
+  readonly allowed_characters_description?: string;
 
   /** How raw input must be normalized to produce a valid value for this resource type, described as free text. */
   readonly normalization?: string;
 
   /** Provider-specific capabilities or limitations Convention Evaluation must respect. */
   readonly provider_capabilities?: ReadonlyArray<string>;
+
+  /**
+   * A structured, executable representation of this resource type's allowed
+   * characters (see `specification/resource-definition.md#character-constraints`).
+   * Every code point in a rendered name must belong to the allowed set this value
+   * describes.
+   */
+  readonly character_constraints?: ResourceNameCharacterSet;
+
+  /** The rendered name's first code point must belong to this allowed set. */
+  readonly starts_with?: ResourceNameCharacterSet;
+
+  /** The rendered name's last code point must belong to this allowed set. */
+  readonly ends_with?: ResourceNameCharacterSet;
+
+  /** Exact, case-sensitive prefixes a rendered name must not start with. */
+  readonly forbidden_prefixes?: ReadonlyArray<string>;
+
+  /** Exact, case-sensitive suffixes a rendered name must not end with. */
+  readonly forbidden_suffixes?: ReadonlyArray<string>;
 } & (
   | {
+      readonly min_length?: undefined;
       readonly max_length?: undefined;
       readonly length_unit?: undefined;
     }
   | {
+      /** Minimum length imposed by the underlying platform, measured in `length_unit`. */
+      readonly min_length: number;
+      readonly max_length?: undefined;
+      /** The unit `min_length` counts. Required whenever `min_length` is declared. */
+      readonly length_unit: ResourceNameLengthUnit;
+    }
+  | {
+      readonly min_length?: undefined;
       /** Maximum length imposed by the underlying platform, measured in `length_unit`. */
       readonly max_length: number;
-
       /** The unit `max_length` counts. Required whenever `max_length` is declared. */
+      readonly length_unit: ResourceNameLengthUnit;
+    }
+  | {
+      readonly min_length: number;
+      readonly max_length: number;
       readonly length_unit: ResourceNameLengthUnit;
     }
 );
