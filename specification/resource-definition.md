@@ -507,6 +507,23 @@ A Placement Constraint with no executable `rule` (see [The conditional-input
 problem](#the-conditional-input-problem) above) contributes no automated validation
 outcome; it remains descriptive only.
 
+Steps 4, 5, and 6 each combine more than one constraint family or entry; within each,
+the following sub-order is also normative, so that no combined step is itself
+ambiguous between two independently conforming implementations:
+
+- Within step 4, `starts_with` is evaluated before `ends_with`.
+- Within step 5, `forbidden_prefixes` is evaluated before `forbidden_suffixes`; within
+  each of those two fields, its entries are themselves evaluated in declaration order,
+  unchanged from [Reserved prefixes and suffixes](#reserved-prefixes-and-suffixes)
+  above.
+- Within step 6, `PlacementConstraint` entries are evaluated in the declaration order
+  of the `placement_constraints` array.
+
+This sub-ordering is, like the top-level order above, only about the deterministic
+*sequence* of reported `ConventionValidationFailure` entries: it changes no
+constraint's success or failure, no failure `code`, and no other Specification v1.2
+behavior.
+
 ### Validation behavior and failure semantics (Specification v1.2)
 
 Every constraint introduced by this version is a validator, consistent with
