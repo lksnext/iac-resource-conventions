@@ -4,8 +4,12 @@ This directory contains the Specification for `iac-resource-conventions`.
 
 ## Specification Status
 
-**Current version:** Specification v1.1
-**Status:** Additive extension of the frozen v1.0 baseline
+**Current version:** Specification v1.2
+**Status:** Additive extension of the frozen v1.0 baseline (v1.2 changes one field's
+shape from v1.1, `placement_constraints`, and renames `allowed_characters`; see
+[Specification v1.2: Executable Resource Constraints](#specification-v12-executable-resource-constraints)
+below for why this is treated as a deliberate, low-risk pre-release migration rather
+than a purely additive change)
 
 The conceptual Specification described in this directory — Resource Identity,
 Governance Context, Naming Request, Context Resolution, Resource Definition, Convention
@@ -18,7 +22,10 @@ never defined enough naming semantics for deterministic execution (see
 [`docs/architecture/convention-evaluation-executability.md`](../docs/architecture/convention-evaluation-executability.md)).
 Specification v1.1 adds exactly the normative naming semantics needed to close that gap,
 additively, without redefining any v1.0 concept — see [Specification v1.1: Executable
-Naming](#specification-v11-executable-naming) below.
+Naming](#specification-v11-executable-naming) below. Specification v1.2 adds the
+minimum structured, executable Resource Definition constraint vocabulary demonstrated
+necessary by the AWS Resource Definition catalog — see [Specification v1.2: Executable
+Resource Constraints](#specification-v12-executable-resource-constraints) below.
 
 The Reference Evaluator, Resource Definitions, Convention Packs, and adapters are
 expected to validate this Specification rather than redefine it. (The Reference
@@ -124,6 +131,108 @@ Specification v1.1 intentionally does **not** define:
 
 These remain deferred, unchanged from Specification v1.0's own scope, until
 implementation evidence demonstrates a genuine need to address them.
+
+## Specification v1.2: Executable Resource Constraints
+
+Milestone 3.3 — Catalog Validation & Model Conformance (see
+[`docs/architecture/resource-definition-catalog-conformance.md`](../docs/architecture/resource-definition-catalog-conformance.md))
+demonstrated, using the four real, evidence-backed AWS Resource Definitions already
+cataloged, that Specification v1.1 could not yet represent several recurring provider
+constraints in a deterministic, executable form: a documented minimum name length
+(S3, Lambda), an executable character grammar (S3, IAM, Lambda), reserved
+prefixes/suffixes (S3), and a structured conditional Placement Constraint (the ACM
+Certificate/CloudFront `us-east-1` requirement). Specification v1.2 evolves the
+Specification using that evidence, changing exactly one document,
+[`resource-definition.md`](./resource-definition.md), plus a small, related clarification
+in [`resource-identity.md`](./resource-identity.md#plane-3-functional-identity) and an
+additive addition to [`convention-result.md`](./convention-result.md).
+
+### Specification v1.2 scope
+
+- **`min_length`** — a minimum rendered-name length, sharing `length_unit` with
+  `max_length` (see
+  [`resource-definition.md#minimum-length`](./resource-definition.md#minimum-length));
+- **`character_constraints`** — a structured, closed character-class-and-literal
+  representation of a resource type's allowed characters, deliberately not a regular
+  expression (see [`resource-definition.md#character-constraints`](./resource-definition.md#character-constraints)
+  and [`resource-definition.md#regex-decision`](./resource-definition.md#regex-decision));
+- **`starts_with` / `ends_with`** — boundary constraints using the same character-set
+  model (see [`resource-definition.md#startend-constraints`](./resource-definition.md#startend-constraints));
+- **`forbidden_prefixes` / `forbidden_suffixes`** — exact-match reserved-pattern
+  constraints (see [`resource-definition.md#reserved-prefixes-and-suffixes`](./resource-definition.md#reserved-prefixes-and-suffixes));
+- a formalized **ResourceType semantic-variant boundary rule** (see
+  [`resource-definition.md#resourcetype-semantic-variants-specification-v12`](./resource-definition.md#resourcetype-semantic-variants-specification-v12)
+  and its counterpart clarification in
+  [`resource-identity.md#plane-3-functional-identity`](./resource-identity.md#plane-3-functional-identity));
+- **Structured Placement Constraints** — a `statement`/optional-`rule` shape replacing
+  the v1.0/v1.1 bare string array, with a closed `equals`/`present`/`absent` operator
+  vocabulary, evaluable only from existing canonical inputs (see
+  [`resource-definition.md#structured-placement-constraints-specification-v12`](./resource-definition.md#structured-placement-constraints-specification-v12));
+- a deterministic **constraint validation order** and a small, optional, closed
+  **validation failure-code vocabulary** (see
+  [`resource-definition.md#constraint-validation-order-specification-v12`](./resource-definition.md#constraint-validation-order-specification-v12)
+  and [`resource-definition.md#validation-behavior-and-failure-semantics-specification-v12`](./resource-definition.md#validation-behavior-and-failure-semantics-specification-v12));
+- migration of `allowed_characters` to the purely descriptive
+  `allowed_characters_description`, and of `placement_constraints`'s shape (see
+  [`resource-definition.md#version-compatibility-specification-v12`](./resource-definition.md#version-compatibility-specification-v12)).
+
+### Delta from Specification v1.1
+
+| Field | v1.1 | v1.2 |
+| --- | --- | --- |
+| `rendering_constraints.min_length` | Did not exist. | New, optional; shares `length_unit` with `max_length`. Additive. |
+| `rendering_constraints.allowed_characters` | Free descriptive `string`. | Renamed, unchanged in meaning, to `allowed_characters_description`. **This is a shape change** (a field rename), contained to Resource Definitions that already declare this field. |
+| `rendering_constraints.character_constraints` | Did not exist. | New, optional, structured, executable character-class/literal representation. Additive. |
+| `rendering_constraints.starts_with` / `.ends_with` | Did not exist. | New, optional, structured boundary constraints. Additive. |
+| `rendering_constraints.forbidden_prefixes` / `.forbidden_suffixes` | Did not exist. | New, optional, exact-match reserved-pattern constraints. Additive. |
+| `placement_constraints` | `ReadonlyArray<string>`. | `ReadonlyArray<PlacementConstraint>`, each `{ statement: string; rule?: ... }`. **This is a shape change**, converting every existing free-form string into an object's `statement`. |
+| `ConventionValidationFailure.code` | Did not exist. | New, optional, closed failure-code vocabulary for the constraint families above. Additive. |
+
+Only `allowed_characters` and `placement_constraints` change shape; every other v1.2
+addition is a new, optional field. Both shape changes are deliberate, evidence-driven,
+pre-release migrations (see
+[`resource-definition.md#version-compatibility-specification-v12`](./resource-definition.md#version-compatibility-specification-v12))
+— this repository makes no external compatibility promise for either field today.
+
+### Specification v1.2 schema impact
+
+`resource-definition.md` remains Markdown-normative-semantics-plus-TypeScript-model
+only; no JSON Schema is introduced for Resource Definition in this version. A schema
+was evaluated (structured, executable constraints could make one materially more
+useful than the purely conceptual v1.0/v1.1 model was), but rejected for this version:
+Convention Pack itself remains deliberately schema-less for the same reason (see
+[`convention-pack.md#out-of-scope`](./convention-pack.md#out-of-scope)), and introducing
+one is a larger, independent unit of work than the evidence-driven field additions
+above — it is not required to state the new invariants normatively in prose, and adding
+one merely for completeness is exactly what this version's own evidence-driven design
+rule warns against. This may be revisited once a schema-consuming implementation (for
+example, a validating catalog loader) demonstrates a concrete need.
+
+### Specification v1.2 Non-Goals
+
+Specification v1.2 intentionally does **not** introduce:
+
+- provider SDK integration or provider catalog discovery;
+- automatic normalization, truncation, or hashing;
+- global uniqueness checks or a uniqueness registry;
+- metadata projection semantics;
+- a universal rule engine, `Rule`, `RuleEngine`, `Expression`, `Script`, predicate
+  callback, or generic evaluation framework of any kind;
+- arbitrary expression evaluation, including regular expressions, CEL, JSONLogic, or
+  Rego;
+- configuration schemas for every provider property (for example, IAM's `path` remains
+  deferred; see [`resource-definition.md#iam-path-design-gate-non-normative`](./resource-definition.md#iam-path-design-gate-non-normative));
+- additional AWS, Azure, or Kubernetes provider coverage;
+- a canonical resource-to-resource relationship model (needed to make the ACM/CloudFront
+  Placement Constraint executable; see
+  [`resource-definition.md#the-conditional-input-problem`](./resource-definition.md#the-conditional-input-problem));
+- a JSON Schema for Resource Definition (see [Specification v1.2 schema
+  impact](#specification-v12-schema-impact) above);
+- a redesign of `uniqueness_scope` or `global` (see
+  [`resource-definition.md#unchanged-by-specification-v12`](./resource-definition.md#unchanged-by-specification-v12)).
+
+These remain deferred until implementation evidence demonstrates a genuine need to
+address them.
 
 ## Purpose
 
@@ -348,10 +457,13 @@ project adopts versioned schema releases.
 
 The conceptual Specification was frozen as v1.0 and is expected to evolve over time.
 Specification v1.1 (see [Specification v1.1: Executable
-Naming](#specification-v11-executable-naming) above) is the first such evolution: an
+Naming](#specification-v11-executable-naming) above) was the first such evolution: an
 additive naming-semantics extension driven by the Reference Evaluator's own
-implementation experience, not a theoretical redesign. Future changes should follow
-these principles:
+implementation experience, not a theoretical redesign. Specification v1.2 (see
+[Specification v1.2: Executable Resource Constraints](#specification-v12-executable-resource-constraints)
+above) is the second, driven by the Resource Definition catalog's own implementation
+experience rather than a theoretical redesign. Future changes should follow these
+principles:
 
 - **Implementation first** — build the Reference Evaluator, a Resource Definition
   catalog, executable Convention Packs, and adapters before revisiting conceptual

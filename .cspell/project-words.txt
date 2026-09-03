@@ -63,3 +63,18 @@ stanbul
 # (docs/architecture/resource-definition-catalog-conformance.md)
 globality
 executably
+
+# Specification v1.2 (Executable Resource Constraints) — GitHub-style markdown anchor
+# slugs referenced as link fragments in prose (for example
+# specification/resource-definition.md#startend-constraints,
+# #resourcetype-semantic-variants-specification-v12), derived mechanically from
+# heading text ("Start/end constraints", "ResourceType semantic variants") and not
+# themselves prose words.
+startend
+resourcetype
+
+# Regular-expression dialect and policy-language names cited in the Specification
+# v1.2 regex decision (specification/resource-definition.md#regex-decision) and its
+# Non-Goals (specification/README.md#specification-v12-non-goals)
+PCRE
+Rego

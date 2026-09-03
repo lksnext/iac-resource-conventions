@@ -430,3 +430,29 @@ prioritized, and exactly one next action is recommended — all of which this do
 records. Milestone 3.4 — Additional Providers is **not** activated by this milestone;
 per this milestone's own recommendation, evolving the Specification (a future milestone,
 not numbered here) is the suggested next step instead.
+
+## Specification v1.2 resolution
+
+[Specification v1.2: Executable Resource Constraints](../../specification/README.md#specification-v12-executable-resource-constraints)
+acted on [Specification v1.2 recommendation](#specification-v12-recommendation) above.
+This section cross-references which of that recommendation's six proposed items were
+resolved normatively, and which remain open — it appends to this document's findings
+without rewriting them.
+
+| # | Proposed item | Resolution |
+| --- | --- | --- |
+| 1 | `min_length` (P1) | **Resolved.** [`resource-definition.md#minimum-length`](../../specification/resource-definition.md#minimum-length) defines it normatively, sharing `length_unit` with `max_length`. |
+| 2 | Secondary, independently-constrained identifier component (P1 — IAM `path`) | **Not resolved; deferred deliberately.** [`resource-definition.md#iam-path-design-gate-non-normative`](../../specification/resource-definition.md#iam-path-design-gate-non-normative) re-examined the [Path and secondary-identifier gap](#path-and-secondary-identifier-gap) using this version's own evidence-driven design questions and concluded IAM's `path` is a provider configuration property, not a Resource Definition domain-boundary need; only one resource demonstrates it. |
+| 3 | Structured conditional-constraint mechanism (P1 — ACM/CloudFront, S3 variant boundary) | **Partially resolved, in two different ways.** The S3 general-purpose/directory-bucket boundary is resolved by formalizing the [ResourceType semantic-boundary rule](#resourcetype-semantic-boundary-rule) as [`resource-definition.md#resourcetype-semantic-variants-specification-v12`](../../specification/resource-definition.md#resourcetype-semantic-variants-specification-v12) — distinct `ResourceType`s, not a conditional constraint. The ACM/CloudFront case is resolved only as far as a structured Placement Constraint shape can be defined from existing canonical inputs; the condition itself remains explicitly non-executable — see [`resource-definition.md#the-conditional-input-problem`](../../specification/resource-definition.md#the-conditional-input-problem), which reports this as a stated blocker rather than a partial implementation. |
+| 4 | Executable allowed-character/pattern representation (P1 — Lambda's regex) | **Resolved, without adopting regex.** [`resource-definition.md#character-constraints`](../../specification/resource-definition.md#character-constraints) defines a structured, closed character-class-and-literal model; [`resource-definition.md#regex-decision`](../../specification/resource-definition.md#regex-decision) documents why Lambda's own published regex reduces to this model without loss, and why regex itself is not adopted normatively. |
+| 5 | Canonical `uniqueness_scope` vocabulary (P2) | **Not resolved; deliberately unchanged.** [`resource-definition.md#unchanged-by-specification-v12`](../../specification/resource-definition.md#unchanged-by-specification-v12) confirms `uniqueness_scope` remains a free-form `string` — no new evidence beyond the ambiguity already noted in [Uniqueness-scope vocabulary review](#uniqueness-scope-vocabulary-review) justified a redesign. |
+| 6 | Reserved-prefix/suffix representation (P2) | **Resolved.** [`resource-definition.md#reserved-prefixes-and-suffixes`](../../specification/resource-definition.md#reserved-prefixes-and-suffixes) defines exact-match `forbidden_prefixes`/`forbidden_suffixes`; IPv4-resembling names and adjacency restrictions (for example, adjacent periods) remain explicitly deferred as a separate, still-open item (see [`resource-definition.md#deferred-reserved-pattern-rules`](../../specification/resource-definition.md#deferred-reserved-pattern-rules)). |
+
+Specification v1.2 changed only `specification/resource-definition.md`,
+`specification/resource-identity.md` (a small clarification), and
+`specification/convention-result.md` (the additive `code` field). No catalog TypeScript
+file under `packages/catalog/src/aws/` changed — the [Catalog impact
+plan](../../specification/resource-definition.md#catalog-impact-plan-non-normative) in
+`resource-definition.md` documents how each entry would map, as input for a later,
+separate implementation increment. This milestone's own conformance findings above
+remain unchanged historical record.

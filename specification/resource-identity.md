@@ -80,6 +80,18 @@ the system. `component` is optional. `resource_type` remains the technical resou
 The selected Convention Pack determines which of these attributes are required for a
 given resource.
 
+`resource_type` identifies exactly one stable set of technical Resource Definition
+semantics (see
+[`resource-definition.md#resourcetype-semantic-variants-specification-v12`](./resource-definition.md#resourcetype-semantic-variants-specification-v12)).
+When a provider's own documentation demonstrates that two resources reachable through
+what looks like the same API operation have a materially different namespace, naming
+grammar, uniqueness scope, placement semantics, or technical constraints because of a
+provider-defined configuration choice, they are two distinct `resource_type` values —
+never one value whose Resource Definition branches conditionally on that
+configuration. This clarification does not change `resource_type`'s own shape (still a
+canonical technical resource kind identifier); it only formalizes what a single
+`resource_type` value is permitted to mean.
+
 The simplified hierarchy is:
 
 ```text
