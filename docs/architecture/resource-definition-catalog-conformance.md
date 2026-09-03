@@ -9,6 +9,13 @@ coverage; see [`docs/architecture/resource-definition-catalog.md`](resource-defi
 for the catalog's package architecture and Milestone 3.2's original provenance summary,
 which this document extends rather than repeats.
 
+This matrix records human/provider-evidence review — it is not automated, and Milestone
+3.3.2's structural conformance validator does not replace it: the validator checks that
+a `ResourceDefinition` is well-formed, never whether a fact is factually current or
+authoritative (see
+[`docs/architecture/resource-definition-catalog.md#catalog-conformance-validation`](resource-definition-catalog.md#catalog-conformance-validation)).
+They solve different problems and remain separate.
+
 ## Purpose
 
 Milestone 3.2 established the catalog's first AWS slice. Milestone 3.3 validates it:

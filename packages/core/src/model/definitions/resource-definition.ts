@@ -10,12 +10,16 @@ import type { ResourceNameLengthUnit } from "./resource-name-length-unit.js";
  * what a kind of resource can be: the technical shape, constraints, and valid
  * deployment topology every instance of that resource type must respect.
  *
- * The Specification defines this concept only in prose and explicitly does not yet
- * define a catalog, a JSON Schema, or a formal grammar for Placement Constraints (see
- * `specification/resource-definition.md`'s "Out of scope" section). This contract
- * therefore represents only the named responsibility categories the Specification
- * describes, at the same conceptual granularity, without inventing a concrete schema or
- * grammar the Specification itself defers to a later iteration.
+ * Specification v1.2 defines a structured, executable representation for length
+ * constraints, character constraints, start/end constraints, forbidden prefixes and
+ * suffixes, and `PlacementConstraint` rules (see
+ * `specification/resource-definition.md#executable-resource-constraints-specification-v12`).
+ * Normalization, `provider_capabilities`, `allowed_characters_description`, and a
+ * relationship-dependent Placement Constraint with no canonical condition input (see
+ * `./placement-constraint.js`) remain descriptive/conceptual only — the Specification
+ * does not yet define an executable representation for them. This contract represents
+ * every responsibility category at the granularity the Specification currently defines
+ * it, without inventing a schema or grammar for the categories still deferred.
  *
  * See `specification/resource-definition.md`.
  */

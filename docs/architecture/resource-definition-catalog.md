@@ -248,14 +248,12 @@ need for a resource type whose valid characters are not single-byte ASCII.
   [`test/runtime/catalog.test.mjs`](../../packages/catalog/test/runtime/catalog.test.mjs):
   known/unknown lookup, determinism, immutability (including deep immutability of
   nested `rendering_constraints`, `identity_constraints`, and `placement_constraints`),
-  and an exact expected `listResourceTypes()` list (not merely "already sorted"), so a
-  missing registration is caught.
-- **Definition integrity** — the same file: catalog key equals
-  `definition.resource_type` for every entry, every entry declares a `platform`,
-  `max_length`/`length_unit` are declared together or not at all, no entry declares an
-  empty `resource_type` or a duplicate one, no `placement_constraints` entry is an
-  empty string, and `identity_constraints.unique: true` is always paired with a
-  `uniqueness_scope` (Milestone 3.3).
+  an exact expected `listResourceTypes()` list (not merely "already sorted", so a
+  missing registration is caught), and that every catalog key matches its own
+  definition's `resource_type`.
+- **Conformance** —
+  [`test/runtime/conformance.test.mjs`](../../packages/catalog/test/runtime/conformance.test.mjs):
+  see [Catalog Conformance Validation](#catalog-conformance-validation) below.
 - **Integration** —
   [`test/runtime/integration.test.mjs`](../../packages/catalog/test/runtime/integration.test.mjs):
   an end-to-end `resource_type -> catalog lookup -> ResourceDefinition -> evaluate() ->
@@ -265,6 +263,74 @@ need for a resource type whose valid characters are not single-byte ASCII.
   placement constraints are exercised by core evaluator tests; statement-only catalog
   placement entries remain descriptive (see
   [`docs/architecture/convention-evaluation-executability.md`](convention-evaluation-executability.md)).
+
+## Catalog Conformance Validation
+
+Milestone 3.3.2 turns the catalog's mechanically verifiable publication invariants —
+previously spread across several ad hoc test assertions — into one reusable internal
+validator:
+[`src/internal/validate-resource-definition.ts`](../../packages/catalog/src/internal/validate-resource-definition.ts).
+It answers a narrower question than Convention Evaluation:
+
+- **Resource evaluation** (owned by `@lksnext/iac-conventions-core`'s `evaluate()`)
+  validates a resource *instance*/rendered name against a `ResourceDefinition`.
+- **ResourceDefinition conformance** (owned by this package) validates that a *static
+  catalog definition itself* is well formed according to Specification v1.2 and this
+  catalog's own publication policy, before it is ever passed to `evaluate()`.
+
+These are different concerns and are never mixed: `evaluate()` never calls this
+validator, and this validator never inspects a resolved Resource Identity or generates
+or validates a rendered name. It runs during catalog tests (see
+[Testing strategy](#testing-strategy) above), as part of the normal `npm test`/
+`npm run validate` pipeline that already gates this repository's CI — no separate
+`catalog:validate` script was added, since no concrete workflow yet needs conformance
+checked outside that pipeline (see
+[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) and
+[`CONTRIBUTING.md#continuous-integration`](../../CONTRIBUTING.md#continuous-integration)).
+It is not repeated on every `getResourceDefinition()` call: the catalog is trusted,
+immutable, built-in package data, not untrusted runtime input.
+
+`validateResourceDefinition`/`validateCatalogEntries` are internal-only — neither is
+exported from [`src/index.ts`](../../packages/catalog/src/index.ts) — and return a
+`ReadonlyArray<CatalogConformanceIssue>` (`{ resource_type, path, message }`) rather
+than throwing, so a single malformed definition reports every problem at once, in
+deterministic field-declaration order. There is no severity, code, or diagnostic
+framework: every issue in this increment blocks publication/tests, so a taxonomy would
+carry no decision either way.
+
+### What is automated
+
+- `resource_type`/`platform` are non-empty; `category`, when declared, is non-empty.
+- `identity_constraints.uniqueness_scope` is declared, and non-empty, whenever `unique`
+  is `true`.
+- `min_length`/`max_length` are non-negative; either bound requires `length_unit`;
+  `min_length <= max_length` when both are declared.
+- `character_constraints`/`starts_with`/`ends_with` each declare a non-empty allowed
+  set, use only recognized character classes, and every literal is exactly one Unicode
+  code point.
+- `forbidden_prefixes`/`forbidden_suffixes` entries are non-empty.
+- Every `PlacementConstraint`'s `statement` is non-empty; a declared `rule` (and its
+  optional `condition`) has a canonical Resource Identity attribute `subject` and a
+  valid `equals`/`present`/`absent` operator/value shape.
+- Catalog registration: a registered key equals its definition's own `resource_type`,
+  and no two entries share a `resource_type`.
+
+Duplicate `classes`/`literals` entries and duplicate `forbidden_prefixes`/
+`forbidden_suffixes` entries are **not** rejected: Specification v1.2 states a
+duplicate code point has no effect on a character set's allowed union, and defines no
+prohibition on duplicate reserved patterns; validation follows the Specification's own
+normative text rather than inventing stricter catalog policy for aesthetic cleanliness.
+`aws_*` -> `platform: "aws"` is likewise not inferred from `resource_type` syntax: no
+Specification document defines that as a normative rule, so it is not encoded as one.
+
+### What remains human/provider-evidence review
+
+The validator never judges provider truth — whether AWS documentation is still
+current, whether a fact's provenance is authoritative, whether `uniqueness_scope` is
+factually correct, or whether a provider constraint was omitted entirely. Those remain
+review concerns recorded in
+[`docs/architecture/resource-definition-catalog-conformance.md`](resource-definition-catalog-conformance.md),
+which this validator does not replace.
 
 ## Future evolution
 
