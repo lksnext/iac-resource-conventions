@@ -82,12 +82,12 @@ flowchart TD
 
 ## Supported Adapters
 
-| Adapter   | Description                                          | Status  |
-| --------- | ---------------------------------------------------- | ------- |
-| Terraform | Consumes the Specification from Terraform modules.   | Planned |
-| AWS CDK   | Consumes the Specification from AWS CDK constructs.  | Planned |
-| Ansible   | Consumes the Specification from Ansible roles/tasks. | Planned |
-| CLI       | Consumes the Specification from the command line.    | Planned |
+| Adapter   | Description                                          | Status                 |
+| --------- | ---------------------------------------------------- | ---------------------- |
+| Terraform | Consumes the Specification from Terraform modules.   | Planned                |
+| AWS CDK   | Consumes the Specification from AWS CDK constructs.  | Planned                |
+| Ansible   | Consumes the Specification from Ansible roles/tasks. | Planned                |
+| CLI       | Consumes the Specification from the command line.    | Foundation in progress |
 
 ## Convention Packs
 
@@ -116,7 +116,8 @@ The repository is organized around the Specification-first architecture describe
 ├── specification/    # The Specification (single source of truth)
 ├── packages/         # Implementation monorepo packages (npm workspaces)
 │   ├── core/         # @lksnext/iac-conventions-core — domain contracts and Reference Evaluator
-│   └── catalog/      # @lksnext/iac-conventions-catalog — static Resource Definition Catalog
+│   ├── catalog/      # @lksnext/iac-conventions-catalog — static Resource Definition Catalog
+│   └── cli/          # @lksnext/iac-conventions-cli — command-line adapter (foundation)
 ├── scripts/          # Repository automation scripts
 ├── IMPLEMENTATION.md # Implementation monorepo architecture
 ├── CONTRIBUTING.md
@@ -131,7 +132,6 @@ The following areas are introduced incrementally as the project develops and may
 exist. See [`IMPLEMENTATION.md`](IMPLEMENTATION.md) for the full package boundary and
 dependency rules:
 
-- `packages/cli/` — command-line adapter.
 - `packages/adapters/terraform/` — Terraform adapter.
 - `packages/adapters/cdk/` — AWS CDK adapter.
 - `packages/adapters/ansible/` — Ansible adapter.
@@ -240,12 +240,13 @@ for the full API contract, design rationale, and current capability scope.
   see [`packages/catalog/README.md`](packages/catalog/README.md)).
 - Executable Convention Packs
 - Contract Tests
+- CLI (Milestone 4 — in progress; the command-line foundation is implemented, see
+  [`packages/cli/README.md`](packages/cli/README.md)).
 
 ### Phase 3
 
 - Terraform Adapter
 - CDK Adapter
-- CLI
 - Additional adapters
 
 Adapters consume the Specification; they do not redefine it. See

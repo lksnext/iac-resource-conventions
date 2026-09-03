@@ -39,6 +39,12 @@ This is the **implementation foundation** only. As of this writing:
   four AWS entries (`aws_s3_bucket`, `aws_iam_role`, `aws_lambda_function`,
   `aws_acm_certificate`). See [Milestones](#milestones) below and
   [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md).
+- `packages/cli` (`@lksnext/iac-conventions-cli`) exists (Milestone 4.1), holding the
+  `iac-conventions` command-line adapter foundation: one command, `evaluate`, that reads
+  a JSON `naming_request`/`convention_pack`/`evaluation_context` on stdin, looks up the
+  referenced `ResourceDefinition` from `catalog`, calls `core`'s `evaluate()`, and writes
+  the resulting `ConventionResult` as JSON to stdout. See [Milestones](#milestones) below
+  and [`docs/architecture/cli.md`](docs/architecture/cli.md).
 - [Biome](https://biomejs.dev/) is configured as the canonical formatter and linter for
   TypeScript, JavaScript, JSON, and JSONC across the whole repository (see
   [Formatting and linting](#formatting-and-linting)). ESLint and Prettier are not used.
@@ -66,9 +72,9 @@ This is the **implementation foundation** only. As of this writing:
   [Milestones](#milestones) below), and composed into the public `evaluate()` function
   (increment 2.7), exported from the package root alongside its `EvaluateInput` contract. Metadata
   projection, general normalization, `allowed_characters` grammar, Placement Constraint
-  validation, truncation, hashing, global uniqueness, CLI behavior, and adapter integration
-  remain unimplemented.
-- `packages/cli` and `packages/adapters/*` do not exist yet — they are planned (see
+  validation, truncation, hashing, global uniqueness, and adapter integration remain
+  unimplemented.
+- `packages/adapters/*` do not exist yet — they are planned (see
   [Planned packages](#planned-packages)) and must only be created when a concrete task
   needs them, per the repository's incremental-evolution principle (see
   [`AGENTS.md`](AGENTS.md#repository-evolution)).
@@ -454,6 +460,53 @@ scoped or started here) are, in order:
   defines, and update the four AWS catalog entries per the [Catalog impact
   plan](specification/resource-definition.md#catalog-impact-plan-non-normative).
 
+- **Milestone 4 — CLI & Integration Foundation.** Makes `core` and `catalog` consumable
+  by developers and, later, Terraform, through a new command-line adapter package.
+  Recommended roadmap:
+  - **4.1 CLI Package Foundation.**
+  - **4.2 Stable Evaluate JSON Contract** (planned): harden and document the `evaluate`
+    JSON input/output contract once real usage feedback exists.
+  - **4.3 Terraform External Integration** (planned): a Terraform-specific transport
+    mode compatible with `data "external"`'s string-only protocol.
+  - **4.4 First Alpha Release** (planned): publication readiness across `core`,
+    `catalog`, and `cli`.
+  - Completed increment: **4.1 — CLI Package Foundation** (a new workspace package,
+    `packages/cli/` (`@lksnext/iac-conventions-cli`), depending on `core` and `catalog`
+    and never the reverse. Publishes a single binary, `iac-conventions`
+    (`package.json`'s `bin` field points at `dist/cli.js`; no `main`/`exports` library
+    surface is declared, since the package's public surface is its binary, not a
+    JavaScript API). Implements `--help`, `--version`, and one command, `evaluate`,
+    using Node's built-in `node:util.parseArgs` — no CLI framework dependency
+    (Commander, yargs, oclif, cac, clipanion) was added, since this milestone's command
+    surface does not justify one. `evaluate` reads one JSON object from stdin (a
+    CLI-specific `{ naming_request, convention_pack, evaluation_context }` contract,
+    not `EvaluateInput` exposed verbatim), resolves `naming_request.resource_type`
+    through `catalog`'s `getResourceDefinition`, and calls `core`'s `evaluate()`,
+    writing the resulting `ConventionResult` as JSON to stdout. Design gate: the
+    repository has a Resource Definition Catalog but no executable Convention Pack
+    catalog yet (`specification/convention-packs/aws-workload-default.md` is a
+    Markdown Specification Artifact, not runtime data), so the caller supplies the full
+    `ConventionPack` in the JSON input rather than the CLI hard-coding or silently
+    resolving one. Exit `0` covers a domain-invalid `ConventionResult`
+    (`validation.valid === false` is a successful evaluation outcome, not a
+    CLI/transport failure); exit `1` covers every CLI/transport failure (malformed
+    JSON, a missing required field, an unknown `resource_type`, an unrecognized
+    command/flag). Reviewed Terraform's `external` data source protocol directly from
+    HashiCorp's documentation and confirmed it requires string-only JSON values in both
+    directions, so the CLI's current generic, nested `ConventionResult` JSON output is
+    deliberately not wrapped or flattened for Terraform in this milestone — that
+    transport adapter is deferred to 4.3. Added `@types/node` as a root **development**
+    dependency (type declarations only) since this is the first package whose source
+    uses Node built-ins directly. `packages/cli/test/runtime/cli.test.mjs` spawns the
+    built `dist/cli.js` as a child process (not only internal command functions) and
+    covers `--help`/`--version`, a valid evaluation, a v1.2 `max_length` domain-invalid
+    result, an unknown `resource_type`, malformed JSON, and byte-for-byte deterministic
+    output. No Specification file changed, no Reference Evaluator behavior changed, no
+    catalog provider coverage changed, and no native Terraform provider or
+    Terraform-specific naming behavior was implemented. See
+    [`docs/architecture/cli.md`](docs/architecture/cli.md) for the full architecture
+    and every design-gate rationale.)
+
 ## Package Naming Policy
 
 The GitHub repository name, npm scope, package family, and package suffix are four
@@ -505,10 +558,9 @@ The repository name intentionally differs from the published package names:
   family together (`@lksnext/iac-conventions-*`) are sufficient to identify both the
   publisher and the project unambiguously.
 
-The planned CLI executable name is `iac-conventions` (see
-[CLI distribution](#cli-distribution-planned-not-implemented) below) — short and
-independent from both the repository name and the `@lksnext/iac-conventions-cli`
-package name that publishes it.
+The planned CLI executable name is `iac-conventions` (implemented in Milestone 4.1; see
+[CLI distribution](#cli-distribution) below) — short and independent from both the
+repository name and the `@lksnext/iac-conventions-cli` package name that publishes it.
 
 Do not use the `@iac-resource-conventions/*` scope — an npm scope must map to a
 publishing organization (`@lksnext`), not restate the repository name.
@@ -523,14 +575,23 @@ packages/
 │   ├── tsconfig.json
 │   └── src/
 │       └── index.ts
-└── catalog/            # @lksnext/iac-conventions-catalog (exists)
+├── catalog/            # @lksnext/iac-conventions-catalog (exists)
+│   ├── package.json
+│   ├── README.md
+│   ├── tsconfig.json
+│   └── src/
+│       ├── aws/
+│       │   └── s3-bucket.ts
+│       └── index.ts
+└── cli/                # @lksnext/iac-conventions-cli (exists)
     ├── package.json
     ├── README.md
     ├── tsconfig.json
     └── src/
-        ├── aws/
-        │   └── s3-bucket.ts
-        └── index.ts
+        ├── commands/
+        │   └── evaluate.ts
+        ├── cli.ts
+        └── errors.ts
 ```
 
 ### Planned packages
@@ -540,7 +601,6 @@ requires them:
 
 ```text
 packages/
-├── cli/                # @lksnext/iac-conventions-cli (planned)
 └── adapters/
     ├── terraform/       # @lksnext/iac-conventions-terraform (planned)
     ├── cdk/             # @lksnext/iac-conventions-cdk (planned)
@@ -1175,21 +1235,29 @@ implemented.
   package) or a prepack step that copies them from the repository root; this is not done in this
   task because no package is published yet.
 
-## CLI distribution (planned, not implemented)
+## CLI distribution
 
-The CLI package does not exist yet. Once implemented, it must:
+`packages/cli` (`@lksnext/iac-conventions-cli`) was implemented in Milestone 4.1. It:
 
-- Accept machine-readable JSON input and produce machine-readable JSON output.
-- Execute deterministically, with no hidden network calls.
-- Return stable, documented exit codes.
-- Support explicit Convention Pack and Resource Definition inputs or registries.
-- Report its own version.
-- Run directly under Node.js — no binary-packaging tool (`pkg`, `nexe`, single
-  executable applications, etc.) is chosen in this task; that decision is deferred until
-  a concrete distribution need (for example, a Terraform external data source requiring
-  a zero-Node-install binary) justifies it.
+- Accepts machine-readable JSON input on stdin and produces machine-readable JSON
+  output on stdout (`evaluate`); no other command reads or writes files yet.
+- Executes deterministically, with no hidden network calls: the same stdin input always
+  produces byte-for-byte identical stdout (verified in
+  `packages/cli/test/runtime/cli.test.mjs`).
+- Returns stable, documented exit codes: `0` for a completed command (including a
+  domain-invalid `ConventionResult`), `1` for any CLI/transport failure. See
+  [`docs/architecture/cli.md#exit-codes`](docs/architecture/cli.md#exit-codes).
+- Requires the caller to supply the Convention Pack and, via `resource_type`, the
+  Resource Definition lookup key explicitly — there is no built-in or hidden registry
+  (see [`docs/architecture/cli.md#convention-pack-source-decision`](docs/architecture/cli.md#convention-pack-source-decision)).
+- Reports its own version via `--version`, read at runtime from its own
+  `package.json`.
+- Runs directly under Node.js — no binary-packaging tool (`pkg`, `nexe`, single
+  executable applications, etc.) is chosen yet; that decision is deferred until a
+  concrete distribution need (for example, a Terraform external data source requiring a
+  zero-Node-install binary) justifies it.
 
-The planned CLI executable name is `iac-conventions` (see
+The CLI executable name is `iac-conventions` (see
 [Package Naming Policy](#package-naming-policy) above) — short and independent from both
 the repository name and the `@lksnext/iac-conventions-cli` package name that publishes
 it.
