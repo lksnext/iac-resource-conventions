@@ -19,19 +19,19 @@ classified by evidence quality (no `Unsupported` fact was found), `aws_s3_bucket
 scoped explicitly to general purpose buckets only, and catalog integrity tests were
 strengthened. This is still a deliberately incomplete slice, not broad AWS coverage —
 see
-[`docs/architecture/resource-definition-catalog.md`](../../docs/architecture/resource-definition-catalog.md)
+[`docs/architecture/resource-definition-catalog.md`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/resource-definition-catalog.md)
 for the full architecture and
-[`docs/architecture/resource-definition-catalog-conformance.md`](../../docs/architecture/resource-definition-catalog-conformance.md)
+[`docs/architecture/resource-definition-catalog-conformance.md`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/resource-definition-catalog-conformance.md)
 for the per-fact conformance matrix and the model gaps this milestone found (for
 example, no `min_length` field, no separate `path` identifier component, and
 `placement_constraints`' free-form-only representation of conditional rules).
 
 Milestone 4.2 added a first executable Convention Pack: `aws-workload-default`,
 implementing
-[`specification/convention-packs/aws-workload-default.md`](../../specification/convention-packs/aws-workload-default.md).
+[`specification/convention-packs/aws-workload-default.md`](https://github.com/lksnext/iac-resource-conventions/blob/main/specification/convention-packs/aws-workload-default.md).
 This is currently the **only** Convention Pack the catalog carries — not broad
 Convention Pack coverage — see
-[`docs/architecture/convention-pack-catalog.md`](../../docs/architecture/convention-pack-catalog.md)
+[`docs/architecture/convention-pack-catalog.md`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/convention-pack-catalog.md)
 for the full architecture.
 
 ## Intended responsibilities
@@ -68,13 +68,13 @@ Resource Definition PR that introduces malformed data (for example, `min_length`
 greater than `max_length`, a non-integer or `NaN`/`Infinity` length bound, an
 unsupported `length_unit`, an empty character set, or a mismatched catalog key) fails
 tests before merge. See
-[`docs/architecture/resource-definition-catalog.md#catalog-conformance-validation`](../../docs/architecture/resource-definition-catalog.md#catalog-conformance-validation).
+[`docs/architecture/resource-definition-catalog.md#catalog-conformance-validation`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/resource-definition-catalog.md#catalog-conformance-validation).
 
 Every `ConventionPack` catalog entry is likewise checked by an internal, unexported
 validator (`src/internal/validate-convention-pack.ts`) — for example, an out-of-vocabulary
 or duplicated `naming_component_order` reference, an unsupported `casing` value, or a
 mismatched catalog key. See
-[`docs/architecture/convention-pack-catalog.md#conformance`](../../docs/architecture/convention-pack-catalog.md#conformance).
+[`docs/architecture/convention-pack-catalog.md#conformance`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/convention-pack-catalog.md#conformance).
 
 Both validators check structural conformance only, never provider or organizational
 policy truth, and are not general-purpose runtime schema validators.
