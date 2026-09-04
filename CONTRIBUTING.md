@@ -334,6 +334,9 @@ workflow](.github/workflows/ci.yml):
 - A `dependency-audit` job runs `npm audit`/`npm audit:production` once (not across the OS matrix,
   for the same network-dependent reason as `docs-links`) — see [Architecture and Dependency
   Security](#architecture-and-dependency-security) above for the severity threshold rationale.
+  Each audit step retries a few times with a short backoff before failing, since the npm
+  registry's advisory endpoint occasionally returns a transient error unrelated to any actual
+  dependency change.
 - A `dependency-licenses` job runs `npm run licenses:check`/`npm run licenses:production` once, on
   Linux only — see [Dependency License Compliance](#dependency-license-compliance) above for why
   it is not part of the `validate` OS matrix.
