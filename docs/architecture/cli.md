@@ -1,12 +1,12 @@
 # CLI Architecture
 
 This document describes the architecture of `@lksnext/iac-conventions-cli` (Milestone
-4.1 — CLI Package Foundation). It does not redefine the Specification or the Reference
-Evaluator; it describes how the existing `@lksnext/iac-conventions-core` and
-`@lksnext/iac-conventions-catalog` public APIs are made consumable from the command
-line. See [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md) for the implementation
-monorepo architecture and [`AGENTS.md`](../../AGENTS.md) for the overall project
-architecture.
+4.1 — CLI Package Foundation; Milestone 4.3 — Stable CLI Evaluate JSON Contract). It
+does not redefine the Specification or the Reference Evaluator; it describes how the
+existing `@lksnext/iac-conventions-core` and `@lksnext/iac-conventions-catalog` public
+APIs are made consumable from the command line. See
+[`IMPLEMENTATION.md`](../../IMPLEMENTATION.md) for the implementation monorepo
+architecture and [`AGENTS.md`](../../AGENTS.md) for the overall project architecture.
 
 ## Purpose
 
@@ -25,22 +25,28 @@ core evaluate()
 deterministic output
 ```
 
-Milestone 4.1 implements only the minimal stable foundation: one command, `evaluate`,
-that proves this pipeline works end-to-end. It does not implement a broad command
-suite, a Terraform-specific transport mode, or a native Terraform provider.
+Milestone 4.1 implemented only the minimal stable foundation: one command, `evaluate`,
+proving this pipeline works end-to-end, with a provisional input contract requiring the
+caller to supply a full `ConventionPack` object. Milestone 4.3 replaces that provisional
+contract with the stable one described below. Neither milestone implements a broad
+command suite, a Terraform-specific transport mode, or a native Terraform provider.
 
 ## Package boundary
 
 **The CLI contains no naming, validation, Context Resolution, or provider-rule logic.**
-It orchestrates two existing public APIs:
+It orchestrates two existing public APIs, both from `@lksnext/iac-conventions-catalog`:
 
-- `@lksnext/iac-conventions-catalog`'s `getResourceDefinition(resourceType)`.
-- `@lksnext/iac-conventions-core`'s `evaluate(input)`.
+- `getResourceDefinition(resourceType)`.
+- `getConventionPack(conventionPackId)`.
+
+...and one from `@lksnext/iac-conventions-core`:
+
+- `evaluate(input)`.
 
 Every domain decision — name generation, validation, failure codes, warnings — is made
 by `evaluate()`. The CLI's own code is limited to argument parsing, stdin/stdout I/O,
-JSON parsing, catalog lookup, and mapping the external JSON input contract onto the
-public `EvaluateInput` contract.
+transport (structural) JSON validation, catalog lookup, and mapping the external JSON
+input contract onto the public `EvaluateInput` contract.
 
 The CLI's own public surface is its binary, `iac-conventions`. It does not export a
 broad JavaScript library API for its internals (see [Non-responsibilities](#non-responsibilities)
@@ -80,75 +86,116 @@ prior need for it.
 
 The CLI defines its own external JSON input contract for `evaluate` rather than
 exposing `EvaluateInput` (`@lksnext/iac-conventions-core`) directly, since
-`EvaluateInput` requires an already-selected `ResourceDefinition` that an external
-caller (a human, a shell pipeline, or Terraform) cannot be expected to supply:
+`EvaluateInput` requires an already-selected `ResourceDefinition` and `ConventionPack`
+that an external caller (a human, a shell pipeline, or Terraform) cannot be expected to
+supply as full objects — both are looked up from `@lksnext/iac-conventions-catalog`
+instead (see [`packages/cli/src/internal/parse-evaluate-request.ts`](../../packages/cli/src/internal/parse-evaluate-request.ts)):
 
 ```ts
-interface CliEvaluateInput {
-  readonly naming_request: NamingRequest; // must include resource_type
-  readonly convention_pack: ConventionPack;
+interface EvaluateRequest {
+  readonly naming_request: NamingRequest; // must include resource_type and convention
   readonly evaluation_context: EvaluationContext;
 }
 ```
 
-`naming_request.resource_type` is the catalog lookup key. No separate top-level
-`resource_type` field is introduced: `NamingRequest` already carries one (see
-`packages/core/src/model/requests/naming-request.ts`), and duplicating it as a second,
-independent field would create two sources of truth for the same lookup key with no
-Specification-defined precedence between them.
+`naming_request.resource_type` and `naming_request.convention` are the two catalog
+lookup keys. No separate top-level fields are introduced for either: `NamingRequest`
+already carries both (see `packages/core/src/model/requests/naming-request.ts`), and
+duplicating them as independent top-level fields would create two sources of truth for
+the same lookup keys with no Specification-defined precedence between them.
 
-## Convention Pack source decision
+Only `naming_request` and `evaluation_context` are accepted at the top level; any other
+field (including a leftover Milestone 4.1 `convention_pack`) is rejected as an unknown
+field rather than silently ignored, so a typo or a stale caller fails loudly instead of
+being misinterpreted.
 
-The CLI cannot call `evaluate()` without a `ConventionPack`. Before finalizing the input
-contract, the repository was reviewed for an existing Convention Pack source:
+## Convention Pack source decision (historical) and Milestone 4.3 replacement
 
-- `specification/convention-packs/aws-workload-default.md` is a **Specification
-  Artifact document** — Markdown policy, not executable data.
-- `IMPLEMENTATION.md`'s package responsibility table lists "executable Convention
-  Packs" as a **future** `@lksnext/iac-conventions-catalog` responsibility; no such
-  runtime registry exists in `packages/catalog/src` today (confirmed by inspection —
-  the catalog package exports only `getResourceDefinition`/`listResourceTypes`, over
-  `ResourceDefinition` values, never `ConventionPack` values).
+Milestone 4.1 could not call `evaluate()` without a `ConventionPack`, and no executable
+Convention Pack catalog existed yet, so it required the caller to supply the full
+`ConventionPack` object in the JSON input (`convention_pack`). That section anticipated
+an executable catalog as a purely additive, optional second input mode.
 
-**Decision: the caller supplies the full `ConventionPack` in the JSON input (Option
-A).** This is the smallest architecturally correct solution available today: it
-requires no new catalog milestone, does not hard-code `aws-workload-default` (or any
-other pack) inside the CLI, and keeps the CLI a thin adapter. A future executable
-Convention Pack catalog (Option B) can add a second, optional input mode (for example, a
-`convention` string resolved through a catalog lookup) without a breaking change to this
-one, since the current contract's `convention_pack` field would simply become optional
-once an alternative resolution path exists.
-
-**Milestone 4.2 update:** `@lksnext/iac-conventions-catalog` now exposes
+**Milestone 4.2** added that catalog: `@lksnext/iac-conventions-catalog` now exposes
 `getConventionPack`/`listConventionPackIds` (see
-[`docs/architecture/convention-pack-catalog.md`](convention-pack-catalog.md)), the
-Option B catalog this section anticipated. This milestone deliberately does **not**
-change the CLI's JSON contract or `CliEvaluateInput` shape: `convention_pack` remains
-required, full-object JSON, exactly as decided above, so a future `convention` string
-resolved via `getConventionPack` remains a genuinely additive, non-breaking change
-rather than one made under this milestone's more limited scope.
+[`docs/architecture/convention-pack-catalog.md`](convention-pack-catalog.md)). Milestone
+4.2 itself deliberately left the CLI's JSON contract unchanged, deferring the contract
+change to this milestone.
 
-## Resource Definition lookup
+**Milestone 4.3 removes `convention_pack` entirely** rather than supporting two
+competing input contracts side by side. This project is pre-0.1.0-alpha: `packages/cli`
+is marked `"private": true` in `package.json`, is not yet published, and no prior
+milestone or release documented a compatibility commitment for the full-`ConventionPack`
+input — the Milestone 4.2 note above explicitly anticipated it being superseded, not
+preserved. `naming_request.convention` is now resolved through `getConventionPack`,
+exactly like `naming_request.resource_type` is resolved through `getResourceDefinition`.
 
-Unlike `ConventionPack`, `ResourceDefinition` lookup already has an explicit catalog.
-The CLI:
+## Catalog lookups
 
-1. Reads `naming_request.resource_type` from the parsed input.
-2. Calls `getResourceDefinition(resourceType)`.
-3. If it returns `undefined`, the CLI reports a deterministic error to stderr and exits
-   non-zero **without** calling `evaluate()`. There is no provider fallback and no
-   partial evaluation with an undefined definition.
+Both `ResourceDefinition` and `ConventionPack` are resolved the same way, from the same
+catalog package, keyed by fields already present on `NamingRequest`. The CLI:
+
+1. Reads `naming_request.resource_type` and `naming_request.convention` from the
+   parsed, transport-valid input.
+2. Calls `getResourceDefinition(resourceType)`. If it returns `undefined`, the CLI
+   reports a deterministic error to stderr and exits non-zero **without** calling
+   `evaluate()`.
+3. Calls `getConventionPack(convention)`. If it returns `undefined`, the CLI reports a
+   deterministic error to stderr and exits non-zero **without** calling `evaluate()`.
+
+There is no provider or Convention Pack fallback, and no partial evaluation with an
+undefined definition or pack. This is implemented in
+[`packages/cli/src/internal/execute-evaluation-request.ts`](../../packages/cli/src/internal/execute-evaluation-request.ts).
+
+## Transport and domain validation boundary
+
+The CLI performs only **transport (structural) validation** — is the JSON well-formed
+enough to safely reach core? — never **domain validation** (required attributes,
+protected-value conflicts, naming/rendering/placement constraints), which remains
+`evaluate()`'s sole responsibility. No schema-validation library dependency was added;
+[`parseEvaluateRequest`](../../packages/cli/src/internal/parse-evaluate-request.ts) is a
+small, plain internal function, not exposed as public API and not a class.
+
+core's Context Resolution (`packages/core/src/evaluator/context-resolution/`)
+dereferences every nested `NamingRequest`/`EvaluationContext` field using optional
+chaining only, so a malformed *nested* value (wrong type or an absent field) cannot
+throw there — it only resolves to `undefined`, which core's own required-attribute
+validation already reports. The CLI's transport validation is therefore limited to what
+core does **not** already defend against:
+
+- the JSON root, `naming_request`, and `evaluation_context` must each be a plain object
+  (not an array, `null`, or a primitive);
+- `naming_request.resource_type` and `naming_request.convention` must each be a
+  non-empty string, since both are used as object-map lookup keys before `evaluate()`
+  is ever called;
+- only `naming_request` and `evaluation_context` are accepted at the top level.
+
+No deeper structural validation (for example, validating the shape of
+`naming_request.overrides` or `evaluation_context.runtime_context`) is implemented:
+doing so would duplicate domain validation that already belongs to core, and the
+reference evaluator safety review found no nested shape capable of crashing it.
+
+## No protocol versioning
+
+This contract carries no version field or version negotiation (for example, no
+`"version": 1` on the input or output JSON). The package itself is unpublished, private
+(`"private": true`), and pre-0.1.0-alpha: there are no external consumers yet to
+negotiate a version with, and adding one now would be speculative machinery with no
+current requirement driving it (see `AGENTS.md`'s Coding Conventions: avoid unnecessary
+abstraction until a real, current need exists). If a future milestone introduces a
+breaking change to this contract after the package is published, that milestone should
+introduce explicit versioning at that time, informed by real consumers.
 
 ## `EvaluateInput` mapping
 
 The CLI constructs the public `EvaluateInput` directly from the parsed JSON input and
-the catalog lookup result:
+both catalog lookup results:
 
 ```ts
 evaluate({
-  naming_request: input.naming_request,
-  convention_pack: input.convention_pack,
-  evaluation_context: input.evaluation_context,
+  naming_request: request.naming_request,
+  evaluation_context: request.evaluation_context,
+  convention_pack: conventionPack, // from getConventionPack()
   resource_definition: resourceDefinition, // from getResourceDefinition()
 });
 ```
@@ -163,8 +210,9 @@ pre-normalized — `evaluate()` remains solely responsible for every domain deci
   no banners, progress logs, or explanatory text. For `--help`/`--version`, this is the
   requested human-readable text.
 - **stderr** carries only CLI usage/errors: a single, deterministic, human-readable
-  line for every expected failure (malformed JSON, a missing required field, an unknown
-  `resource_type`, an unknown command). Unexpected internal errors may include a stack
+  line for every expected failure (malformed JSON, an unknown top-level field, a
+  missing or invalid required field, an unknown `resource_type`, an unknown
+  `convention`, an unknown command). Unexpected internal errors may include a stack
   trace on stderr, but stdout is never used for diagnostics.
 
 This is essential for shell pipelines, CI, and Terraform's `external` data source (see
@@ -178,9 +226,10 @@ depend on stdout carrying only machine-readable transport output.
   returning an invalid proposed name is a successful evaluation outcome, not a
   CLI/transport failure. A caller (for example, Terraform) that wants to fail on an
   invalid name must check `validation.valid` in the returned JSON itself.
-- **`1`** — a CLI/transport failure: malformed JSON, a missing required field (for
-  example, `naming_request.resource_type`), an unknown `resource_type`, an unknown or
-  missing command, an unrecognized flag, or an unexpected internal error.
+- **`1`** — a CLI/transport failure: malformed JSON, an unknown top-level field, a
+  missing or invalid required field (for example, `naming_request.resource_type` or
+  `naming_request.convention`), an unknown `resource_type`, an unknown `convention`, an
+  unknown or missing command, an unrecognized flag, or an unexpected internal error.
 
 This distinction is deliberate: it lets machine callers pipe the CLI's stdout to a JSON
 parser unconditionally on exit `0`, and treat a non-zero exit as "the tool itself
@@ -205,10 +254,17 @@ and numbers are not supported by that protocol.
 
 The CLI's current `evaluate` output — the full, nested `ConventionResult` — is
 therefore **not** directly compatible with `data "external"` as-is. This is expected
-and deliberate at this milestone: Milestone 4.1 keeps the CLI's domain output generic,
-and a Terraform-specific transport mode (for example, `evaluate --terraform-external`,
-flattening the result to string values) is deferred to a later milestone. No
-Terraform-specific behavior is mixed into the generic JSON output implemented here.
+and deliberate: the CLI's domain output stays generic, and a Terraform-specific
+transport mode (for example, `evaluate --terraform-external`, flattening the result to
+string values) is deferred to a later milestone. No Terraform-specific behavior is
+mixed into the generic JSON output implemented here.
+
+`executeEvaluationRequest` (see
+[`packages/cli/src/internal/execute-evaluation-request.ts`](../../packages/cli/src/internal/execute-evaluation-request.ts))
+is a standalone internal function: both catalog lookups and the call to `evaluate()`
+are performed by that one function, independent of stdin/stdout wiring. A future
+Terraform transport (Milestone 4.4) can call it directly around a different
+stdin/stdout shape, instead of invoking this CLI as a subprocess.
 
 ## Non-responsibilities
 
@@ -228,15 +284,16 @@ Recommended roadmap (see `IMPLEMENTATION.md`'s Milestone 4 entry):
 
 - **4.2 — Executable Convention Pack Catalog**: complete; see
   [`docs/architecture/convention-pack-catalog.md`](convention-pack-catalog.md).
-- **4.3 — Stable Evaluate JSON Contract**: harden and document the `evaluate` JSON
-  input/output contract (error taxonomy, schema, versioning) once real usage
-  feedback exists.
+- **4.3 — Stable Evaluate JSON Contract**: complete; see this document's
+  [Input boundary](#input-boundary) and
+  [Transport and domain validation boundary](#transport-and-domain-validation-boundary)
+  sections.
 - **4.4 — Terraform External Integration**: add a Terraform-specific transport mode
-  compatible with `data "external"`'s string-only protocol.
+  compatible with `data "external"`'s string-only protocol, reusing
+  `executeEvaluationRequest`.
 - **4.5 — First Alpha Release**: publication readiness across `core`, `catalog`, and
   `cli`.
 
 A `catalog` subcommand (for example, to list known `ResourceType`s or
-`ConventionPackId`s) and a `convention` string input resolved through
-`getConventionPack` are both plausible future additions, but neither is implemented in
+`ConventionPackId`s) remains a plausible future addition, but is not implemented in
 this milestone.

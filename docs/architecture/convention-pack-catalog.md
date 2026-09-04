@@ -142,12 +142,15 @@ own worked naming example end-to-end through `evaluate()`.
 
 ## CLI relationship
 
-`@lksnext/iac-conventions-cli`'s `evaluate` command's JSON input contract is
-**unchanged** by this catalog: `convention_pack` remains a required, full-object JSON
-field (see
-[`docs/architecture/cli.md#convention-pack-source-decision`](cli.md#convention-pack-source-decision)).
-A `convention` string resolved through `getConventionPack` remains a plausible, purely
-additive future CLI input mode, not implemented by this milestone.
+`@lksnext/iac-conventions-cli`'s `evaluate` command's JSON input contract was
+**unchanged** by this catalog at the time it was added: `convention_pack` remained a
+required, full-object JSON field, deferring the contract change to a later milestone.
+
+**Milestone 4.3 update:** the CLI's `evaluate` JSON input contract has since been
+replaced. `naming_request.convention` is now resolved through this catalog's
+`getConventionPack`, and the full-object `convention_pack` field has been removed
+entirely (see
+[`docs/architecture/cli.md#convention-pack-source-decision-historical-and-milestone-43-replacement`](cli.md#convention-pack-source-decision-historical-and-milestone-43-replacement)).
 
 ## Non-responsibilities
 

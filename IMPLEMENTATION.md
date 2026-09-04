@@ -469,10 +469,10 @@ scoped or started here) are, in order:
   Recommended roadmap:
   - **4.1 CLI Package Foundation.**
   - **4.2 Executable Convention Pack Catalog.**
-  - **4.3 Stable Evaluate JSON Contract** (planned): harden and document the `evaluate`
-    JSON input/output contract once real usage feedback exists.
-  - **4.4 Terraform External Integration** (planned): a Terraform-specific transport
-    mode compatible with `data "external"`'s string-only protocol.
+  - **4.3 Stable Evaluate JSON Contract.**
+  - **4.4 Terraform External Integration** (next active increment): a Terraform-specific
+    transport mode compatible with `data "external"`'s string-only protocol, reusing
+    `executeEvaluationRequest`.
   - **4.5 First Alpha Release** (planned): publication readiness across `core`,
     `catalog`, and `cli`.
   - Completed increment: **4.1 — CLI Package Foundation** (a new workspace package,
@@ -562,6 +562,46 @@ scoped or started here) are, in order:
     new Resource Definition provider coverage, and no Specification modification. See
     [`docs/architecture/convention-pack-catalog.md`](docs/architecture/convention-pack-catalog.md)
     for the full architecture.)
+  - Completed increment: **4.3 — Stable Evaluate JSON Contract** (replaces the
+    Milestone 4.1 provisional `evaluate` JSON contract with a stable one:
+    `{ naming_request, evaluation_context }`, removing the full-object
+    `convention_pack` field entirely rather than supporting two competing contracts —
+    the package remains unpublished and `"private": true`, and no prior milestone
+    documented a compatibility commitment for that field. `naming_request.convention`
+    is now resolved through `catalog`'s `getConventionPack`, exactly like
+    `naming_request.resource_type` is resolved through `getResourceDefinition`; an
+    unknown identifier for either is a deterministic transport failure (non-zero exit,
+    empty stdout), never a fallback or partial evaluation. Adds a small, internal,
+    non-exported transport parser, `parseEvaluateRequest`
+    (`packages/cli/src/internal/parse-evaluate-request.ts`) — no schema-validation
+    library dependency and no classes — validating only what core's Context
+    Resolution does not already defend against: the JSON root, `naming_request`, and
+    `evaluation_context` must each be a plain object, `naming_request.resource_type`
+    and `naming_request.convention` must each be a non-empty string, and only those
+    two top-level fields are accepted (an unknown field, including a leftover
+    `convention_pack`, is a transport failure). A structural safety review of
+    `packages/core/src/evaluator/context-resolution/` confirmed every nested
+    `NamingRequest`/`EvaluationContext` field is dereferenced with optional chaining
+    only, so no deeper nested guard was added — doing so would duplicate core's own
+    domain validation. Extracted catalog lookup and the `evaluate()` call into a
+    second internal function, `executeEvaluationRequest`
+    (`packages/cli/src/internal/execute-evaluation-request.ts`), reusable by a future
+    Terraform transport (Milestone 4.4) without invoking this CLI as a subprocess.
+    `packages/cli/src/commands/evaluate.ts` is now a thin I/O orchestrator over both
+    internal functions. Exit-code semantics and the full `ConventionResult` JSON
+    output are unchanged: exit `0` whenever a `ConventionResult` is produced
+    (including `validation.valid === false`), non-zero only for CLI/transport,
+    catalog-lookup, or internal failures. No protocol version field was added: the
+    package is unpublished with no external consumers to negotiate a version with.
+    `packages/cli/test/runtime/cli.test.mjs` was extended with an unknown-Convention-
+    Pack-id case, a domain-invalid-but-transport-valid case, and malformed-transport
+    cases (a JSON array root, a missing/array-typed `naming_request` or
+    `evaluation_context`, a missing/empty `resource_type`/`convention`, and an unknown
+    top-level field), plus a case confirming a wrong-typed nested
+    `naming_request.overrides` does not crash core. No Specification file changed, no
+    Reference Evaluator behavior changed, and no CLI naming/provider-rule logic was
+    added. See [`docs/architecture/cli.md`](docs/architecture/cli.md) for the full
+    architecture and every design-gate rationale.)
 
 ## Package Naming Policy
 

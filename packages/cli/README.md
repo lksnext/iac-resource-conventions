@@ -4,10 +4,10 @@ Command-line adapter for the `iac-resource-conventions` Reference Evaluator.
 
 ## Status
 
-Milestone 4.1 — CLI Package Foundation. This package establishes the minimal, stable
-foundation for the `iac-conventions` executable: one command, `evaluate`, that proves
-`CLI -> catalog -> core` works end-to-end. It does not yet implement a broad command
-suite, Terraform-specific output, or a `catalog` subcommand — see
+Milestone 4.3 — Stable CLI Evaluate JSON Contract. This package establishes the
+stable foundation for the `iac-conventions` executable: one command, `evaluate`, that
+proves `CLI -> catalog -> core` works end-to-end. It does not yet implement a broad
+command suite, Terraform-specific output, or a `catalog` subcommand — see
 [`docs/architecture/cli.md`](../../docs/architecture/cli.md) for the full architecture,
 design-gate decisions, and current limitations.
 
@@ -17,11 +17,12 @@ This package is an **adapter**, not a domain implementation:
 
 - It contains no naming, validation, Context Resolution, or provider-rule logic of its
   own.
-- It orchestrates two existing public APIs: `@lksnext/iac-conventions-catalog`'s
-  `getResourceDefinition` and `@lksnext/iac-conventions-core`'s `evaluate()`.
+- It orchestrates two existing public APIs, both from
+  `@lksnext/iac-conventions-catalog`: `getResourceDefinition` and `getConventionPack`,
+  and `@lksnext/iac-conventions-core`'s `evaluate()`.
 - Every domain decision — name generation, validation, failure codes — is made by
-  `evaluate()`. This package only reads JSON, looks up a `ResourceDefinition`, calls
-  `evaluate()`, and writes JSON.
+  `evaluate()`. This package only reads JSON, looks up a `ResourceDefinition` and a
+  `ConventionPack`, calls `evaluate()`, and writes JSON.
 
 Dependency direction: `cli -> core`, `cli -> catalog`, `catalog -> core`. `core` and
 `catalog` never depend on `cli`.
@@ -47,23 +48,22 @@ echo '{
     "resource_type": "aws_s3_bucket",
     "functional": { "service": "ingestion" }
   },
-  "convention_pack": {
-    "id": "aws-workload-default",
-    "naming_component_order": ["organizational.system", "functional.service"],
-    "separator": "-"
-  },
   "evaluation_context": {
-    "shared_organizational_context": { "system": "telemetry-platform" }
+    "shared_organizational_context": { "system": "telemetry-platform" },
+    "shared_deployment_context": { "environment": "production" }
   }
 }' | node packages/cli/dist/cli.js evaluate
 ```
 
-`naming_request.resource_type` is required — it is used to look up the
-`ResourceDefinition` from `@lksnext/iac-conventions-catalog`. `convention_pack` must
-still be supplied in full: `@lksnext/iac-conventions-catalog` now also exposes an
-executable Convention Pack catalog (`getConventionPack`), but the CLI's JSON contract
-is unchanged by that addition (see
-[`docs/architecture/cli.md#convention-pack-source-decision`](../../docs/architecture/cli.md#convention-pack-source-decision)).
+`naming_request.resource_type` and `naming_request.convention` are both required: they
+are the lookup keys used to resolve, respectively, the `ResourceDefinition` and the
+`ConventionPack` from `@lksnext/iac-conventions-catalog`'s `getResourceDefinition` and
+`getConventionPack`. Neither is supplied by the caller as a full object — this replaced
+the Milestone 4.1 provisional contract, which required a full `convention_pack` JSON
+object (see
+[`docs/architecture/cli.md#convention-pack-source-decision-historical-and-milestone-43-replacement`](../../docs/architecture/cli.md#convention-pack-source-decision-historical-and-milestone-43-replacement)).
+Only `naming_request` and `evaluation_context` are accepted at the top level; any other
+field is a transport error.
 
 ## Output
 
@@ -76,8 +76,9 @@ CLI/transport errors are written to stderr as a single human-readable line.
 - `0` — the command completed, including a **domain-invalid** result
   (`validation.valid === false`): evaluation completing and returning an invalid
   proposed name is a successful outcome, not a CLI failure.
-- `1` — a CLI/transport failure: malformed JSON, a missing required field, an unknown
-  `resource_type`, or an unexpected internal error.
+- `1` — a CLI/transport failure: malformed JSON, an unknown top-level field, a missing
+  or invalid required field, an unknown `resource_type`, an unknown `convention`, or an
+  unexpected internal error.
 
 See [`docs/architecture/cli.md#exit-codes`](../../docs/architecture/cli.md#exit-codes)
 for the full rationale.
@@ -90,6 +91,8 @@ for the full rationale.
   data source protocol, which requires string-only values (see
   [`docs/architecture/cli.md#terraform-integration-boundary`](../../docs/architecture/cli.md#terraform-integration-boundary)).
   Terraform integration is planned for a later milestone.
-- No `catalog` subcommand (for example, to list known `ResourceType`s) exists yet.
-- The Convention Pack must be supplied by the caller in full; there is no built-in or
-  named Convention Pack registry.
+- No `catalog` subcommand (for example, to list known `ResourceType`s or
+  `ConventionPackId`s) exists yet.
+- Transport validation is intentionally minimal (structural checks only); it does not
+  duplicate core's domain validation (see
+  [`docs/architecture/cli.md#transport-and-domain-validation-boundary`](../../docs/architecture/cli.md#transport-and-domain-validation-boundary)).
