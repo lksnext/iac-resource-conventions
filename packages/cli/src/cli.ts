@@ -31,9 +31,11 @@ Options:
   -v, --version  Show the installed package version and exit.
 
 Input (evaluate):
-  A JSON object on stdin with "naming_request" (including "resource_type"),
-  "convention_pack", and "evaluation_context". "resource_type" is looked up in
-  @lksnext/iac-conventions-catalog to obtain the ResourceDefinition.
+  A JSON object on stdin with exactly two fields: "naming_request" (including
+  "resource_type" and "convention") and "evaluation_context". "resource_type"
+  is looked up in @lksnext/iac-conventions-catalog to obtain the
+  ResourceDefinition, and "convention" is looked up there to obtain the
+  ConventionPack — neither is supplied by the caller in full.
 
 Output (evaluate):
   The public ConventionResult, as JSON, on stdout. Nothing else is written to
@@ -43,8 +45,9 @@ Exit codes:
   0  The command completed, including a domain-invalid ConventionResult
      (validation.valid === false is a successful evaluation outcome, not a
      CLI/transport failure).
-  1  A CLI/transport failure: malformed JSON, a missing required field, an
-     unknown resource_type, or an unexpected internal error.
+  1  A CLI/transport failure: malformed JSON, an unknown top-level field, a
+     missing or invalid required field, an unknown resource_type, an unknown
+     convention, or an unexpected internal error.
 `;
 
 /** Parses `argv` and dispatches to the requested command. Exported for testing. */
