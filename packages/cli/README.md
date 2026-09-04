@@ -13,7 +13,8 @@ Milestone 4.4 — Terraform External Integration. This package implements two co
 `terraform-external`, a thin transport reusing the same evaluation path so Terraform's
 `hashicorp/external` provider can consume it. It does not yet implement a broad command
 suite or a `catalog` subcommand — see
-[`docs/architecture/cli.md`](../../docs/architecture/cli.md) for the full architecture,
+[`docs/architecture/cli.md`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/cli.md)
+for the full architecture,
 design-gate decisions, and current limitations.
 
 ## Purpose and architecture boundary
@@ -34,15 +35,15 @@ Dependency direction: `cli -> core`, `cli -> catalog`, `catalog -> core`. `core`
 
 ## Install / run
 
-This package is not published yet (`"private": true`). Within this repository:
-
 ```bash
-npm run build --workspace=@lksnext/iac-conventions-cli
-node packages/cli/dist/cli.js --help
+npm install @lksnext/iac-conventions-cli@alpha
+iac-conventions --help
 ```
 
-Once published, the same binary is available as `iac-conventions` (see the `bin` field
-in [`package.json`](package.json)).
+The same binary is also available from a repository checkout, without installing from
+npm, via `npm run build --workspace=@lksnext/iac-conventions-cli` and
+`node packages/cli/dist/cli.js --help` (see the `bin` field in
+[`package.json`](package.json)).
 
 ## `evaluate` — stdin JSON input
 
@@ -66,7 +67,7 @@ are the lookup keys used to resolve, respectively, the `ResourceDefinition` and 
 `getConventionPack`. Neither is supplied by the caller as a full object — this replaced
 the Milestone 4.1 provisional contract, which required a full `convention_pack` JSON
 object (see
-[`docs/architecture/cli.md#convention-pack-source-decision-historical-and-milestone-43-replacement`](../../docs/architecture/cli.md#convention-pack-source-decision-historical-and-milestone-43-replacement)).
+[`docs/architecture/cli.md#convention-pack-source-decision-historical-and-milestone-43-replacement`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/cli.md#convention-pack-source-decision-historical-and-milestone-43-replacement)).
 Only `naming_request` and `evaluation_context` are accepted at the top level; any other
 field is a transport error.
 
@@ -80,10 +81,12 @@ CLI/transport errors are written to stderr as a single human-readable line.
 
 `terraform-external` lets Terraform's `hashicorp/external` provider consume this CLI as
 a `data "external"` data source. See
-[`docs/integrations/terraform.md`](../../docs/integrations/terraform.md) for a full
-usage guide and [`examples/terraform/external/`](../../examples/terraform/external/)
+[`docs/integrations/terraform.md`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/integrations/terraform.md)
+for a full
+usage guide and
+[`examples/terraform/external/`](https://github.com/lksnext/iac-resource-conventions/tree/main/examples/terraform/external)
 for a runnable example; see
-[`docs/architecture/cli.md#terraform-integration-boundary`](../../docs/architecture/cli.md#terraform-integration-boundary)
+[`docs/architecture/cli.md#terraform-integration-boundary`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/cli.md#terraform-integration-boundary)
 for the full protocol mapping.
 
 ```bash
@@ -113,7 +116,7 @@ validation, or catalog-lookup logic is duplicated.
   unexpected internal error. For `terraform-external`, this also includes a missing or
   invalid `request_json` field.
 
-See [`docs/architecture/cli.md#exit-codes`](../../docs/architecture/cli.md#exit-codes)
+See [`docs/architecture/cli.md#exit-codes`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/cli.md#exit-codes)
 for the full rationale.
 
 ## Current limitations
@@ -121,9 +124,9 @@ for the full rationale.
 - Only two commands, `evaluate` and `terraform-external`, are implemented.
 - `terraform-external` is a bridge built on `hashicorp/external`, not a native
   Terraform provider — see
-  [`docs/integrations/terraform.md#limitations`](../../docs/integrations/terraform.md#limitations).
+  [`docs/integrations/terraform.md#limitations`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/integrations/terraform.md#limitations).
 - No `catalog` subcommand (for example, to list known `ResourceType`s or
   `ConventionPackId`s) exists yet.
 - Transport validation is intentionally minimal (structural checks only); it does not
   duplicate core's domain validation (see
-  [`docs/architecture/cli.md#transport-and-domain-validation-boundary`](../../docs/architecture/cli.md#transport-and-domain-validation-boundary)).
+  [`docs/architecture/cli.md#transport-and-domain-validation-boundary`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/cli.md#transport-and-domain-validation-boundary)).
