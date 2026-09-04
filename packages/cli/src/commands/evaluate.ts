@@ -45,7 +45,13 @@ export async function runEvaluateCommand(): Promise<number> {
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return 0;
   } catch (error) {
-    process.stderr.write(`${error instanceof CliError ? error.message : "Malformed input."}\n`);
-    return 1;
+    if (error instanceof CliError) {
+      process.stderr.write(`${error.message}\n`);
+      return 1;
+    }
+    // Not a transport failure: rethrow so the top-level handler in cli.ts reports it
+    // as an unexpected internal error (with a stack trace) instead of mislabeling it
+    // as malformed input.
+    throw error;
   }
 }

@@ -4,10 +4,11 @@ Command-line adapter for the `iac-resource-conventions` Reference Evaluator.
 
 ## Status
 
-Milestone 4.3 — Stable CLI Evaluate JSON Contract. This package establishes the
-stable foundation for the `iac-conventions` executable: one command, `evaluate`, that
-proves `CLI -> catalog -> core` works end-to-end. It does not yet implement a broad
-command suite, Terraform-specific output, or a `catalog` subcommand — see
+Milestone 4.4 — Terraform External Integration. This package implements two commands:
+`evaluate`, proving `CLI -> catalog -> core` works end-to-end, and
+`terraform-external`, a thin transport reusing the same evaluation path so Terraform's
+`hashicorp/external` provider can consume it. It does not yet implement a broad command
+suite or a `catalog` subcommand — see
 [`docs/architecture/cli.md`](../../docs/architecture/cli.md) for the full architecture,
 design-gate decisions, and current limitations.
 
@@ -71,26 +72,52 @@ field is a transport error.
 JSON to stdout, and nothing else — no banners, progress logs, or explanatory text. All
 CLI/transport errors are written to stderr as a single human-readable line.
 
+## Terraform External Integration
+
+`terraform-external` lets Terraform's `hashicorp/external` provider consume this CLI as
+a `data "external"` data source. See
+[`docs/integrations/terraform.md`](../../docs/integrations/terraform.md) for a full
+usage guide and [`examples/terraform/external/`](../../examples/terraform/external/)
+for a runnable example; see
+[`docs/architecture/cli.md#terraform-integration-boundary`](../../docs/architecture/cli.md#terraform-integration-boundary)
+for the full protocol mapping.
+
+```bash
+echo '{
+  "request_json": "{\"naming_request\":{\"convention\":\"aws-workload-default\",\"resource_type\":\"aws_iam_role\",\"functional\":{\"service\":\"ingestion\"}},\"evaluation_context\":{\"shared_organizational_context\":{\"system\":\"telemetry-platform\"},\"shared_deployment_context\":{\"environment\":\"production\"}}}"
+}' | node packages/cli/dist/cli.js terraform-external
+```
+
+`terraform-external` reads exactly one field on stdin, `request_json`: a string
+containing the same JSON document `evaluate` accepts. This matches
+`hashicorp/external`'s `query` argument, which only supports string values. It writes
+a JSON object of string values to stdout: `name` (the generated name, or `""` if none
+was produced), `valid` (`"true"`/`"false"`), and `result_json` (the full
+`ConventionResult`, JSON-encoded as a string) — matching `hashicorp/external`'s
+`result` attribute, which is likewise string-only. It reuses the exact same
+`parseEvaluateRequest`/`executeEvaluationRequest` functions `evaluate` uses; no naming,
+validation, or catalog-lookup logic is duplicated.
+
 ## Exit codes
 
 - `0` — the command completed, including a **domain-invalid** result
   (`validation.valid === false`): evaluation completing and returning an invalid
-  proposed name is a successful outcome, not a CLI failure.
+  proposed name is a successful outcome, not a CLI failure. This applies to both
+  `evaluate` and `terraform-external`.
 - `1` — a CLI/transport failure: malformed JSON, an unknown top-level field, a missing
   or invalid required field, an unknown `resource_type`, an unknown `convention`, or an
-  unexpected internal error.
+  unexpected internal error. For `terraform-external`, this also includes a missing or
+  invalid `request_json` field.
 
 See [`docs/architecture/cli.md#exit-codes`](../../docs/architecture/cli.md#exit-codes)
 for the full rationale.
 
 ## Current limitations
 
-- Only one command, `evaluate`, is implemented.
-- No Terraform-specific transport mode (`--terraform-external` or similar) exists yet;
-  the generic JSON output above is not directly compatible with Terraform's `external`
-  data source protocol, which requires string-only values (see
-  [`docs/architecture/cli.md#terraform-integration-boundary`](../../docs/architecture/cli.md#terraform-integration-boundary)).
-  Terraform integration is planned for a later milestone.
+- Only two commands, `evaluate` and `terraform-external`, are implemented.
+- `terraform-external` is a bridge built on `hashicorp/external`, not a native
+  Terraform provider — see
+  [`docs/integrations/terraform.md#limitations`](../../docs/integrations/terraform.md#limitations).
 - No `catalog` subcommand (for example, to list known `ResourceType`s or
   `ConventionPackId`s) exists yet.
 - Transport validation is intentionally minimal (structural checks only); it does not

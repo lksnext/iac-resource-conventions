@@ -43,12 +43,16 @@ This is the **implementation foundation** only. As of this writing:
   [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md),
   and
   [`docs/architecture/convention-pack-catalog.md`](docs/architecture/convention-pack-catalog.md).
-- `packages/cli` (`@lksnext/iac-conventions-cli`) exists (Milestone 4.1), holding the
-  `iac-conventions` command-line adapter foundation: one command, `evaluate`, that reads
-  a JSON `naming_request`/`convention_pack`/`evaluation_context` on stdin, looks up the
-  referenced `ResourceDefinition` from `catalog`, calls `core`'s `evaluate()`, and writes
-  the resulting `ConventionResult` as JSON to stdout. See [Milestones](#milestones) below
-  and [`docs/architecture/cli.md`](docs/architecture/cli.md).
+- `packages/cli` (`@lksnext/iac-conventions-cli`) exists (Milestone 4.1, stabilized in
+  4.3, extended in 4.4), holding the `iac-conventions` command-line adapter: two
+  commands, `evaluate` and `terraform-external`, that both read a JSON
+  `naming_request`/`evaluation_context` (via `terraform-external`, wrapped in a single
+  `request_json` string field for Terraform's `hashicorp/external` provider), look up
+  the referenced `ResourceDefinition` and `ConventionPack` from `catalog`, call `core`'s
+  `evaluate()`, and write the resulting `ConventionResult` as JSON (or, for
+  `terraform-external`, a string-only projection of it) to stdout. See
+  [Milestones](#milestones) below and
+  [`docs/architecture/cli.md`](docs/architecture/cli.md).
 - [Biome](https://biomejs.dev/) is configured as the canonical formatter and linter for
   TypeScript, JavaScript, JSON, and JSONC across the whole repository (see
   [Formatting and linting](#formatting-and-linting)). ESLint and Prettier are not used.
@@ -470,11 +474,9 @@ scoped or started here) are, in order:
   - **4.1 CLI Package Foundation.**
   - **4.2 Executable Convention Pack Catalog.**
   - **4.3 Stable Evaluate JSON Contract.**
-  - **4.4 Terraform External Integration** (next active increment): a Terraform-specific
-    transport mode compatible with `data "external"`'s string-only protocol, reusing
-    `executeEvaluationRequest`.
-  - **4.5 First Alpha Release** (planned): publication readiness across `core`,
-    `catalog`, and `cli`.
+  - **4.4 Terraform External Integration.**
+  - **4.5 First Alpha Release** (next active increment): publication readiness across
+    `core`, `catalog`, and `cli`.
   - Completed increment: **4.1 — CLI Package Foundation** (a new workspace package,
     `packages/cli/` (`@lksnext/iac-conventions-cli`), depending on `core` and `catalog`
     and never the reverse. Publishes a single binary, `iac-conventions`
@@ -602,6 +604,59 @@ scoped or started here) are, in order:
     Reference Evaluator behavior changed, and no CLI naming/provider-rule logic was
     added. See [`docs/architecture/cli.md`](docs/architecture/cli.md) for the full
     architecture and every design-gate rationale.)
+  - Completed increment: **4.4 — Terraform External Integration** (adds a second CLI
+    command, `terraform-external`, so Terraform's `hashicorp/external` provider can
+    consume this project's conventions through `data "external"`. Reviewed
+    `hashicorp/external`'s own protocol documentation directly and confirmed: `query`
+    and `result` are both string-only maps; success exits `0`; failure prints a single
+    human-readable line to stderr and exits non-zero (stdout is then ignored);
+    Terraform re-runs the program on every refresh; and HashiCorp documents the
+    mechanism itself as an "escape hatch," not a first-class provider replacement.
+    `terraform-external` reuses the exact same `parseEvaluateRequest`/
+    `executeEvaluationRequest` functions Milestone 4.3 introduced, unchanged — no
+    naming, validation, Context Resolution, or catalog-lookup logic is duplicated. Adds
+    two small internal functions: `parseTerraformExternalQuery`
+    (`packages/cli/src/internal/parse-terraform-external-query.ts`), which extracts and
+    validates a single stdin field, `request_json` (a non-empty string containing the
+    same JSON document `evaluate` accepts — the only practical mapping onto
+    `query`'s string-only values), and hands it unchanged to `parseEvaluateRequest`;
+    and `serializeTerraformExternalResult`
+    (`packages/cli/src/internal/serialize-terraform-external-result.ts`), which projects
+    a `ConventionResult` into `{ name, valid, result_json }` — `name` from
+    `outputs?.name` (or `""` if absent, never a placeholder), `valid` from
+    `validation.valid` converted to the literal string `"true"`/`"false"` (never
+    independently recomputed), and `result_json` as the full result, compactly
+    JSON-encoded, so no field is lost. `packages/cli/src/commands/terraform-external.ts`
+    is a thin I/O orchestrator, mirroring `evaluate.ts`'s structure exactly. Also fixed
+    two Milestone 4.3 bugs, applying to both commands: `evaluate.ts`'s (and now
+    `terraform-external.ts`'s) catch-all no longer mislabels an unexpected
+    (non-`CliError`) internal error as `"Malformed input."` — it is rethrown to
+    `cli.ts`'s existing top-level handler, which reports it with a stack trace instead
+    of a misleading transport message; and `cli.ts`'s dispatch now rejects extra
+    positional arguments (for example, `evaluate unexpected`) as a usage error for both
+    commands, instead of silently ignoring them. Added
+    `packages/cli/test/runtime/terraform-external.test.mjs` (valid protocol,
+    domain-invalid result, a focused unit test of `serializeTerraformExternalResult`
+    for the no-generated-name case, seven malformed-query cases, three
+    stable-request-error-reuse cases, determinism, and the string-only invariant) and
+    `packages/cli/test/runtime/error-boundary.test.mjs` (a focused unit test, using
+    `node:test`'s module-mocking support, proving both commands rethrow an unexpected
+    internal error rather than mislabeling it — reproducing such an error end-to-end
+    is impractical by design, since core's Context Resolution never throws for
+    malformed nested input). The CLI package's `test` script now uses `node:test`'s
+    default recursive discovery (`node --experimental-test-module-mocks --test`, no
+    glob or explicit file list) so it remains cross-platform and automatically picks up
+    every `test/runtime/*.test.mjs` file. Added a runnable example,
+    `examples/terraform/external/` (validated with `terraform fmt`, `terraform init
+    -backend=false`, `terraform validate`, and a real `terraform apply` against the
+    locally built CLI — no AWS credentials or provider required), and a new
+    integration guide, `docs/integrations/terraform.md`. No Specification file
+    changed, no Reference Evaluator behavior changed, no catalog provider coverage
+    changed, no native Terraform provider was implemented, and no new runtime
+    dependency was added (`hashicorp/external` is a Terraform provider the example
+    declares, not an npm dependency of this repository). See
+    [`docs/architecture/cli.md#terraform-integration-boundary`](docs/architecture/cli.md#terraform-integration-boundary)
+    for the full architecture and every design-gate rationale.)
 
 ## Package Naming Policy
 
@@ -1333,44 +1388,49 @@ implemented.
 
 ## CLI distribution
 
-`packages/cli` (`@lksnext/iac-conventions-cli`) was implemented in Milestone 4.1. It:
+`packages/cli` (`@lksnext/iac-conventions-cli`) was implemented in Milestone 4.1,
+stabilized in Milestone 4.3, and extended in Milestone 4.4. It:
 
 - Accepts machine-readable JSON input on stdin and produces machine-readable JSON
-  output on stdout (`evaluate`); no other command reads or writes files yet.
+  output on stdout (`evaluate` and `terraform-external`); no other command reads or
+  writes files yet.
 - Executes deterministically, with no hidden network calls: the same stdin input always
   produces byte-for-byte identical stdout (verified in
-  `packages/cli/test/runtime/cli.test.mjs`).
+  `packages/cli/test/runtime/cli.test.mjs` and
+  `packages/cli/test/runtime/terraform-external.test.mjs`).
 - Returns stable, documented exit codes: `0` for a completed command (including a
   domain-invalid `ConventionResult`), `1` for any CLI/transport failure. See
   [`docs/architecture/cli.md#exit-codes`](docs/architecture/cli.md#exit-codes).
-- Requires the caller to supply the Convention Pack and, via `resource_type`, the
-  Resource Definition lookup key explicitly — there is no built-in or hidden registry
-  (see [`docs/architecture/cli.md#convention-pack-source-decision`](docs/architecture/cli.md#convention-pack-source-decision)).
+- Resolves both the Convention Pack (via `naming_request.convention`) and the Resource
+  Definition (via `naming_request.resource_type`) from `catalog`'s own lookup APIs —
+  there is no built-in or hidden registry, and the caller never supplies either as a
+  full object (see
+  [`docs/architecture/cli.md#catalog-lookups`](docs/architecture/cli.md#catalog-lookups)).
 - Reports its own version via `--version`, read at runtime from its own
   `package.json`.
 - Runs directly under Node.js — no binary-packaging tool (`pkg`, `nexe`, single
   executable applications, etc.) is chosen yet; that decision is deferred until a
-  concrete distribution need (for example, a Terraform external data source requiring a
-  zero-Node-install binary) justifies it.
+  concrete distribution need justifies it.
 
 The CLI executable name is `iac-conventions` (see
 [Package Naming Policy](#package-naming-policy) above) — short and independent from both
 the repository name and the `@lksnext/iac-conventions-cli` package name that publishes
 it.
 
-## Terraform integration boundary (planned, not implemented)
+## Terraform integration boundary (implemented: Milestone 4.4)
 
-Initial strategy:
+Milestone 4.4 implemented the initial strategy this section originally planned:
 
 ```text
 Terraform
-    -> external data source
-        -> TypeScript CLI
-            -> core Reference Evaluator
+    -> `data "external"` (hashicorp/external provider)
+        -> `iac-conventions terraform-external` (TypeScript CLI)
+            -> core Reference Evaluator (via the same parseEvaluateRequest /
+               executeEvaluationRequest functions `evaluate` uses)
 ```
 
-Possible future strategy, once Terraform's provider-defined functions/data sources are a
-better fit:
+A possible future strategy, once Terraform's provider-defined functions/data sources or
+a dedicated native provider are a better fit than the `hashicorp/external` bridge:
 
 ```text
 Terraform provider
@@ -1378,10 +1438,17 @@ Terraform provider
         -> stable evaluator contract
 ```
 
-The Terraform adapter must consume the Reference Evaluator's contract; it must not
-reimplement Context Resolution, naming rules, metadata projection, Placement Constraint
-validation, or Convention Pack semantics. No Terraform files or provider code are created
-in this task.
+This remains contingent on real usage evidence from the current bridge (see
+[`docs/integrations/terraform.md#future-evolution`](docs/integrations/terraform.md#future-evolution))
+and is not implemented by this milestone. The `terraform-external` transport itself
+consumes the Reference Evaluator's contract exactly as the strategy above requires: it
+does not reimplement Context Resolution, naming rules, metadata projection, Placement
+Constraint validation, or Convention Pack semantics — see
+[`docs/architecture/cli.md#terraform-integration-boundary`](docs/architecture/cli.md#terraform-integration-boundary)
+for the full protocol mapping, and
+[`examples/terraform/external/`](examples/terraform/external/) for a runnable example.
+No Terraform provider code (Go, or otherwise) was created; this is a CLI transport, not
+a provider.
 
 ## CI
 

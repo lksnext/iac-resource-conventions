@@ -21,6 +21,6 @@
   "scripts": {
     "build": "npm run build -w @lksnext/iac-conventions-catalog && tsc -p tsconfig.json",
     "typecheck": "npm run build -w @lksnext/iac-conventions-catalog && tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test test/runtime/cli.test.mjs"
+    "test": "npm run build && node --experimental-test-module-mocks --test"
   }
 }

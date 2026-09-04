@@ -1,11 +1,13 @@
 // Runtime tests for the CLI package's binary/package wiring (Milestone 4.1: CLI
-// Package Foundation; Milestone 4.3: Stable CLI Evaluate JSON Contract). See
-// docs/architecture/cli.md.
+// Package Foundation; Milestone 4.3: Stable CLI Evaluate JSON Contract; Milestone 4.4:
+// Terraform External Integration). See docs/architecture/cli.md.
 //
 // These spawn the built executable (`dist/cli.js`) as a separate Node process, the
 // same way a shell pipeline, CI job, or Terraform's `external` data source would
 // invoke it, so this suite proves the binary and package wiring, not only internal
-// command functions.
+// command functions. `terraform-external`-specific tests live in
+// ./terraform-external.test.mjs; the unexpected-error boundary both commands share is
+// tested in ./error-boundary.test.mjs.
 
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -86,6 +88,24 @@ test("an unknown command is a usage error: non-zero exit, empty stdout", async (
   assert.notEqual(exitCode, 0);
   assert.equal(stdout, "");
   assert.match(stderr, /Unknown command: "not-a-command"/);
+});
+
+// --- extra positional arguments (Milestone 4.4 fix) ------------------------------------
+
+test("evaluate: an extra positional argument is a usage error, not silently ignored", async () => {
+  const { exitCode, stdout, stderr } = await runCli(["evaluate", "unexpected"], VALID_INPUT);
+
+  assert.notEqual(exitCode, 0);
+  assert.equal(stdout, "");
+  assert.match(stderr, /Unexpected argument: "unexpected"/);
+});
+
+test("terraform-external: an extra positional argument is a usage error, not silently ignored", async () => {
+  const { exitCode, stdout, stderr } = await runCli(["terraform-external", "unexpected"], "{}");
+
+  assert.notEqual(exitCode, 0);
+  assert.equal(stdout, "");
+  assert.match(stderr, /Unexpected argument: "unexpected"/);
 });
 
 // --- evaluate: valid evaluation -------------------------------------------------------
