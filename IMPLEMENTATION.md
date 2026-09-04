@@ -690,6 +690,20 @@ is outside this document's current record and should be verified directly agains
     native Terraform provider was implemented, no new runtime dependency was added, and no
     package was actually published, tagged, or pushed. See [Release
     Readiness](#release-readiness) below for the full record.)
+  - Completed increment: **4.5.1 — Alpha Package Conformance** (closed two concrete gaps found
+    while reviewing Milestone 4.5 before an actual first publish: the automated external-consumer
+    smoke test did not yet exercise the installed CLI's `evaluate` or `terraform-external`
+    commands, only `--version`; and the three package READMEs contained repository-relative
+    links to content not shipped in their own tarball, which break once viewed standalone.
+    Extended `scripts/smoke-test-packages.mjs` to run both commands against the tarball-installed
+    binary, including a domain-invalid case; converted every such link in the three package
+    READMEs to an absolute GitHub URL; corrected a stale "not published yet" claim in `cli`'s
+    README; found and fixed a related packaging defect empirically — `prepack` did not build,
+    so packing from a clean/`dist`-less checkout silently produced an empty tarball — by making
+    `prepack` run `build` first in all three packages; and documented publication order,
+    partial-publication recovery, npm dist-tag, and a release runbook. No Specification file
+    changed, no product behavior changed, no package was published, tagged, or pushed. See
+    [Alpha Package Conformance](#alpha-package-conformance) below for the full record.)
 
 ## Package Naming Policy
 
@@ -1454,6 +1468,18 @@ rule was added, and Specification semantics were not touched.
   directly; each tarball contains only `LICENSE`, `NOTICE`, `README.md`, `package.json`, and
   `dist/**` — no `src/`, `test/`, local artifacts, or Git metadata. No `npm pack` warnings were
   produced for any of the three packages.
+- **Stale/missing `dist` at pack time (closed in Milestone 4.5.1):** `prepack` previously only
+  copied `LICENSE`/`NOTICE`; it did not build. Reproduced empirically: removing `dist/` and
+  running `npm pack --dry-run` from that state silently produced a tarball with *no* `dist/**`
+  at all (no warning, no error — just `LICENSE`, `NOTICE`, `README.md`, `package.json`). Since
+  `dist` is git-ignored, a fresh checkout, or any local state where `npm run clean` ran without a
+  following `npm run build`, would silently publish an empty, non-functional package. `prepack`
+  in all three packages (`core`, `catalog`, `cli`) now runs `npm run build` first
+  (`"prepack": "npm run build && node ../../scripts/copy-license-notice.mjs ."`), since
+  `prepack` runs for both `npm pack` and `npm publish` and each package's own `build` script
+  already builds its internal dependency first. Verified: removing all three `dist/` directories
+  and re-running `npm run package:dry-run` now reproduces full, correct tarballs from a clean
+  state.
 - **External-consumer smoke test (mandatory, performed manually and via
   `scripts/smoke-test-packages.mjs`):** real tarballs were built with `npm pack`, installed with
   `npm install --offline` (registry metadata lookups otherwise made the install unreliable in a
@@ -1477,9 +1503,12 @@ rule was added, and Specification semantics were not touched.
     monorepo binary): `terraform fmt -check -diff`, `terraform init -backend=false`,
     `terraform validate`, and `terraform plan` all succeeded, producing the expected
     `generated_name`/`valid` outputs with no AWS credentials required.
-- **`scripts/smoke-test-packages.mjs`** (new) automates the tarball-pack-install-import-verify
-  sequence above (core+catalog import, installed CLI `--version`) using only Node.js built-ins
-  and the `npm` CLI already required by this repository — no new dependency. Exposed as
+- **`scripts/smoke-test-packages.mjs`** automates the tarball-pack-install-import-verify
+  sequence above using only Node.js built-ins and the `npm` CLI already required by this
+  repository — no new dependency. It automates core+catalog import, the installed CLI's
+  `--version`, `evaluate`, and `terraform-external` (Milestone 4.5.1 closed a gap where only
+  `--version` was automated; see [Alpha Package
+  Conformance](#alpha-package-conformance) below for the full record). Exposed as
   `npm run package:smoke-test`; `npm run package:dry-run` runs `npm pack --dry-run` for all
   three packages as a quicker, non-installing check. A dedicated `package-smoke-test` CI job
   (mirroring the existing single-run `docs-links`/`dependency-audit`/`dependency-licenses` job
@@ -1518,6 +1547,68 @@ rule was added, and Specification semantics were not touched.
   `character_constraints`, the CLI, and the Terraform bridge) as unimplemented or "in progress"
   when the code already implements them (see [Status](#status) above); historical milestone
   narratives elsewhere in this document were left unmodified.
+- **Not done in this milestone (by design):** no package was published, no npm login/token was
+  used or added, no Git tag was created, no GitHub Release was created, and no feature,
+  provider, ResourceType, Convention Pack, CLI command, or Specification semantics changed.
+
+## Alpha Package Conformance
+
+Milestone 4.5.1 closed two concrete gaps found while reviewing Milestone 4.5's release
+readiness before an actual first publish: the external-consumer smoke test did not yet exercise
+the installed CLI's `evaluate` or `terraform-external` commands (only `--version`), and the
+three package READMEs contained repository-relative links to files not shipped in their own
+tarball (`docs/**`, `specification/**`, `IMPLEMENTATION.md`, `examples/**`), which silently
+break once viewed standalone on npmjs.com or in an extracted tarball. Both are now closed (see
+[Release Readiness](#release-readiness) above for the smoke-test and prepack-build fixes, and
+the three package READMEs for the corrected links). This section records the release-process
+decisions that follow from that review; still no package was published, no Git tag was created,
+and no product behavior changed.
+
+- **Package README links:** every package README (`core`, `catalog`, `cli`) link whose target is
+  not included in that package's own `files` (so, anything under `docs/`, `specification/`, or
+  `examples/`, plus root `IMPLEMENTATION.md`) was converted to an absolute GitHub URL —
+  `https://github.com/lksnext/iac-resource-conventions/blob/main/<path>` for files,
+  `.../tree/main/<path>` for directories. Links to content the tarball actually ships (for
+  example, `cli`'s own `package.json`) were left as repository-relative, since they resolve
+  correctly both inside the monorepo and inside an extracted tarball.
+- **`main`, not a version tag:** links point at the `main` branch, not `v0.1.0-alpha.0` — no
+  release tag exists yet (only `specification-v1.0` does), so a tag-scoped link would 404 until
+  a tag is actually created. This does mean a reader following a link from an old published
+  tarball could see documentation that has since changed on `main`; re-pointing links at a
+  release tag once one exists is a reasonable follow-up, not done here to avoid inventing a tag
+  that does not exist.
+- **`packages/cli/README.md`'s stale claim corrected:** "This package is not published yet
+  (`\"private\": true\`)" was false since Milestone 4.5 removed `private` from
+  `packages/cli/package.json`; the Install/run section now shows
+  `npm install @lksnext/iac-conventions-cli@alpha` as the primary path, with the from-source
+  build kept as an alternative.
+- **Publication order:** `core`, then `catalog`, then `cli` — required by the exact-pinned
+  internal dependency versions (`catalog` depends on `core@0.1.0-alpha.0`; `cli` depends on
+  both at `0.1.0-alpha.0`); publishing a dependent before its dependency exists on the registry
+  would fail the dependent's own install.
+- **Partial-publication failure/recovery policy (recommendation only):** if publication fails
+  partway (for example, `core` and `catalog` succeed but `cli` fails), do not attempt to
+  unpublish the packages that already succeeded — npm discourages and time-limits unpublishing,
+  and a partially-visible alpha is not itself harmful. Instead, fix the failure, bump all three
+  packages to the next synchronized prerelease (for example, `0.1.0-alpha.1`), and republish the
+  full coordinated set together, preserving the "all three packages always resolve to the same
+  prerelease" invariant the exact-pinned dependencies rely on.
+- **npm dist-tag:** publish with `--tag alpha` (`npm publish --tag alpha`), not the default
+  `latest` — `npm install @lksnext/iac-conventions-cli` without a tag should not resolve to a
+  prerelease; consumers must opt in via `npm install @lksnext/iac-conventions-cli@alpha`,
+  matching the corrected `cli` README instructions above.
+- **Release runbook:** see
+  [`docs/release-notes/publishing.md`](docs/release-notes/publishing.md) for the step-by-step
+  sequence (clean checkout, validation, build, package smoke test, auth check, publish order,
+  post-publish verification, tagging, GitHub Release). Not placed under `docs/releases/` because
+  this repository's `.gitignore` ignores any path matching `releases/`, including nested ones.
+- **Provenance:** still only a recommendation for a future CI-driven publish (see
+  [Release Readiness](#release-readiness) above) — a manual first publish from a maintainer's
+  machine cannot honestly carry npm provenance attestation (which requires a supported CI
+  environment), so the runbook does not claim it for the first alpha.
+- **Manual vs. CI publish:** unchanged recommendation — manual, documented `npm publish` for
+  this first alpha; introduce a GitHub Actions publish workflow (with provenance) only after the
+  manual process has proven the package topology works end-to-end.
 - **Not done in this milestone (by design):** no package was published, no npm login/token was
   used or added, no Git tag was created, no GitHub Release was created, and no feature,
   provider, ResourceType, Convention Pack, CLI command, or Specification semantics changed.

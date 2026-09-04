@@ -15,21 +15,24 @@ implemented: domain contracts for every core Specification concept, Context Reso
 Convention Evaluation (including Specification v1.1 executable naming), and the public
 `evaluate()` orchestration API (Milestone 2.7). Metadata projection, general normalization,
 truncation, hashing, and global uniqueness remain unimplemented. See
-[`IMPLEMENTATION.md`](../../IMPLEMENTATION.md) at the repository root for the monorepo
-architecture, package boundaries, milestone history, and deferred decisions.
+[`IMPLEMENTATION.md`](https://github.com/lksnext/iac-resource-conventions/blob/main/IMPLEMENTATION.md)
+at the repository root for the monorepo architecture, package boundaries, milestone history,
+and deferred decisions.
 
 ### Node.js requirement
 
 This package's `engines.node` (`>=22`) matches the repository's single, unified Node.js
-version policy — see [IMPLEMENTATION.md#status](../../IMPLEMENTATION.md#status) for the
-full rationale.
+version policy — see
+[IMPLEMENTATION.md#status](https://github.com/lksnext/iac-resource-conventions/blob/main/IMPLEMENTATION.md#status)
+for the full rationale.
 
 ## Intended responsibilities
 
 This package owns:
 
 - TypeScript domain contracts corresponding to the frozen Specification under
-  [`specification/`](../../specification/) (Resource Identity, Governance Context, Naming
+  [`specification/`](https://github.com/lksnext/iac-resource-conventions/tree/main/specification)
+  (Resource Identity, Governance Context, Naming
   Request, Resource Definition, Convention Pack, Convention Result).
 - Context Resolution.
 - Convention Evaluation.
@@ -69,7 +72,7 @@ const result = evaluate(input);
 // result.outputs.name === "telemetry-platform-ingestion-aws_s3_bucket"
 ```
 
-See [`docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented`](../../docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented)
+See [`docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/reference-evaluator.md#reference-evaluator-api-implemented)
 for the full API contract and design rationale.
 
 ## Development

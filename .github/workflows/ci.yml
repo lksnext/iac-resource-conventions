@@ -112,11 +112,27 @@ jobs:
       # scripts, see CONTRIBUTING.md#dependency-security-auditing) intentionally does not
       # fail CI on every low/moderate advisory, most of which are unactionable noise in
       # transitive devDependencies; high/critical severities gate the build.
+      #
+      # The registry's advisory-bulk endpoint occasionally returns a transient 503, which
+      # otherwise fails this job with no code or dependency change involved. Retry a few
+      # times with a short backoff before treating it as a real failure.
       - name: Audit dependencies (all)
-        run: npm run audit
+        run: |
+          for attempt in 1 2 3; do
+            npm run audit && exit 0
+            echo "npm audit attempt $attempt failed, retrying..." >&2
+            sleep 10
+          done
+          exit 1
 
       - name: Audit dependencies (production)
-        run: npm run audit:production
+        run: |
+          for attempt in 1 2 3; do
+            npm run audit:production && exit 0
+            echo "npm audit:production attempt $attempt failed, retrying..." >&2
+            sleep 10
+          done
+          exit 1
 
   dependency-licenses:
     name: Check dependency licenses
