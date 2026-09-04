@@ -3,6 +3,11 @@
 TypeScript domain contracts and Reference Evaluator for the `iac-resource-conventions`
 Specification.
 
+> Viewing this on npmjs.com? Relative links below (for example to `IMPLEMENTATION.md` or
+> `specification/`) resolve only within the source repository, not from a published package.
+> See them at
+> <https://github.com/lksnext/iac-resource-conventions>.
+
 ## Status
 
 The Executable Domain Model (Milestone 1) and the Reference Evaluator (Milestone 2) are

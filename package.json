@@ -43,7 +43,9 @@
     "audit:production": "npm audit --omit=dev --audit-level=high",
     "licenses:check": "node scripts/check-licenses.mjs",
     "licenses:production": "node scripts/check-licenses.mjs --production",
-    "licenses:report": "node scripts/check-licenses.mjs --report"
+    "licenses:report": "node scripts/check-licenses.mjs --report",
+    "package:dry-run": "npm pack --dry-run --workspace=@lksnext/iac-conventions-core --workspace=@lksnext/iac-conventions-catalog --workspace=@lksnext/iac-conventions-cli",
+    "package:smoke-test": "node scripts/smoke-test-packages.mjs"
   },
   "lint-staged": {
     "*.{js,cjs,mjs,jsx,ts,tsx,json,jsonc}": [

@@ -151,3 +151,35 @@ jobs:
 
       - name: Check dependency licenses (production)
         run: npm run licenses:production
+
+  package-smoke-test:
+    name: Package smoke test (publishable tarballs)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build packages
+        run: npm run build
+
+      # Package installation tests are high-value because workspace tests cannot
+      # detect publication-only failures (for example a sibling dependency that
+      # resolves via a workspace symlink in development but not from a published
+      # tarball). Runs once, on Linux only: it packs each publishable package
+      # (@lksnext/iac-conventions-core, -catalog, -cli), installs only those
+      # tarballs into a disposable consumer project outside the repository
+      # (--offline, so it never depends on network availability or registry
+      # state), and proves core/catalog import correctly and the installed
+      # `iac-conventions` binary resolves and reports the expected version. See
+      # scripts/smoke-test-packages.mjs and IMPLEMENTATION.md#release-readiness.
+      - name: Smoke-test publishable package tarballs
+        run: npm run package:smoke-test

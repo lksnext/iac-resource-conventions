@@ -82,12 +82,12 @@ flowchart TD
 
 ## Supported Adapters
 
-| Adapter   | Description                                          | Status                 |
-| --------- | ---------------------------------------------------- | ---------------------- |
-| Terraform | Consumes the Specification from Terraform modules.   | Planned                |
-| AWS CDK   | Consumes the Specification from AWS CDK constructs.  | Planned                |
-| Ansible   | Consumes the Specification from Ansible roles/tasks. | Planned                |
-| CLI       | Consumes the Specification from the command line.    | Foundation in progress |
+| Adapter   | Description                                          | Status                                                           |
+| --------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
+| Terraform | Consumes the Specification from Terraform modules.   | Bridge available (`terraform-external`); native provider planned |
+| AWS CDK   | Consumes the Specification from AWS CDK constructs.  | Planned                                                          |
+| Ansible   | Consumes the Specification from Ansible roles/tasks. | Planned                                                          |
+| CLI       | Consumes the Specification from the command line.    | Available (`evaluate`, `terraform-external`)                     |
 
 A native Terraform adapter/provider is still planned, but Terraform configurations can
 already consume this project's conventions today through the CLI's `terraform-external`
@@ -123,7 +123,7 @@ The repository is organized around the Specification-first architecture describe
 ├── packages/         # Implementation monorepo packages (npm workspaces)
 │   ├── core/         # @lksnext/iac-conventions-core — domain contracts and Reference Evaluator
 │   ├── catalog/      # @lksnext/iac-conventions-catalog — static Resource Definition & Convention Pack catalogs
-│   └── cli/          # @lksnext/iac-conventions-cli — command-line adapter (foundation)
+│   └── cli/          # @lksnext/iac-conventions-cli — command-line adapter
 ├── scripts/          # Repository automation scripts
 ├── IMPLEMENTATION.md # Implementation monorepo architecture
 ├── CONTRIBUTING.md
@@ -149,6 +149,35 @@ dependency rules:
 Requires [Node.js](https://nodejs.org/) 22 LTS or later (see `engines` in
 [`package.json`](package.json)); the Dev Container and CI already provide it.
 
+### As a published package (once available)
+
+```bash
+npm install @lksnext/iac-conventions-cli@alpha
+iac-conventions --help
+```
+
+```bash
+echo '{
+  "naming_request": {
+    "convention": "aws-workload-default",
+    "resource_type": "aws_iam_role",
+    "functional": { "service": "ingestion" }
+  },
+  "evaluation_context": {
+    "shared_organizational_context": { "system": "telemetry-platform" },
+    "shared_deployment_context": { "environment": "production" }
+  }
+}' | iac-conventions evaluate
+```
+
+See [`packages/cli/README.md`](packages/cli/README.md) for the full command reference and
+[`docs/integrations/terraform.md`](docs/integrations/terraform.md) for consuming these
+conventions from Terraform via `terraform-external`. This is currently an alpha prerelease —
+see [`docs/release-notes/v0.1.0-alpha.0.md`](docs/release-notes/v0.1.0-alpha.0.md) for current
+scope and limitations; no package has been published to npm yet.
+
+### From a clone (for contributors)
+
 ```bash
 git clone https://github.com/lksnext/iac-resource-conventions.git
 cd iac-resource-conventions
@@ -167,8 +196,9 @@ Documentation quality (Markdown style, spelling, and link validation) is checked
 
 Architecture and dependency security are checked by `npm run audit`/`npm run audit:production` —
 see [`CONTRIBUTING.md`](CONTRIBUTING.md#architecture-and-dependency-security) for details.
-Automated package dependency direction validation is intentionally deferred until the
-implementation contains multiple packages with meaningful dependency relationships — see
+Automated package dependency direction validation exists for `catalog -> core` (see
+[`packages/catalog/test/runtime/dependency-direction.test.mjs`](packages/catalog/test/runtime/dependency-direction.test.mjs));
+an equivalent check for `cli -> catalog`/`cli -> core` has not been added yet — see
 [`IMPLEMENTATION.md`](IMPLEMENTATION.md#dependency-direction).
 
 Dependency license compliance is checked by `npm run licenses:check`/`npm run
@@ -229,6 +259,8 @@ for the full API contract, design rationale, and current capability scope.
 - [`docs/integrations/terraform.md`](docs/integrations/terraform.md) — how Terraform
   configurations consume this project's conventions today, through the CLI's
   `terraform-external` command and the `hashicorp/external` provider.
+- [`docs/release-notes/v0.1.0-alpha.0.md`](docs/release-notes/v0.1.0-alpha.0.md) — draft release notes
+  for the first alpha prerelease (not yet published).
 - [`docs/`](docs/) — further reference documentation (planned).
 - Reference Documentation — planned.
 - [`examples/terraform/external/`](examples/terraform/external/) — a runnable Terraform
@@ -239,7 +271,7 @@ for the full API contract, design rationale, and current capability scope.
 ### Phase 1
 
 - ✓ Specification — frozen as v1.0, additively extended by v1.1 — Executable Naming,
-  and by v1.2 — Executable Resource Constraints (in development; see
+  and by v1.2 — Executable Resource Constraints (implemented; see
   [`specification/README.md`](specification/README.md#specification-status)).
 
 ### Phase 2
@@ -256,8 +288,12 @@ for the full API contract, design rationale, and current capability scope.
   `aws-workload-default`, is implemented, see
   [`docs/architecture/convention-pack-catalog.md`](docs/architecture/convention-pack-catalog.md)).
 - Contract Tests
-- CLI (Milestone 4 — in progress; `evaluate` and `terraform-external` are implemented,
-  see [`packages/cli/README.md`](packages/cli/README.md)).
+- ✓ CLI (Milestone 4 — complete for its planned scope; `evaluate` and `terraform-external`
+  are implemented, see [`packages/cli/README.md`](packages/cli/README.md)).
+- ✓ First Alpha Release Readiness (Milestone 4.5 — packaging, versioning, and
+  external-consumer smoke testing for `core`, `catalog`, and `cli`; publication itself is a
+  separate, explicitly approved step — see
+  [`docs/release-notes/v0.1.0-alpha.0.md`](docs/release-notes/v0.1.0-alpha.0.md)).
 
 ### Phase 3
 

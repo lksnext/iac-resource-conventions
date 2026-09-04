@@ -59,6 +59,14 @@ pnpm-debug.log*
 dist/
 build/
 
+# LICENSE/NOTICE copies placed into each publishable package directory by
+# scripts/copy-license-notice.mjs (a package.json `prepack` step) so `npm pack`/`npm
+# publish` ship license text without walking up to the repository root. The root
+# LICENSE and NOTICE remain the single source of truth; these copies are generated,
+# never edited directly, and never committed.
+packages/*/LICENSE
+packages/*/NOTICE
+
 # TypeScript build artifacts (compiled output already covered by dist/ and build/
 # above; this also ignores incremental build info files under any package).
 *.tsbuildinfo

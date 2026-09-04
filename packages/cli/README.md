@@ -2,6 +2,10 @@
 
 Command-line adapter for the `iac-resource-conventions` Reference Evaluator.
 
+> Viewing this on npmjs.com? Relative links below (for example to `docs/` or
+> `examples/terraform/external/`) resolve only within the source repository, not from a
+> published package. See them at <https://github.com/lksnext/iac-resource-conventions>.
+
 ## Status
 
 Milestone 4.4 — Terraform External Integration. This package implements two commands:
