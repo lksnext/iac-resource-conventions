@@ -89,6 +89,12 @@ flowchart TD
 | Ansible   | Consumes the Specification from Ansible roles/tasks. | Planned                |
 | CLI       | Consumes the Specification from the command line.    | Foundation in progress |
 
+A native Terraform adapter/provider is still planned, but Terraform configurations can
+already consume this project's conventions today through the CLI's `terraform-external`
+command and the `hashicorp/external` provider — see
+[`docs/integrations/terraform.md`](docs/integrations/terraform.md) for this current
+bridge approach.
+
 ## Convention Packs
 
 Convention Packs are pre-built collections of conventions for a specific organizational context
@@ -217,9 +223,16 @@ for the full API contract, design rationale, and current capability scope.
   architecture for the Reference Evaluator (Milestone 2).
 - [`docs/architecture/convention-pack-catalog.md`](docs/architecture/convention-pack-catalog.md)
   — architecture for the executable Convention Pack Catalog (Milestone 4.2).
+- [`docs/architecture/cli.md`](docs/architecture/cli.md) — architecture for the
+  `iac-conventions` CLI, including the `evaluate` and `terraform-external` commands
+  (Milestone 4).
+- [`docs/integrations/terraform.md`](docs/integrations/terraform.md) — how Terraform
+  configurations consume this project's conventions today, through the CLI's
+  `terraform-external` command and the `hashicorp/external` provider.
 - [`docs/`](docs/) — further reference documentation (planned).
 - Reference Documentation — planned.
-- Examples — planned.
+- [`examples/terraform/external/`](examples/terraform/external/) — a runnable Terraform
+  example consuming `terraform-external`.
 
 ## Roadmap
 
@@ -243,8 +256,8 @@ for the full API contract, design rationale, and current capability scope.
   `aws-workload-default`, is implemented, see
   [`docs/architecture/convention-pack-catalog.md`](docs/architecture/convention-pack-catalog.md)).
 - Contract Tests
-- CLI (Milestone 4 — in progress; the command-line foundation is implemented, see
-  [`packages/cli/README.md`](packages/cli/README.md)).
+- CLI (Milestone 4 — in progress; `evaluate` and `terraform-external` are implemented,
+  see [`packages/cli/README.md`](packages/cli/README.md)).
 
 ### Phase 3
 

@@ -1,12 +1,13 @@
 # CLI Architecture
 
 This document describes the architecture of `@lksnext/iac-conventions-cli` (Milestone
-4.1 — CLI Package Foundation; Milestone 4.3 — Stable CLI Evaluate JSON Contract). It
-does not redefine the Specification or the Reference Evaluator; it describes how the
-existing `@lksnext/iac-conventions-core` and `@lksnext/iac-conventions-catalog` public
-APIs are made consumable from the command line. See
-[`IMPLEMENTATION.md`](../../IMPLEMENTATION.md) for the implementation monorepo
-architecture and [`AGENTS.md`](../../AGENTS.md) for the overall project architecture.
+4.1 — CLI Package Foundation; Milestone 4.3 — Stable CLI Evaluate JSON Contract;
+Milestone 4.4 — Terraform External Integration). It does not redefine the
+Specification or the Reference Evaluator; it describes how the existing
+`@lksnext/iac-conventions-core` and `@lksnext/iac-conventions-catalog` public APIs are
+made consumable from the command line. See [`IMPLEMENTATION.md`](../../IMPLEMENTATION.md)
+for the implementation monorepo architecture and [`AGENTS.md`](../../AGENTS.md) for the
+overall project architecture.
 
 ## Purpose
 
@@ -28,8 +29,11 @@ deterministic output
 Milestone 4.1 implemented only the minimal stable foundation: one command, `evaluate`,
 proving this pipeline works end-to-end, with a provisional input contract requiring the
 caller to supply a full `ConventionPack` object. Milestone 4.3 replaces that provisional
-contract with the stable one described below. Neither milestone implements a broad
-command suite, a Terraform-specific transport mode, or a native Terraform provider.
+contract with the stable one described below. Milestone 4.4 adds a second command,
+`terraform-external`, a thin transport reusing the same evaluation path so Terraform
+can consume it through the `hashicorp/external` provider (see
+[Terraform integration boundary](#terraform-integration-boundary) below). Neither
+milestone implements a broad command suite or a native Terraform provider.
 
 ## Package boundary
 
@@ -247,24 +251,89 @@ key order for the same input.
 ## Terraform integration boundary
 
 Terraform's `external` data source protocol
-([HashiCorp documentation](https://registry.terraform.io/providers/hashicorp/external/latest/docs/data-sources/data))
+([HashiCorp documentation](https://registry.terraform.io/providers/hashicorp/external/latest/docs/data-sources/external))
 requires the external program to read a JSON object of **string** values from stdin and
 write a JSON object of **string** values to stdout; nested objects, arrays, booleans,
-and numbers are not supported by that protocol.
+and numbers are not supported by that protocol. On success the program must exit `0`;
+on failure it must print a single human-readable line to stderr and exit non-zero (any
+stdout is then ignored). Terraform re-runs the program on every refresh, since it
+expects an `external` data source to have no observable side effects. HashiCorp itself
+documents this mechanism as an "escape hatch" for situations where a first-class
+provider is not available, not as a first-class provider replacement, and does not
+guarantee that Terraform Enterprise's remote execution environment can run arbitrary
+external programs.
 
-The CLI's current `evaluate` output — the full, nested `ConventionResult` — is
-therefore **not** directly compatible with `data "external"` as-is. This is expected
-and deliberate: the CLI's domain output stays generic, and a Terraform-specific
-transport mode (for example, `evaluate --terraform-external`, flattening the result to
-string values) is deferred to a later milestone. No Terraform-specific behavior is
-mixed into the generic JSON output implemented here.
+The CLI's `evaluate` output — the full, nested `ConventionResult` — is not directly
+compatible with `data "external"`'s string-only protocol. Rather than flattening
+`evaluate` itself (which would break its generic, structured contract for every other
+caller), Milestone 4.4 adds a **second command**, `terraform-external`, as a dedicated
+transport around the exact same evaluation path:
 
-`executeEvaluationRequest` (see
-[`packages/cli/src/internal/execute-evaluation-request.ts`](../../packages/cli/src/internal/execute-evaluation-request.ts))
-is a standalone internal function: both catalog lookups and the call to `evaluate()`
-are performed by that one function, independent of stdin/stdout wiring. A future
-Terraform transport (Milestone 4.4) can call it directly around a different
-stdin/stdout shape, instead of invoking this CLI as a subprocess.
+```text
+Terraform `data "external"`
+      ↓ stdin: { "request_json": "<the same evaluate JSON, as a string>" }
+terraform-external command
+      ↓ parseTerraformExternalQuery         (../../packages/cli/src/internal/parse-terraform-external-query.ts)
+      ↓ parseEvaluateRequest                (../../packages/cli/src/internal/parse-evaluate-request.ts — reused, unchanged)
+      ↓ executeEvaluationRequest            (../../packages/cli/src/internal/execute-evaluation-request.ts — reused, unchanged)
+      ↓ serializeTerraformExternalResult     (../../packages/cli/src/internal/serialize-terraform-external-result.ts)
+      ↓ stdout: { "name": "...", "valid": "true"|"false", "result_json": "<the full ConventionResult, as a string>" }
+```
+
+This is transport reuse, not a second evaluator: `terraform-external` never calls
+`evaluate()` directly, constructs an `EvaluateInput`, or duplicates any catalog lookup
+or domain logic. It calls the exact same `parseEvaluateRequest`/
+`executeEvaluationRequest` functions `evaluate` calls (see
+[`packages/cli/src/commands/terraform-external.ts`](../../packages/cli/src/commands/terraform-external.ts)),
+around a different stdin/stdout shape.
+
+### Input (`terraform-external`)
+
+A JSON object on stdin with exactly one field, `request_json`: a string containing the
+same JSON document `evaluate` accepts (`{ naming_request, evaluation_context }`, see
+[Input boundary](#input-boundary) above). This single string field is the only
+practical mapping onto `hashicorp/external`'s `query`, since `query` itself only
+supports string values — nesting `naming_request`/`evaluation_context` as separate
+query fields would still require flattening them, and would create a second, divergent
+input shape alongside the stable one. `parseTerraformExternalQuery` (see
+[`packages/cli/src/internal/parse-terraform-external-query.ts`](../../packages/cli/src/internal/parse-terraform-external-query.ts))
+only extracts and structurally validates this string; it does not parse or validate its
+contents; the extracted string is handed unchanged to the existing
+`parseEvaluateRequest`.
+
+### Output (`terraform-external`)
+
+A JSON object of string values on stdout, matching `hashicorp/external`'s `result`
+attribute:
+
+- `name` — the generated name (`result.outputs?.name`), or `""` if none was produced.
+  Never a placeholder or invented value.
+- `valid` — `result.validation.valid` converted to the literal string `"true"` or
+  `"false"`. Never independently recomputed.
+- `result_json` — the full `ConventionResult`, compactly JSON-encoded as a string, so
+  every field (validation failures, warnings, resolved identity, and governance
+  context) remains available to a caller that decodes it (for example, with
+  Terraform's `jsondecode(...)`).
+
+This projection is implemented in `serializeTerraformExternalResult` (see
+[`packages/cli/src/internal/serialize-terraform-external-result.ts`](../../packages/cli/src/internal/serialize-terraform-external-result.ts))
+and does not reinterpret or revalidate the `ConventionResult` it receives.
+
+### Domain-invalid results and transport failures over `terraform-external`
+
+The same distinction `evaluate` makes applies here: a domain-invalid `ConventionResult`
+(`validation.valid === false`) is a successful evaluation outcome, so
+`terraform-external` still exits `0` and writes `{ name, valid: "false", result_json }`
+to stdout — Terraform's `data "external"` never sees this as a failure; a caller must
+check `result.valid` itself, exactly as `evaluate` callers check `validation.valid`. A
+CLI/transport failure (malformed JSON, a missing/invalid `request_json`, or any failure
+the reused `parseEvaluateRequest`/`executeEvaluationRequest` raise) is reported as a
+single deterministic line on stderr with a non-zero exit, matching the `external`
+protocol's failure contract exactly.
+
+See [`packages/cli/README.md`](../../packages/cli/README.md) and
+[`docs/integrations/terraform.md`](../integrations/terraform.md) for a runnable
+example.
 
 ## Non-responsibilities
 
@@ -277,6 +346,9 @@ The CLI does not, and must not:
 - Expose a broad JavaScript library API for its internals — its public surface is its
   binary.
 - Maintain a built-in or hidden Convention Pack registry.
+- Reimplement naming/validation/Context Resolution logic a second time for
+  `terraform-external`: it must always reuse `parseEvaluateRequest` and
+  `executeEvaluationRequest`.
 
 ## Future evolution
 
@@ -288,12 +360,13 @@ Recommended roadmap (see `IMPLEMENTATION.md`'s Milestone 4 entry):
   [Input boundary](#input-boundary) and
   [Transport and domain validation boundary](#transport-and-domain-validation-boundary)
   sections.
-- **4.4 — Terraform External Integration**: add a Terraform-specific transport mode
-  compatible with `data "external"`'s string-only protocol, reusing
-  `executeEvaluationRequest`.
+- **4.4 — Terraform External Integration**: complete; see this document's
+  [Terraform integration boundary](#terraform-integration-boundary) section.
 - **4.5 — First Alpha Release**: publication readiness across `core`, `catalog`, and
-  `cli`.
+  `cli` — the next active increment.
 
 A `catalog` subcommand (for example, to list known `ResourceType`s or
 `ConventionPackId`s) remains a plausible future addition, but is not implemented in
-this milestone.
+this milestone. A native Terraform provider (replacing the `hashicorp/external`
+bridge entirely) also remains a plausible future addition, contingent on real usage
+evidence from this bridge.
