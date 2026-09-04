@@ -64,10 +64,11 @@ This is the **implementation foundation** only. As of this writing:
   tooling](#documentation-quality-tooling)).
 - npm audit provides dependency security validation locally and in CI (see
   [Dependency security validation](#dependency-security-validation)). Automated
-  architectural dependency validation is intentionally deferred until the
-  implementation contains multiple packages with meaningful dependency
-  relationships (see [Architectural dependency validation
-  (deferred)](#architectural-dependency-validation-deferred)).
+  architectural dependency validation exists for `catalog -> core` (see
+  [`packages/catalog/test/runtime/dependency-direction.test.mjs`](packages/catalog/test/runtime/dependency-direction.test.mjs));
+  a dedicated tool (for example dependency-cruiser) enforcing it for every package pair,
+  including `cli -> catalog`/`cli -> core`, remains deferred (see [Architectural dependency
+  validation (deferred)](#architectural-dependency-validation-deferred)).
 - license-checker-rseidelsohn provides dependency license compliance validation locally and in
   CI (see [Dependency license validation](#dependency-license-validation)) — a separate concern
   from npm audit's security scanning.
@@ -78,10 +79,15 @@ This is the **implementation foundation** only. As of this writing:
   implemented under
   [`packages/core/src/evaluator/`](packages/core/src/evaluator/) (see
   [Milestones](#milestones) below), and composed into the public `evaluate()` function
-  (increment 2.7), exported from the package root alongside its `EvaluateInput` contract. Metadata
-  projection, general normalization, `allowed_characters` grammar, Placement Constraint
-  validation, truncation, hashing, global uniqueness, and adapter integration remain
-  unimplemented.
+  (increment 2.7), exported from the package root alongside its `EvaluateInput` contract.
+  Specification v1.2's executable Resource Constraints — `min_length`/`max_length`,
+  `character_constraints`, and Placement Constraint validation — are also implemented (see
+  [`packages/core/src/evaluator/convention-evaluation/resource-constraints/`](packages/core/src/evaluator/convention-evaluation/resource-constraints/)).
+  Metadata projection, general normalization, truncation-by-the-evaluator, hashing, and global
+  uniqueness remain unimplemented. Adapter integration is no longer purely future: `packages/cli`
+  (Milestone 4) is an implemented adapter, including a Terraform integration via the
+  `terraform-external` command (Milestone 4.4); a native Terraform/CDK/Ansible provider/adapter
+  remains unimplemented.
 - `packages/adapters/*` do not exist yet — they are planned (see
   [Planned packages](#planned-packages)) and must only be created when a concrete task
   needs them, per the repository's incremental-evolution principle (see
@@ -312,12 +318,17 @@ This is the **implementation foundation** only. As of this writing:
     [`docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented`](docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented)
     and
     [`docs/architecture/convention-evaluation-executability.md#length-and-truncation`](docs/architecture/convention-evaluation-executability.md#length-and-truncation).
-  - Not yet started: metadata projection, general normalization, `allowed_characters` grammar,
-    Placement Constraint validation, Governance Profile defaults, truncation, hashing, and
-    global uniqueness. Every one of these is a Specification v1.1 Non-Goal (see
+  - Not yet started: metadata projection, general normalization, Governance Profile defaults,
+    truncation, hashing, and global uniqueness. Every one of these is a Specification v1.1
+    Non-Goal (see
     [`specification/README.md#specification-v11-non-goals`](specification/README.md#specification-v11-non-goals)),
     not a gap within v1.1's own executable scope, so their absence does not contradict Milestone
-    2's "Complete for Specification v1.1 executable scope" status above.
+    2's "Complete for Specification v1.1 executable scope" status above. `allowed_characters`
+    grammar (as Specification v1.2's `character_constraints`) and Placement Constraint validation
+    — listed here as not yet started when this entry was first written — were subsequently
+    implemented under Specification v1.2 — Executable Resource Constraints (see the completed
+    increments below); this line is retained, uncorrected in place, as the historical record at
+    the time Milestone 2 concluded.
   - Deferred: see
     [`docs/architecture/reference-evaluator.md#deferred-decisions`](docs/architecture/reference-evaluator.md#deferred-decisions).
 
@@ -450,23 +461,30 @@ This is the **implementation foundation** only. As of this writing:
     added.)
 
 Milestone 3.3 is complete; **Specification v1.2 — Executable Resource Constraints** is
-now the active Specification evolution (see
+now implemented (see
 [`specification/README.md#specification-v12-executable-resource-constraints`](specification/README.md#specification-v12-executable-resource-constraints)),
-acting on 3.3's own recommendation. This is a Specification-only design change: it does
-not expand AWS catalog coverage, and Milestone 3.4 — Additional Providers is **not**
-activated by it. Once merged, the planned follow-up implementation increments (not
-scoped or started here) are, in order:
+acting on 3.3's own recommendation. This was a Specification-only design change followed by a
+core-only implementation: it did not expand AWS catalog coverage, and Milestone 3.4 — Additional
+Providers remains **not** activated by it. The two implementation increments below were
+completed:
 
-- **Executable Resource Constraint Model** — add the Specification v1.2 fields
+- **Executable Resource Constraint Model** — added the Specification v1.2 fields
   (`min_length`, `character_constraints`, `starts_with`/`ends_with`,
   `forbidden_prefixes`/`forbidden_suffixes`, the migrated `PlacementConstraint` shape,
   and `ConventionValidationFailure.code`) to the public TypeScript domain model under
-  `packages/core/src/model/`, with no evaluator behavior yet.
-- **Resource Constraint Evaluation** — implement the corresponding Reference Evaluator
+  `packages/core/src/model/`.
+- **Resource Constraint Evaluation** — implemented the corresponding Reference Evaluator
   checks, in the deterministic order
   [`resource-definition.md#constraint-validation-order-specification-v12`](specification/resource-definition.md#constraint-validation-order-specification-v12)
-  defines, and update the four AWS catalog entries per the [Catalog impact
-  plan](specification/resource-definition.md#catalog-impact-plan-non-normative).
+  defines, under
+  [`packages/core/src/evaluator/convention-evaluation/resource-constraints/`](packages/core/src/evaluator/convention-evaluation/resource-constraints/).
+
+Neither increment's detailed design-gate rationale is reproduced here since it predates this
+document's practice of recording one; see the `feat(core): implement executable resource
+constraints` commit for the change itself. Whether the four existing AWS catalog entries were
+updated per the [Catalog impact plan](specification/resource-definition.md#catalog-impact-plan-non-normative)
+is outside this document's current record and should be verified directly against
+`packages/catalog/src/aws/` before being asserted either way.
 
 - **Milestone 4 — CLI & Integration Foundation.** Makes `core` and `catalog` consumable
   by developers and, later, Terraform, through a new command-line adapter package.
@@ -475,8 +493,10 @@ scoped or started here) are, in order:
   - **4.2 Executable Convention Pack Catalog.**
   - **4.3 Stable Evaluate JSON Contract.**
   - **4.4 Terraform External Integration.**
-  - **4.5 First Alpha Release** (next active increment): publication readiness across
-    `core`, `catalog`, and `cli`.
+  - **4.5 First Alpha Release** (complete): publication readiness across `core`,
+    `catalog`, and `cli` — see [Release Readiness](#release-readiness) for the full
+    record. Publication itself (the actual `npm publish`, Git tag, and GitHub Release)
+    remains a separate, explicitly approved step, not part of this increment.
   - Completed increment: **4.1 — CLI Package Foundation** (a new workspace package,
     `packages/cli/` (`@lksnext/iac-conventions-cli`), depending on `core` and `catalog`
     and never the reverse. Publishes a single binary, `iac-conventions`
@@ -657,6 +677,19 @@ scoped or started here) are, in order:
     declares, not an npm dependency of this repository). See
     [`docs/architecture/cli.md#terraform-integration-boundary`](docs/architecture/cli.md#terraform-integration-boundary)
     for the full architecture and every design-gate rationale.)
+  - Completed increment: **4.5 — First Alpha Release Readiness** (prepared, but did not
+    perform, the first alpha publication of `core`, `catalog`, and `cli`: synchronized
+    `0.1.0-alpha.0` versioning, exact-pinned internal dependency versions, `private`-flag
+    removal with `publishConfig.access: "public"`, `LICENSE`/`NOTICE` packaging via a new
+    `prepack` step, per-package `clean` scripts, a real external-consumer tarball
+    install-and-smoke-test proving `core`/`catalog`/`cli` and the Terraform bridge all work once
+    actually installed as ordinary npm dependencies, a new automated
+    `scripts/smoke-test-packages.mjs` and CI job, draft release notes, and corrections to
+    `README.md` and this document's own stale current-state claims. No Specification file
+    changed, no Reference Evaluator behavior changed, no catalog provider coverage changed, no
+    native Terraform provider was implemented, no new runtime dependency was added, and no
+    package was actually published, tagged, or pushed. See [Release
+    Readiness](#release-readiness) below for the full record.)
 
 ## Package Naming Policy
 
@@ -1360,8 +1393,11 @@ implemented.
 - Package names use the `@lksnext` npm scope with the `iac-conventions-*` package family
   (see [Package Naming Policy](#package-naming-policy) above); `@lksnext/iac-conventions`
   itself is reserved for a possible future convenience package and is not created yet.
-- Every workspace package is currently `"private": true` and at `0.1.0` — no package is
-  published, and no publish credentials are configured in this task.
+- `core`, `catalog`, and `cli` are publishable (no `"private"` field) as of Milestone 4.5, each
+  at the synchronized prerelease version `0.1.0-alpha.0`, with `publishConfig.access: "public"`
+  declared on each (see [Release Readiness](#release-readiness) below). The monorepo root
+  itself remains `"private": true` and is never published. No package has actually been
+  published yet, and no publish credentials are configured.
 - During this initial implementation phase, package versions are kept synchronized
   (single repository version) rather than independently versioned; independent
   versioning is only introduced once a package has an actual reason to release on its
@@ -1376,15 +1412,115 @@ implemented.
   changes to generated names, tags, labels, annotations, abbreviations, truncation, or
   hashing are treated as potentially breaking, per
   [`AGENTS.md#compatibility-and-versioning`](AGENTS.md#compatibility-and-versioning).
-- **Published tarballs do not yet include `LICENSE`/`NOTICE`.** `npm pack --dry-run` against
-  `packages/core` (verified while adding dependency license compliance tooling, see
-  [Dependency license validation](#dependency-license-validation) above) confirms the tarball
-  currently contains only `README.md`, `package.json`, and `dist/**` — `package.json#files:
-  ["dist"]` does not implicitly include the repository root `LICENSE` or `NOTICE`, and npm does
-  not add them automatically for a scoped, non-root package. Before any package is actually
-  published, either add explicit `files` entries (for example a copied `LICENSE`/`NOTICE` per
-  package) or a prepack step that copies them from the repository root; this is not done in this
-  task because no package is published yet.
+- **Published tarballs now include `LICENSE`/`NOTICE`.** Milestone 4.5 closed the gap
+  previously recorded here: each publishable package's `prepack` script
+  (`scripts/copy-license-notice.mjs`) copies the repository root `LICENSE` and `NOTICE` into
+  that package's own directory before `npm pack`/`npm publish`, and `files` includes both
+  alongside `dist`. See [Release Readiness](#release-readiness) below for the full verification.
+
+## Release Readiness
+
+Milestone 4.5 — First Alpha Release Readiness prepared, but did not perform, the first alpha
+publication of `core`, `catalog`, and `cli`. This section is release-process documentation, not
+a Specification or evaluator change: no `ResourceType`, Convention Pack, CLI command, or naming
+rule was added, and Specification semantics were not touched.
+
+- **Alpha version:** `0.1.0-alpha.0`, chosen over plain `0.1.0` since this project's status
+  explicitly states APIs, Convention Packs, and adapters may still change before v1.0.0 — a
+  prerelease tag communicates that honestly to the first external consumers. Applied
+  identically to all three publishable packages (synchronized versioning; see [Versioning and
+  publication](#versioning-and-publication) above).
+- **Internal dependency ranges:** `catalog`'s dependency on `core`, and `cli`'s dependencies on
+  `catalog` and `core`, changed from `^0.1.0` to the exact pinned prerelease `0.1.0-alpha.0`.
+  A caret range against a `0.x.y` version is already patch-only under npm semver, and — more
+  importantly — a caret range with no prerelease component does not resolve to a prerelease
+  version at all (npm only matches a prerelease version against a range that itself contains a
+  prerelease of the same `major.minor.patch` tuple). An exact pin is the simplest, most
+  reproducible choice for a first coordinated alpha; revisit once independent versioning is
+  actually adopted.
+- **`private` flags:** removed from `core`, `catalog`, and `cli`; kept on the monorepo root.
+- **`publishConfig.access: "public"`** added to all three, since they publish under the scoped
+  `@lksnext` npm organization and are intended as public, open-source packages — scoped
+  packages default to restricted (private) access otherwise.
+- **Registry:** no registry is hard-coded in any publishable package's metadata; the default
+  public npm registry is assumed. No repository governance currently specifies a private
+  registry.
+- **`clean` scripts:** added to `core`/`catalog`/`cli` (`node -e` removing `dist`, no new
+  dependency such as `rimraf`), so `npm run clean && npm run build` reproduces a package from a
+  clean state — the root `clean` script already existed but had nothing to delegate to.
+- **License/NOTICE packaging:** see [Versioning and publication](#versioning-and-publication)
+  above.
+- **Package contents audit:** `npm pack --dry-run` for each of the three packages was inspected
+  directly; each tarball contains only `LICENSE`, `NOTICE`, `README.md`, `package.json`, and
+  `dist/**` — no `src/`, `test/`, local artifacts, or Git metadata. No `npm pack` warnings were
+  produced for any of the three packages.
+- **External-consumer smoke test (mandatory, performed manually and via
+  `scripts/smoke-test-packages.mjs`):** real tarballs were built with `npm pack`, installed with
+  `npm install --offline` (registry metadata lookups otherwise made the install unreliable in a
+  sandboxed environment; `--offline` has no effect on correctness here since every dependency is
+  one of the three local tarballs) into a disposable consumer project created outside this
+  repository via `npm init -y`, and proven to be real installed packages under
+  `node_modules/@lksnext/*`, not workspace symlinks. From that consumer project:
+  - `@lksnext/iac-conventions-core`'s `evaluate()` produced the expected deterministic name for
+    a minimal `aws_s3_bucket` request.
+  - `@lksnext/iac-conventions-catalog`'s `getResourceDefinition("aws_iam_role")` and
+    `getConventionPack("aws-workload-default")` both resolved, and calling `core`'s `evaluate()`
+    with their results proved `catalog` resolves its own `core` dependency from
+    `node_modules`, not a monorepo-relative path.
+  - The installed `iac-conventions` binary, invoked only via `npx --no-install iac-conventions`
+    (never the monorepo's `dist/cli.js` directly), reported `--version` as exactly
+    `0.1.0-alpha.0`, and both `evaluate` and `terraform-external` produced correct, deterministic
+    output (exit `0`, `valid: true`/`"true"`, the expected generated name, `result_json`
+    decoding correctly, and empty stderr for `terraform-external`).
+  - The existing Terraform example (`examples/terraform/external/`) was re-run with only the
+    packed/installed CLI on `PATH` (via an isolated consumer `node_modules/.bin`, never the
+    monorepo binary): `terraform fmt -check -diff`, `terraform init -backend=false`,
+    `terraform validate`, and `terraform plan` all succeeded, producing the expected
+    `generated_name`/`valid` outputs with no AWS credentials required.
+- **`scripts/smoke-test-packages.mjs`** (new) automates the tarball-pack-install-import-verify
+  sequence above (core+catalog import, installed CLI `--version`) using only Node.js built-ins
+  and the `npm` CLI already required by this repository — no new dependency. Exposed as
+  `npm run package:smoke-test`; `npm run package:dry-run` runs `npm pack --dry-run` for all
+  three packages as a quicker, non-installing check. A dedicated `package-smoke-test` CI job
+  (mirroring the existing single-run `docs-links`/`dependency-audit`/`dependency-licenses` job
+  pattern) was added to [`.github/workflows/ci.yml`](.github/workflows/ci.yml), since package
+  installation tests catch a class of failure workspace tests structurally cannot (a package
+  that compiles in the workspace but cannot resolve a sibling dependency once actually
+  published) and the full sequence completes in well under a minute.
+- **Node engine:** `engines.node: ">=22"` is preserved unchanged for every published package —
+  this is a deliberate requirement for end users too, including CI/container environments that
+  invoke `terraform-external`, not only a development-time constraint; see [Status](#status)
+  above for the single, unified Node.js version policy rationale.
+- **`files`/`exports`/`bin` review:** `core`/`catalog`'s `main`/`types`/`exports` correctly point
+  at `./dist/index.js`/`./dist/index.d.ts`; `cli`'s `bin` correctly points at `./dist/cli.js`,
+  which carries the `#!/usr/bin/env node` shebang required for npm's `bin` installation
+  mechanism to work (verified directly in the built artifact). `cli` deliberately declares no
+  `main`/`exports`: its public surface is the binary, not a JavaScript API, and adding one
+  would be a new, unrequested public contract.
+- **npm provenance:** recommended for the actual future publish step (GitHub Actions'
+  `actions/setup-node` plus `npm publish --provenance`, requiring `id-token: write` workflow
+  permission) once publication is actually planned — not implemented in this milestone, since
+  no publish workflow exists yet and this milestone must not add release secrets/tokens.
+- **Release automation:** recommend starting with a manual, documented `npm publish` (from an
+  approved, signed, tagged release commit) for the first alpha, and only introducing a GitHub
+  Actions publish workflow once that manual process has proven the package topology actually
+  works end-to-end — consistent with this repository's preference against premature release
+  tooling. Changesets/Lerna/Rush are not warranted for three synchronously versioned packages.
+- **Git tag strategy (recommendation only, not created in this milestone):** a single tag,
+  `v0.1.0-alpha.0`, covering all three synchronized packages — no per-package tags, consistent
+  with the synchronized-versioning decision above.
+- **Draft release notes:** [`docs/release-notes/v0.1.0-alpha.0.md`](docs/release-notes/v0.1.0-alpha.0.md)
+  summarizes current scope and limitations for the first alpha; it is explicitly marked as a
+  draft, since no package has been published and no tag exists yet.
+- **Documentation corrections:** the root [`README.md`](README.md)'s Quick Start, Supported
+  Adapters table, and Roadmap, and this document's own top [Status](#status) section, were
+  corrected where they described capabilities (Placement Constraint validation,
+  `character_constraints`, the CLI, and the Terraform bridge) as unimplemented or "in progress"
+  when the code already implements them (see [Status](#status) above); historical milestone
+  narratives elsewhere in this document were left unmodified.
+- **Not done in this milestone (by design):** no package was published, no npm login/token was
+  used or added, no Git tag was created, no GitHub Release was created, and no feature,
+  provider, ResourceType, Convention Pack, CLI command, or Specification semantics changed.
 
 ## CLI distribution
 
@@ -1486,20 +1622,31 @@ instructions). It runs on every push to `main` and on every pull request:
   across the `validate` matrix would not add real signal. Runs `npm run licenses:check` and
   `npm run licenses:production` (see [Dependency license
   validation](#dependency-license-validation) above).
+- **`package-smoke-test` job** (Milestone 4.5) — runs once on `ubuntu-latest` only, after
+  building every package. Packs `core`/`catalog`/`cli`, installs only those tarballs
+  (`--offline`) into a disposable consumer project outside the repository, and proves
+  `core`/`catalog` import correctly and the installed `iac-conventions` binary resolves and
+  reports the expected version — see [Release Readiness](#release-readiness) below and
+  [`scripts/smoke-test-packages.mjs`](scripts/smoke-test-packages.mjs). Runs once, not across
+  the `validate` matrix, since it does not depend on OS-specific behavior this repository has
+  found reason to test across three runners yet and keeps the job's runtime bounded.
 
-No release, tagging, or npm-publication workflow is added — publication remains out of
-scope (see [Versioning and publication](#versioning-and-publication)).
+No release, tagging, or npm-publication workflow is added — actual publication remains out of
+scope (see [Versioning and publication](#versioning-and-publication) and [Release
+Readiness](#release-readiness) below for what Milestone 4.5 did prepare: publishable package
+metadata, a package-installation smoke test, and recommendations for the eventual publish step).
 
 ## Deferred decisions
 
 The following are intentionally **not** decided in this task:
 
 - **Architectural dependency validation tooling** — which tool, if any, to introduce
-  for automated enforcement of the documented package dependency direction (see
-  [Architectural dependency validation
-  (deferred)](#architectural-dependency-validation-deferred) above) is deferred until
-  the implementation contains multiple packages with meaningful dependency
-  relationships.
+  for automated enforcement of the documented package dependency direction across
+  every package pair (see [Architectural dependency validation
+  (deferred)](#architectural-dependency-validation-deferred) above) remains deferred; a
+  hand-written scan already covers `catalog -> core`
+  (`packages/catalog/test/runtime/dependency-direction.test.mjs`), but no equivalent exists yet
+  for `cli -> catalog`/`cli -> core`.
 
 - **Test runner for the Reference Evaluator** — `core`'s current contract tests use
   Node's built-in test runner (see [Testing and fixture strategy](#testing-and-fixture-strategy)
