@@ -14,14 +14,20 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
 
-const PARSE_EVALUATE_REQUEST_PATH = fileURLToPath(
-  new URL("../../dist/internal/parse-evaluate-request.js", import.meta.url),
-);
-const PARSE_TERRAFORM_EXTERNAL_QUERY_PATH = fileURLToPath(
-  new URL("../../dist/internal/parse-terraform-external-query.js", import.meta.url),
-);
+// `t.mock.module()` resolves its specifier the same way `import()` does, so it must be
+// given a `file://` URL string (always forward-slashed) rather than an OS-native path —
+// on Windows, an `fileURLToPath()`-derived path uses backslashes, which does not match
+// the forward-slashed URL that the relative imports below resolve to, silently
+// preventing the mock from being installed.
+const PARSE_EVALUATE_REQUEST_SPECIFIER = new URL(
+  "../../dist/internal/parse-evaluate-request.js",
+  import.meta.url,
+).href;
+const PARSE_TERRAFORM_EXTERNAL_QUERY_SPECIFIER = new URL(
+  "../../dist/internal/parse-terraform-external-query.js",
+  import.meta.url,
+).href;
 
 /** Temporarily replaces `process.stdin` with a fake, empty async-iterable stream. */
 function withEmptyStdin(run) {
@@ -34,7 +40,7 @@ function withEmptyStdin(run) {
 }
 
 test("evaluate: an unexpected (non-CliError) internal error is rethrown, not mislabeled", async (t) => {
-  t.mock.module(PARSE_EVALUATE_REQUEST_PATH, {
+  t.mock.module(PARSE_EVALUATE_REQUEST_SPECIFIER, {
     namedExports: {
       parseEvaluateRequest: () => {
         throw new Error("boom: unexpected internal failure");
@@ -50,7 +56,7 @@ test("evaluate: an unexpected (non-CliError) internal error is rethrown, not mis
 });
 
 test("terraform-external: an unexpected (non-CliError) internal error is rethrown, not mislabeled", async (t) => {
-  t.mock.module(PARSE_TERRAFORM_EXTERNAL_QUERY_PATH, {
+  t.mock.module(PARSE_TERRAFORM_EXTERNAL_QUERY_SPECIFIER, {
     namedExports: {
       parseTerraformExternalQuery: () => {
         throw new Error("boom: unexpected internal failure");
