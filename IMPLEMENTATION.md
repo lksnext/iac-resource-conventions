@@ -1408,8 +1408,8 @@ implemented.
   (see [Package Naming Policy](#package-naming-policy) above); `@lksnext/iac-conventions`
   itself is reserved for a possible future convenience package and is not created yet.
 - `core`, `catalog`, and `cli` are publishable (no `"private"` field) as of Milestone 4.5, each
-  at the synchronized prerelease version `0.1.0-alpha.0`, with `publishConfig.access: "public"`
-  declared on each (see [Release Readiness](#release-readiness) below). The monorepo root
+  at the synchronized prerelease version `0.1.0-alpha.0`, with `publishConfig.registry` pointed
+  at GitHub Packages (see [Release Readiness](#release-readiness) below). The monorepo root
   itself remains `"private": true` and is never published. No package has actually been
   published yet, and no publish credentials are configured.
 - During this initial implementation phase, package versions are kept synchronized
@@ -1453,12 +1453,21 @@ rule was added, and Specification semantics were not touched.
   reproducible choice for a first coordinated alpha; revisit once independent versioning is
   actually adopted.
 - **`private` flags:** removed from `core`, `catalog`, and `cli`; kept on the monorepo root.
-- **`publishConfig.access: "public"`** added to all three, since they publish under the scoped
-  `@lksnext` npm organization and are intended as public, open-source packages — scoped
-  packages default to restricted (private) access otherwise.
-- **Registry:** no registry is hard-coded in any publishable package's metadata; the default
-  public npm registry is assumed. No repository governance currently specifies a private
-  registry.
+- **`publishConfig.registry`** set to `https://npm.pkg.github.com` on all three, and
+  **`repository`** metadata (pointing at this repository, with a per-package `directory`) added
+  to all three, since GitHub Packages is the sole publication target for the `@lksnext` scope
+  (decided after registry-target review; see [Alpha Package
+  Conformance](#alpha-package-conformance) below). The previous `publishConfig.access: "public"`
+  setting was npm-registry-specific (controls visibility of a scoped package on
+  `registry.npmjs.org`) and does not apply to GitHub Packages, where visibility instead follows
+  the owning repository's visibility; it was removed rather than left as dead configuration.
+- **Registry:** `@lksnext/iac-conventions-core`, `@lksnext/iac-conventions-catalog`, and
+  `@lksnext/iac-conventions-cli` publish only to GitHub Packages
+  (`https://npm.pkg.github.com`), never to the public npm registry (`registry.npmjs.org`) or to
+  any private Nexus registry. This is configured per package via `publishConfig.registry` and,
+  for consumption/publication routing, via the repository-root [`.npmrc`](.npmrc)
+  (`@lksnext:registry=https://npm.pkg.github.com`, no credential). Third-party dependencies of
+  this repository are unaffected and continue to resolve from `registry.npmjs.org`.
 - **`clean` scripts:** added to `core`/`catalog`/`cli` (`node -e` removing `dist`, no new
   dependency such as `rimraf`), so `npm run clean && npm run build` reproduces a package from a
   clean state — the root `clean` script already existed but had nothing to delegate to.
@@ -1526,15 +1535,19 @@ rule was added, and Specification semantics were not touched.
   mechanism to work (verified directly in the built artifact). `cli` deliberately declares no
   `main`/`exports`: its public surface is the binary, not a JavaScript API, and adding one
   would be a new, unrequested public contract.
-- **npm provenance:** recommended for the actual future publish step (GitHub Actions'
-  `actions/setup-node` plus `npm publish --provenance`, requiring `id-token: write` workflow
-  permission) once publication is actually planned — not implemented in this milestone, since
-  no publish workflow exists yet and this milestone must not add release secrets/tokens.
+- **npm provenance:** recommended for a possible future CI-driven publish workflow once
+  publication is actually planned — not implemented in this milestone, since no publish
+  workflow exists yet and this milestone must not add release secrets/tokens. GitHub Packages'
+  own provenance/attestation support should be re-checked against current GitHub documentation
+  before that future workflow is implemented.
 - **Release automation:** recommend starting with a manual, documented `npm publish` (from an
-  approved, signed, tagged release commit) for the first alpha, and only introducing a GitHub
-  Actions publish workflow once that manual process has proven the package topology actually
-  works end-to-end — consistent with this repository's preference against premature release
-  tooling. Changesets/Lerna/Rush are not warranted for three synchronously versioned packages.
+  approved, signed, tagged release commit) for the first alpha, authenticating with a newly
+  issued GitHub token supplied only through an environment variable, and only introducing a
+  GitHub Actions publish workflow once that manual process has proven the package topology
+  actually works end-to-end — consistent with this repository's preference against premature
+  release tooling. A proposed (not implemented) GitHub Actions design is documented in
+  [`docs/release-notes/publishing.md`](docs/release-notes/publishing.md#proposed-future-github-actions-publish-workflow-design-only-not-implemented).
+  Changesets/Lerna/Rush are not warranted for three synchronously versioned packages.
 - **Git tag strategy (recommendation only, not created in this milestone):** a single tag,
   `v0.1.0-alpha.0`, covering all three synchronized packages — no per-package tags, consistent
   with the synchronized-versioning decision above.
@@ -1586,6 +1599,28 @@ and no product behavior changed.
   internal dependency versions (`catalog` depends on `core@0.1.0-alpha.0`; `cli` depends on
   both at `0.1.0-alpha.0`); publishing a dependent before its dependency exists on the registry
   would fail the dependent's own install.
+- **Registry target: GitHub Packages only (decided during first-alpha release-readiness
+  review):** pre-publish verification against `registry.npmjs.org` surfaced that this
+  development machine's global npm configuration silently redirected the `@lksnext` scope to a
+  private Nexus registry (`nexus.devops.lksnext.com`) — neither the intended public npm
+  registry nor an intentional project decision. Rather than publish to either, the decision was
+  made to publish exclusively to GitHub Packages (`https://npm.pkg.github.com`), since the
+  project already lives at `github.com/lksnext/iac-resource-conventions` and GitHub Packages
+  requires no third-party registry account. Every publishable package's `publishConfig.registry`
+  now points at GitHub Packages, and the previous npm-registry-specific
+  `publishConfig.access: "public"` (which does not apply to GitHub Packages, where visibility
+  follows the owning repository) was removed. The repository-root [`.npmrc`](.npmrc) routes
+  only the `@lksnext` scope there (`@lksnext:registry=https://npm.pkg.github.com`, no
+  credential); third-party dependencies are unaffected. This is a real, documented limitation
+  for consumers: GitHub Packages requires authentication to install even a public package,
+  unlike `registry.npmjs.org` — see the package READMEs and
+  [`docs/release-notes/v0.1.0-alpha.0.md`](docs/release-notes/v0.1.0-alpha.0.md).
+- **Exposed local credentials (unrelated to the registry decision above, but discovered during
+  the same review):** while diagnosing the registry redirect, a Nexus password and a GitHub
+  personal access token stored in this development machine's local `~/.npmrc` were displayed in
+  terminal output. Both are treated as compromised: neither was reused, reproduced, tested,
+  copied into any tracked file, or used for any authentication in this repository. Rotating or
+  revoking them is left entirely to the machine's owner.
 - **Partial-publication failure/recovery policy (recommendation only):** if publication fails
   partway (for example, `core` and `catalog` succeed but `cli` fails), do not attempt to
   unpublish the packages that already succeeded — npm discourages and time-limits unpublishing,
@@ -1602,13 +1637,17 @@ and no product behavior changed.
   sequence (clean checkout, validation, build, package smoke test, auth check, publish order,
   post-publish verification, tagging, GitHub Release). Not placed under `docs/releases/` because
   this repository's `.gitignore` ignores any path matching `releases/`, including nested ones.
-- **Provenance:** still only a recommendation for a future CI-driven publish (see
+- **Provenance:** still only a recommendation for a possible future CI-driven publish (see
   [Release Readiness](#release-readiness) above) — a manual first publish from a maintainer's
   machine cannot honestly carry npm provenance attestation (which requires a supported CI
-  environment), so the runbook does not claim it for the first alpha.
+  environment), so the runbook does not claim it for the first alpha. GitHub Packages'
+  provenance support should be re-checked before that future workflow is implemented.
 - **Manual vs. CI publish:** unchanged recommendation — manual, documented `npm publish` for
-  this first alpha; introduce a GitHub Actions publish workflow (with provenance) only after the
-  manual process has proven the package topology works end-to-end.
+  this first alpha, authenticating with a newly issued GitHub token, never the credential
+  exposed on this development machine; introduce a GitHub Actions publish workflow (design
+  proposed, not implemented, in
+  [`docs/release-notes/publishing.md`](docs/release-notes/publishing.md#proposed-future-github-actions-publish-workflow-design-only-not-implemented))
+  only after the manual process has proven the package topology works end-to-end.
 - **Not done in this milestone (by design):** no package was published, no npm login/token was
   used or added, no Git tag was created, no GitHub Release was created, and no feature,
   provider, ResourceType, Convention Pack, CLI command, or Specification semantics changed.

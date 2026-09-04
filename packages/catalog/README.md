@@ -3,8 +3,9 @@
 Static Resource Definition and Convention Pack catalog for the
 `iac-resource-conventions` Specification.
 
-> Viewing this on npmjs.com? Relative links below (for example to `docs/` or `specification/`)
-> resolve only within the source repository, not from a published package. See them at
+> Viewing this outside the source repository (for example, on GitHub Packages)? Relative links
+> below (for example to `docs/` or `specification/`) resolve only within the source repository,
+> not from a published package. See them at
 > <https://github.com/lksnext/iac-resource-conventions>.
 
 ## Status

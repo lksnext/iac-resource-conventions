@@ -7,8 +7,13 @@
   "engines": {
     "node": ">=22"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lksnext/iac-resource-conventions.git",
+    "directory": "packages/cli"
+  },
   "publishConfig": {
-    "access": "public"
+    "registry": "https://npm.pkg.github.com"
   },
   "bin": {
     "iac-conventions": "./dist/cli.js"

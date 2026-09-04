@@ -151,7 +151,15 @@ Requires [Node.js](https://nodejs.org/) 22 LTS or later (see `engines` in
 
 ### As a published package (once available)
 
+These packages are published to [GitHub Packages](https://npm.pkg.github.com), not the public
+npm registry. Configure the `@lksnext` scope and authenticate with a GitHub token that has at
+least `read:packages` scope (GitHub Packages requires authentication even for a publicly
+readable package):
+
 ```bash
+echo "@lksnext:registry=https://npm.pkg.github.com" >> ~/.npmrc
+echo "//npm.pkg.github.com/:_authToken=<your-github-token>" >> ~/.npmrc
+
 npm install @lksnext/iac-conventions-cli@alpha
 iac-conventions --help
 ```
@@ -174,7 +182,7 @@ See [`packages/cli/README.md`](packages/cli/README.md) for the full command refe
 [`docs/integrations/terraform.md`](docs/integrations/terraform.md) for consuming these
 conventions from Terraform via `terraform-external`. This is currently an alpha prerelease —
 see [`docs/release-notes/v0.1.0-alpha.0.md`](docs/release-notes/v0.1.0-alpha.0.md) for current
-scope and limitations; no package has been published to npm yet.
+scope and limitations; no package has been published to GitHub Packages yet.
 
 ### From a clone (for contributors)
 

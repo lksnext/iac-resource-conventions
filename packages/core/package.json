@@ -7,8 +7,13 @@
   "engines": {
     "node": ">=22"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lksnext/iac-resource-conventions.git",
+    "directory": "packages/core"
+  },
   "publishConfig": {
-    "access": "public"
+    "registry": "https://npm.pkg.github.com"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

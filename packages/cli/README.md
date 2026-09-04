@@ -2,7 +2,8 @@
 
 Command-line adapter for the `iac-resource-conventions` Reference Evaluator.
 
-> Viewing this on npmjs.com? Relative links below (for example to `docs/` or
+> Viewing this outside the source repository (for example, on GitHub Packages)? Relative links
+> below (for example to `docs/` or
 > `examples/terraform/external/`) resolve only within the source repository, not from a
 > published package. See them at <https://github.com/lksnext/iac-resource-conventions>.
 
@@ -35,7 +36,14 @@ Dependency direction: `cli -> core`, `cli -> catalog`, `catalog -> core`. `core`
 
 ## Install / run
 
+This package is published to [GitHub Packages](https://npm.pkg.github.com), not the public npm
+registry. GitHub Packages requires authentication to install even a publicly readable package —
+configure the `@lksnext` scope and a GitHub token with at least `read:packages` scope first:
+
 ```bash
+echo "@lksnext:registry=https://npm.pkg.github.com" >> ~/.npmrc
+echo "//npm.pkg.github.com/:_authToken=<your-github-token>" >> ~/.npmrc
+
 npm install @lksnext/iac-conventions-cli@alpha
 iac-conventions --help
 ```
