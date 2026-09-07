@@ -729,7 +729,7 @@ is outside this document's current record and should be verified directly agains
 
 - **Milestone 5 — Azure Lamassu Portability Slice** (adds a second, evidence-backed
   platform slice validated against a real external reference project,
-  [`lamassu-azure`](https://github.com/lamassuiot/lamassu-azure): nine Azure Resource
+  `lamassu-azure`: nine Azure Resource
   Definitions (`azure_resource_group`, `azure_virtual_network`, `azure_subnet`,
   `azure_network_security_group`, `azure_linux_virtual_machine`, `azure_key_vault`,
   `azure_postgresql_flexible_server`, `azure_log_analytics_workspace`,

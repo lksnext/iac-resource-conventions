@@ -1,7 +1,7 @@
 # Terraform Example: Azure Lamassu Portability Slice
 
 This example shows how to name the Azure resource types used by the
-[`lamassu-azure`](https://github.com/lamassuiot/lamassu-azure) reference project
+`lamassu-azure` reference project
 through `@lksnext/iac-conventions-cli`'s `terraform-external` command, using this
 repository's Azure Convention Packs instead of `lamassu-azure`'s own hand-written
 Terraform naming module. See
