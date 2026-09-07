@@ -87,3 +87,8 @@ representability
 # Markdown anchor slug for "Specification/runtime fidelity", derived mechanically from
 # heading text (the "/" is dropped by GitHub's slug algorithm), not itself a prose word.
 specificationruntime
+
+# npm CLI flag name (`--userconfig`), used by scripts/smoke-test-github-packages.mjs to
+# point at a disposable, untracked .npmrc for the post-publication GitHub Packages smoke
+# test — not itself a prose word.
+userconfig

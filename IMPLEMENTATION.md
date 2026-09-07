@@ -704,6 +704,22 @@ is outside this document's current record and should be verified directly agains
     partial-publication recovery, npm dist-tag, and a release runbook. No Specification file
     changed, no product behavior changed, no package was published, tagged, or pushed. See
     [Alpha Package Conformance](#alpha-package-conformance) below for the full record.)
+  - Completed increment: **4.5.2 — GitHub Actions Publish Workflow** (adds
+    [`.github/workflows/publish-alpha.yml`](.github/workflows/publish-alpha.yml), a manually
+    triggered (`workflow_dispatch`, with a typed confirmation input and a `main`-ref gate)
+    workflow that publishes `core`, `catalog`, and `cli` to GitHub Packages in dependency order
+    using GitHub's own `GITHUB_TOKEN` — no repository secret created. Adds two reusable scripts:
+    `scripts/verify-publish-readiness.mjs` (offline synchronized-version, internal-dependency-pin,
+    registry, and repository-metadata gate) and `scripts/github-packages-check.mjs` (a
+    non-mutating GitHub Packages existence check used both as the pre-publish collision gate and
+    the post-publish per-package verification), plus
+    `scripts/smoke-test-github-packages.mjs` (a real post-publication consumer install from
+    GitHub Packages itself, distinct from the existing local-tarball
+    `scripts/smoke-test-packages.mjs`, which is unchanged). The workflow does not create a Git
+    tag or a GitHub Release, does not trigger on push or pull-request code, and was not run to
+    completion (no package was actually published) as part of adding it. See [GitHub Actions
+    publish workflow](docs/release-notes/publishing.md#github-actions-publish-workflow) for the
+    full step-by-step design.)
 
 ## Package Naming Policy
 
@@ -1540,14 +1556,13 @@ rule was added, and Specification semantics were not touched.
   workflow exists yet and this milestone must not add release secrets/tokens. GitHub Packages'
   own provenance/attestation support should be re-checked against current GitHub documentation
   before that future workflow is implemented.
-- **Release automation:** recommend starting with a manual, documented `npm publish` (from an
-  approved, signed, tagged release commit) for the first alpha, authenticating with a newly
-  issued GitHub token supplied only through an environment variable, and only introducing a
-  GitHub Actions publish workflow once that manual process has proven the package topology
-  actually works end-to-end — consistent with this repository's preference against premature
-  release tooling. A proposed (not implemented) GitHub Actions design is documented in
-  [`docs/release-notes/publishing.md`](docs/release-notes/publishing.md#proposed-future-github-actions-publish-workflow-design-only-not-implemented).
-  Changesets/Lerna/Rush are not warranted for three synchronously versioned packages.
+- **Release automation:** the first alpha publishes via
+  [`.github/workflows/publish-alpha.yml`](.github/workflows/publish-alpha.yml) (Milestone
+  4.5.2), a manually dispatched GitHub Actions workflow authenticating with GitHub's own
+  `GITHUB_TOKEN` — consistent with this repository's preference against premature release
+  tooling (no new release-automation dependency such as Changesets/Lerna/Rush, warranted for
+  three synchronously versioned packages). The manual `npm publish` sequence documented in
+  [`docs/release-notes/publishing.md`](docs/release-notes/publishing.md) remains a fallback.
 - **Git tag strategy (recommendation only, not created in this milestone):** a single tag,
   `v0.1.0-alpha.0`, covering all three synchronized packages — no per-package tags, consistent
   with the synchronized-versioning decision above.
@@ -1637,17 +1652,17 @@ and no product behavior changed.
   sequence (clean checkout, validation, build, package smoke test, auth check, publish order,
   post-publish verification, tagging, GitHub Release). Not placed under `docs/releases/` because
   this repository's `.gitignore` ignores any path matching `releases/`, including nested ones.
-- **Provenance:** still only a recommendation for a possible future CI-driven publish (see
-  [Release Readiness](#release-readiness) above) — a manual first publish from a maintainer's
-  machine cannot honestly carry npm provenance attestation (which requires a supported CI
-  environment), so the runbook does not claim it for the first alpha. GitHub Packages'
-  provenance support should be re-checked before that future workflow is implemented.
-- **Manual vs. CI publish:** unchanged recommendation — manual, documented `npm publish` for
-  this first alpha, authenticating with a newly issued GitHub token, never the credential
-  exposed on this development machine; introduce a GitHub Actions publish workflow (design
-  proposed, not implemented, in
-  [`docs/release-notes/publishing.md`](docs/release-notes/publishing.md#proposed-future-github-actions-publish-workflow-design-only-not-implemented))
-  only after the manual process has proven the package topology works end-to-end.
+- **Provenance:** still only a recommendation — [`publish-alpha.yml`](.github/workflows/publish-alpha.yml)
+  deliberately does not request `id-token: write` or pass `--provenance` for this first
+  workflow (minimum permissions only; see [Release Readiness](#release-readiness) above).
+  GitHub Packages' provenance support should be re-checked before a future workflow revision
+  adds it.
+- **Manual vs. CI publish:** the first alpha publishes via the GitHub Actions workflow
+  [`publish-alpha.yml`](.github/workflows/publish-alpha.yml) (Milestone 4.5.2; see [GitHub
+  Actions publish
+  workflow](docs/release-notes/publishing.md#github-actions-publish-workflow)), authenticating
+  with GitHub's own `GITHUB_TOKEN` — never the credential exposed on this development machine.
+  The manual `npm publish` sequence remains documented as a fallback.
 - **Not done in this milestone (by design):** no package was published, no npm login/token was
   used or added, no Git tag was created, no GitHub Release was created, and no feature,
   provider, ResourceType, Convention Pack, CLI command, or Specification semantics changed.
@@ -1761,10 +1776,10 @@ instructions). It runs on every push to `main` and on every pull request:
   the `validate` matrix, since it does not depend on OS-specific behavior this repository has
   found reason to test across three runners yet and keeps the job's runtime bounded.
 
-No release, tagging, or npm-publication workflow is added — actual publication remains out of
-scope (see [Versioning and publication](#versioning-and-publication) and [Release
-Readiness](#release-readiness) below for what Milestone 4.5 did prepare: publishable package
-metadata, a package-installation smoke test, and recommendations for the eventual publish step).
+No release, tagging, or npm-publication job is added to `ci.yml` itself — actual publication is
+handled by the separate, manually triggered
+[`.github/workflows/publish-alpha.yml`](.github/workflows/publish-alpha.yml) (Milestone 4.5.2;
+see [Release Readiness](#release-readiness) below), never on every push/pull request.
 
 ## Deferred decisions
 
