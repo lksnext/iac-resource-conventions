@@ -107,3 +107,77 @@ test("integration: a catalog-looked-up ConventionPack and ResourceDefinition can
   assert.equal(result.outputs.name, "telemetry-platform-ingestion-prod-aws_iam_role");
   assert.equal(result.validation.valid, true);
 });
+
+test("integration: azure-workload-default names an azure_resource_group", () => {
+  const conventionPack = getConventionPack("azure-workload-default");
+  assert.ok(conventionPack, "expected the catalog to know azure-workload-default");
+
+  const resourceDefinition = getResourceDefinition("azure_resource_group");
+  assert.ok(resourceDefinition, "expected the catalog to know azure_resource_group");
+
+  const result = evaluate({
+    naming_request: {
+      convention: "azure-workload-default",
+      resource_type: "azure_resource_group",
+      functional: { service: "platform" },
+    },
+    convention_pack: conventionPack,
+    evaluation_context: {
+      shared_organizational_context: { system: "lamassu" },
+      shared_deployment_context: { environment: "production", location: "westeurope" },
+    },
+    resource_definition: resourceDefinition,
+  });
+
+  assert.equal(result.outputs.name, "rg-lamassu-platform-prod-weu");
+  assert.equal(result.validation.valid, true);
+});
+
+test("integration: azure-workload-compact keeps azure_key_vault within its 24-character maximum", () => {
+  const conventionPack = getConventionPack("azure-workload-compact");
+  assert.ok(conventionPack, "expected the catalog to know azure-workload-compact");
+
+  const resourceDefinition = getResourceDefinition("azure_key_vault");
+  assert.ok(resourceDefinition, "expected the catalog to know azure_key_vault");
+
+  const result = evaluate({
+    naming_request: {
+      convention: "azure-workload-compact",
+      resource_type: "azure_key_vault",
+    },
+    convention_pack: conventionPack,
+    evaluation_context: {
+      shared_organizational_context: { system: "lamassu" },
+      shared_deployment_context: { environment: "production" },
+    },
+    resource_definition: resourceDefinition,
+  });
+
+  assert.equal(result.outputs.name, "kv-lamassu-prod");
+  assert.equal(result.validation.valid, true);
+});
+
+test("integration: azure-workload-underscore produces a hyphen-free name for azure_compute_gallery", () => {
+  const conventionPack = getConventionPack("azure-workload-underscore");
+  assert.ok(conventionPack, "expected the catalog to know azure-workload-underscore");
+
+  const resourceDefinition = getResourceDefinition("azure_compute_gallery");
+  assert.ok(resourceDefinition, "expected the catalog to know azure_compute_gallery");
+
+  const result = evaluate({
+    naming_request: {
+      convention: "azure-workload-underscore",
+      resource_type: "azure_compute_gallery",
+    },
+    convention_pack: conventionPack,
+    evaluation_context: {
+      shared_organizational_context: { system: "lamassu" },
+      shared_deployment_context: { environment: "production" },
+    },
+    resource_definition: resourceDefinition,
+  });
+
+  assert.equal(result.outputs.name, "gal_lamassu_prod");
+  assert.equal(result.validation.valid, true);
+  assert.ok(!result.outputs.name.includes("-"), "expected no hyphens in a compute gallery name");
+});

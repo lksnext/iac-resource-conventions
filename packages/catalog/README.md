@@ -30,10 +30,22 @@ example, no `min_length` field, no separate `path` identifier component, and
 Milestone 4.2 added a first executable Convention Pack: `aws-workload-default`,
 implementing
 [`specification/convention-packs/aws-workload-default.md`](https://github.com/lksnext/iac-resource-conventions/blob/main/specification/convention-packs/aws-workload-default.md).
-This is currently the **only** Convention Pack the catalog carries — not broad
-Convention Pack coverage — see
+This was, at the time, the **only** Convention Pack the catalog carried — see
 [`docs/architecture/convention-pack-catalog.md`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/convention-pack-catalog.md)
 for the full architecture.
+
+The Azure Lamassu portability slice added a second, equally small, evidence-backed
+Azure Resource Definition slice — `azure_resource_group`, `azure_virtual_network`,
+`azure_subnet`, `azure_network_security_group`, `azure_linux_virtual_machine`,
+`azure_key_vault`, `azure_postgresql_flexible_server`, `azure_log_analytics_workspace`,
+and `azure_compute_gallery` (under `src/azure/`) — and three Azure Convention Packs:
+`azure-workload-default` (general-purpose, hyphen-separated), `azure-workload-compact`
+(for `azure_key_vault`, whose 24-character maximum is too tight for the default pack's
+full naming component set), and `azure-workload-underscore` (for
+`azure_compute_gallery`, whose naming grammar forbids hyphens). See
+[`specification/convention-packs/`](https://github.com/lksnext/iac-resource-conventions/blob/main/specification/convention-packs/)
+for the normative Specification Artifacts these packs implement. As with the AWS
+slice, this is a deliberately small, evidence-backed set — not broad Azure coverage.
 
 ## Intended responsibilities
 

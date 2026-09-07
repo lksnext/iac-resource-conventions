@@ -92,3 +92,37 @@ specificationruntime
 # point at a disposable, untracked .npmrc for the post-publication GitHub Packages smoke
 # test — not itself a prose word.
 userconfig
+
+# Azure Lamassu portability slice (packages/catalog/src/azure/,
+# packages/catalog/src/convention-packs/azure-workload-*.ts,
+# specification/convention-packs/azure-workload-*.md,
+# examples/terraform/azure-lamassu/) — the external reference project's own name, cited
+# as provenance/validation-case evidence.
+Lamassu
+lamassu
+
+# Azure CAF abbreviations and ARM resource-type path segments cited verbatim from
+# official Microsoft Learn documentation (Azure Lamassu portability slice)
+vnet
+snet
+resourcegroups
+virtualnetworks
+pgsql
+mydemoserver
+
+# Azure region short names (Azure CAF abbreviations table), cited verbatim
+eastus
+westus
+centralus
+northeurope
+uksouth
+ukwest
+
+# Azure Resource Manager naming-rules documentation terminology
+# (packages/catalog/src/azure/resource-group.ts)
+Titlecase
+
+# Milestone 5 (Azure Lamassu portability slice) scoping terminology
+# (docs/architecture/resource-definition-catalog.md)
+unmodeled
+

@@ -121,6 +121,29 @@ test("evaluate: a valid input produces a valid ConventionResult on stdout, exit 
   assert.equal(result.outputs.name, "telemetry-platform-ingestion-prod-aws_iam_role");
 });
 
+test("evaluate: an azure-workload-default request produces a valid ConventionResult", async () => {
+  const input = JSON.stringify({
+    naming_request: {
+      convention: "azure-workload-default",
+      resource_type: "azure_resource_group",
+      functional: { service: "platform" },
+    },
+    evaluation_context: {
+      shared_organizational_context: { system: "lamassu" },
+      shared_deployment_context: { environment: "production", location: "westeurope" },
+    },
+  });
+
+  const { exitCode, stdout, stderr } = await runCli(["evaluate"], input);
+
+  assert.equal(exitCode, 0);
+  assert.equal(stderr, "");
+
+  const result = JSON.parse(stdout);
+  assert.equal(result.validation.valid, true);
+  assert.equal(result.outputs.name, "rg-lamassu-platform-prod-weu");
+});
+
 // --- evaluate: domain-invalid result ---------------------------------------------------
 
 test("evaluate: a v1.2 max_length violation still completes with exit 0 and a domain-invalid result", async () => {
@@ -133,6 +156,32 @@ test("evaluate: a v1.2 max_length violation still completes with exit 0 and a do
     evaluation_context: {
       shared_organizational_context: { system: "telemetry-platform" },
       shared_deployment_context: { environment: "production" },
+    },
+  });
+
+  const { exitCode, stdout, stderr } = await runCli(["evaluate"], input);
+
+  assert.equal(exitCode, 0);
+  assert.equal(stderr, "");
+
+  const result = JSON.parse(stdout);
+  assert.equal(result.validation.valid, false);
+  assert.ok(
+    result.validation.failures?.some((failure) => failure.code === "max-length"),
+    "expected a max-length validation failure",
+  );
+});
+
+test("evaluate: an azure_key_vault name that exceeds its 24-character maximum still completes with exit 0 and a domain-invalid result", async () => {
+  const input = JSON.stringify({
+    naming_request: {
+      convention: "azure-workload-default",
+      resource_type: "azure_key_vault",
+      functional: { service: "platform" },
+    },
+    evaluation_context: {
+      shared_organizational_context: { system: "telemetry-platform" },
+      shared_deployment_context: { environment: "production", location: "westeurope" },
     },
   });
 

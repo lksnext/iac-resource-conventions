@@ -81,6 +81,15 @@ test("listResourceTypes returns exactly the expected catalog entries in lexical 
     "aws_iam_role",
     "aws_lambda_function",
     "aws_s3_bucket",
+    "azure_compute_gallery",
+    "azure_key_vault",
+    "azure_linux_virtual_machine",
+    "azure_log_analytics_workspace",
+    "azure_network_security_group",
+    "azure_postgresql_flexible_server",
+    "azure_resource_group",
+    "azure_subnet",
+    "azure_virtual_network",
   ]);
 });
 
