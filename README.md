@@ -149,7 +149,7 @@ dependency rules:
 Requires [Node.js](https://nodejs.org/) 22 LTS or later (see `engines` in
 [`package.json`](package.json)); the Dev Container and CI already provide it.
 
-### As a published package (once available)
+### As a published package
 
 These packages are published to [GitHub Packages](https://npm.pkg.github.com), not the public
 npm registry. Configure the `@lksnext` scope and authenticate with a GitHub token that has at
@@ -180,9 +180,11 @@ echo '{
 
 See [`packages/cli/README.md`](packages/cli/README.md) for the full command reference and
 [`docs/integrations/terraform.md`](docs/integrations/terraform.md) for consuming these
-conventions from Terraform via `terraform-external`. This is currently an alpha prerelease —
-see [`docs/release-notes/v0.1.0-alpha.0.md`](docs/release-notes/v0.1.0-alpha.0.md) for current
-scope and limitations; no package has been published to GitHub Packages yet.
+conventions from Terraform via `terraform-external`. The current alpha line is published to
+GitHub Packages. For detailed current scope and limitations, see
+[`docs/release-notes/v0.1.0-alpha.0.md`](docs/release-notes/v0.1.0-alpha.0.md) (the first
+alpha, published) and [`docs/release-notes/v0.1.0-alpha.1.md`](docs/release-notes/v0.1.0-alpha.1.md)
+(the current alpha, draft — pending publication).
 
 ### From a clone (for contributors)
 
@@ -267,8 +269,10 @@ for the full API contract, design rationale, and current capability scope.
 - [`docs/integrations/terraform.md`](docs/integrations/terraform.md) — how Terraform
   configurations consume this project's conventions today, through the CLI's
   `terraform-external` command and the `hashicorp/external` provider.
-- [`docs/release-notes/v0.1.0-alpha.0.md`](docs/release-notes/v0.1.0-alpha.0.md) — draft release notes
-  for the first alpha prerelease (not yet published).
+- [`docs/release-notes/v0.1.0-alpha.0.md`](docs/release-notes/v0.1.0-alpha.0.md) — release notes
+  for the first alpha prerelease (published).
+- [`docs/release-notes/v0.1.0-alpha.1.md`](docs/release-notes/v0.1.0-alpha.1.md) — draft release
+  notes for the current alpha prerelease (pending publication).
 - [`docs/`](docs/) — further reference documentation (planned).
 - Reference Documentation — planned.
 - [`examples/terraform/external/`](examples/terraform/external/) — a runnable Terraform
