@@ -273,9 +273,9 @@ for the full API contract, design rationale, and current capability scope.
 - Reference Documentation — planned.
 - [`examples/terraform/external/`](examples/terraform/external/) — a runnable Terraform
   example consuming `terraform-external`.
-- [`examples/terraform/azure-lamassu/`](examples/terraform/azure-lamassu/) — a runnable
-  Terraform example naming Azure resources against the `lamassu-azure` reference project's
-  resource types, using this catalog's Azure Convention Packs.
+- [`examples/terraform/azure-workload/`](examples/terraform/azure-workload/) — a runnable
+  Terraform example naming a representative set of Azure resource types, using this
+  catalog's Azure Convention Packs.
 
 ## Roadmap
 
@@ -294,10 +294,10 @@ for the full API contract, design rationale, and current capability scope.
   public `evaluate()` API is available, see
   [`docs/architecture/reference-evaluator.md`](docs/architecture/reference-evaluator.md)).
 - Resource Definition Catalog (Milestone 3 — in progress; an initial AWS slice and an Azure
-  slice (Azure Lamassu portability slice) are implemented, see
+  slice (Azure portability slice) are implemented, see
   [`packages/catalog/README.md`](packages/catalog/README.md)).
 - ✓ Executable Convention Packs (Milestone 4.2 — complete; a first pack,
-  `aws-workload-default`, is implemented, and the Azure Lamassu portability slice added
+  `aws-workload-default`, is implemented, and the Azure portability slice added
   three Azure packs (`azure-workload-default`, `azure-workload-compact`,
   `azure-workload-underscore`), see
   [`docs/architecture/convention-pack-catalog.md`](docs/architecture/convention-pack-catalog.md)).

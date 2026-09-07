@@ -34,7 +34,7 @@ This was, at the time, the **only** Convention Pack the catalog carried — see
 [`docs/architecture/convention-pack-catalog.md`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/convention-pack-catalog.md)
 for the full architecture.
 
-The Azure Lamassu portability slice added a second, equally small, evidence-backed
+The Azure portability slice added a second, equally small, evidence-backed
 Azure Resource Definition slice — `azure_resource_group`, `azure_virtual_network`,
 `azure_subnet`, `azure_network_security_group`, `azure_linux_virtual_machine`,
 `azure_key_vault`, `azure_postgresql_flexible_server`, `azure_log_analytics_workspace`,

@@ -1,9 +1,8 @@
-# Terraform Example: Azure Lamassu Portability Slice
+# Terraform Example: Azure Workload Convention Packs
 
-This example shows how to name the Azure resource types used by the
-`lamassu-azure` reference project
-through `@lksnext/iac-conventions-cli`'s `terraform-external` command, using this
-repository's Azure Convention Packs instead of `lamassu-azure`'s own hand-written
+This example shows how to name a representative set of Azure resource types for a
+sample workload through `@lksnext/iac-conventions-cli`'s `terraform-external`
+command, using this repository's Azure Convention Packs instead of a hand-written
 Terraform naming module. See
 [`../../../docs/integrations/terraform.md`](../../../docs/integrations/terraform.md)
 for the full architecture, protocol mapping, and limitations this example follows, and
@@ -21,8 +20,8 @@ for the full architecture, protocol mapping, and limitations this example follow
 
 ## What this example does
 
-`main.tf` evaluates three Naming Requests, one per Azure resource type used by
-`lamassu-azure`'s `network` and `keyvault` Terraform modules:
+`main.tf` evaluates three Naming Requests, one per Azure resource type a typical
+networked workload with a secrets store would provision:
 
 1. `azure_resource_group` and `azure_virtual_network`, named under
    `azure-workload-default` — the general-purpose, hyphen-separated Convention Pack
@@ -39,23 +38,23 @@ evaluation_context }` document is encoded with `jsonencode(...)` into
 `query.request_json`, and `result.name` / `result.valid` / `result.result_json` are
 read back as outputs.
 
-## Migration notes: maintaining lamassu-azure's existing generated names is not required
+## Migration notes: preserving an existing hand-written naming scheme is not required
 
-`lamassu-azure`'s own Terraform naming module (`terraform/modules/naming/main.tf`)
-hand-rolls a hyphenated pattern per resource type, with an underscore-only special case
-for `azurerm_shared_image_gallery` because Azure's naming grammar forbids hyphens for
-that resource type (see
+Many existing Azure Terraform codebases hand-roll their own naming module — typically
+a hyphenated pattern per resource type, with an underscore-only special case for
+`azurerm_shared_image_gallery` because Azure's naming grammar forbids hyphens for that
+resource type (see
 [`specification/convention-packs/azure-workload-underscore.md`](../../../specification/convention-packs/azure-workload-underscore.md),
-which now documents that exact constraint for `azure_compute_gallery`, the Resource
-Type this catalog uses for that same resource).
+which documents that exact constraint for `azure_compute_gallery`, the Resource Type
+this catalog uses for that same resource).
 
-Adopting this example's Convention Packs is **not required to preserve
-`lamassu-azure`'s existing generated names byte-for-byte**. The naming component order,
-abbreviations, and separators declared by `azure-workload-default`,
+Adopting this example's Convention Packs is **not required to preserve an existing
+hand-written naming module's generated names byte-for-byte**. The naming component
+order, abbreviations, and separators declared by `azure-workload-default`,
 `azure-workload-compact`, and `azure-workload-underscore` are an independent,
 Specification-driven naming policy; a resource migrated to name itself through this
-catalog may receive a different, but equally valid, name than `lamassu-azure`'s own
-naming module previously produced for it. Treat adoption as a one-time rename, not an
+catalog may receive a different, but equally valid, name than a hand-written naming
+module previously produced for it. Treat adoption as a one-time rename, not an
 in-place, invisible replacement — plan any migration of already-provisioned resources
 accordingly (for example, `terraform state mv`, or accepting a resource replacement,
 depending on whether the target resource type supports renaming in place).

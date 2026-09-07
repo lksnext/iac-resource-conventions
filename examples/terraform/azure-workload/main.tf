@@ -9,10 +9,9 @@ terraform {
   }
 }
 
-# Evaluates Naming Requests for the Azure resource types used by the lamassu-azure
-# reference project (https://github.com/lamassuiot/lamassu-azure) through the
-# `iac-conventions terraform-external` bridge (Milestone 4.4), using this catalog's
-# Azure Convention Packs instead of lamassu-azure's own hand-written naming module.
+# Evaluates Naming Requests for a representative set of Azure resource types through
+# the `iac-conventions terraform-external` bridge (Milestone 4.4), using this
+# catalog's Azure Convention Packs instead of a hand-written naming module.
 # See ./README.md and ../../../docs/integrations/terraform.md for the full protocol
 # mapping.
 #
@@ -20,7 +19,7 @@ terraform {
 # naming conventions locally, it never contacts Azure.
 
 locals {
-  system      = "lamassu"
+  system      = "workload"
   environment = "production"
   location    = "westeurope"
 }

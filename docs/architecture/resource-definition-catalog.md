@@ -239,9 +239,9 @@ need for a resource type whose valid characters are not single-byte ASCII.
   entirely, since ACM certificates have no user-supplied name. This confirms the field's
   optionality is load-bearing, not merely a type-level nicety.
 
-## Azure Lamassu portability slice
+## Azure portability slice
 
-The Azure Lamassu portability slice added a second, equally small, evidence-backed
+The Azure portability slice added a second, equally small, evidence-backed
 platform slice: `azure_resource_group`, `azure_virtual_network`, `azure_subnet`,
 `azure_network_security_group`, `azure_linux_virtual_machine`, `azure_key_vault`,
 `azure_postgresql_flexible_server`, `azure_log_analytics_workspace`, and
@@ -252,9 +252,11 @@ the same Explicit/Derived evidence-classification convention the AWS slice alrea
 established (see [Definition provenance and modeling findings](#definition-provenance-and-modeling-findings)
 above).
 
-This slice was selected to validate Azure portability against a real external
-reference project (`lamassu-azure`'s Terraform naming module and resource modules),
-covering a management resource with no location-dependent naming rule
+This slice was selected to validate Azure portability against a representative
+Terraform-based Azure workload (a resource group, virtual network, and subnet with a
+network security group, a Linux virtual machine, a Key Vault, a PostgreSQL Flexible
+Server, a Log Analytics workspace, and a Compute Gallery), covering a management
+resource with no location-dependent naming rule
 (`azure_resource_group`), two resources whose uniqueness scope narrows below their
 containing resource group (`azure_subnet`, scoped to its virtual network), two
 resources with a global uniqueness scope despite being regionally placed

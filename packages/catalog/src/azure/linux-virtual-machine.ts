@@ -7,7 +7,7 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  *
  * Source: {@link https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules}
  * ("Naming rules and restrictions for Azure resources", `Microsoft.Compute` section,
- * `virtualMachines` row, retrieved for the Azure Lamassu portability slice).
+ * `virtualMachines` row, retrieved for the Azure portability slice).
  *
  * Findings:
  * - **Windows/Linux scope** — "virtualMachines | resource group | 1-15 (Windows)

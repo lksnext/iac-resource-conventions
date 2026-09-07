@@ -129,7 +129,7 @@ test("evaluate: an azure-workload-default request produces a valid ConventionRes
       functional: { service: "platform" },
     },
     evaluation_context: {
-      shared_organizational_context: { system: "lamassu" },
+      shared_organizational_context: { system: "workload" },
       shared_deployment_context: { environment: "production", location: "westeurope" },
     },
   });
@@ -141,7 +141,7 @@ test("evaluate: an azure-workload-default request produces a valid ConventionRes
 
   const result = JSON.parse(stdout);
   assert.equal(result.validation.valid, true);
-  assert.equal(result.outputs.name, "rg-lamassu-platform-prod-weu");
+  assert.equal(result.outputs.name, "rg-workload-platform-prod-weu");
 });
 
 // --- evaluate: domain-invalid result ---------------------------------------------------

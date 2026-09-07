@@ -36,13 +36,13 @@ This is the **implementation foundation** only. As of this writing:
 - `packages/catalog` (`@lksnext/iac-conventions-catalog`) exists, holding two static,
   immutable artifact catalogs: a Resource Definition Catalog validated against
   authoritative AWS and Azure documentation (Milestones 3.1–3.3, extended by the Azure
-  Lamassu portability slice) — a `getResourceDefinition` / `listResourceTypes` lookup
+  portability slice) — a `getResourceDefinition` / `listResourceTypes` lookup
   API over four AWS entries (`aws_s3_bucket`, `aws_iam_role`, `aws_lambda_function`,
   `aws_acm_certificate`) and nine Azure entries (`azure_resource_group`,
   `azure_virtual_network`, `azure_subnet`, `azure_network_security_group`,
   `azure_linux_virtual_machine`, `azure_key_vault`, `azure_postgresql_flexible_server`,
   `azure_log_analytics_workspace`, `azure_compute_gallery`) — and an executable
-  Convention Pack Catalog (Milestone 4.2, extended by the Azure Lamassu portability
+  Convention Pack Catalog (Milestone 4.2, extended by the Azure portability
   slice) — a `getConventionPack` / `listConventionPackIds` lookup API over four packs,
   `aws-workload-default`, `azure-workload-default`, `azure-workload-compact`, and
   `azure-workload-underscore`. See [Milestones](#milestones) below,
@@ -727,10 +727,9 @@ is outside this document's current record and should be verified directly agains
     publish workflow](docs/release-notes/publishing.md#github-actions-publish-workflow) for the
     full step-by-step design.)
 
-- **Milestone 5 — Azure Lamassu Portability Slice** (adds a second, evidence-backed
-  platform slice validated against a real external reference project,
-  `lamassu-azure`: nine Azure Resource
-  Definitions (`azure_resource_group`, `azure_virtual_network`, `azure_subnet`,
+- **Milestone 5 — Azure Portability Slice** (adds a second, evidence-backed
+  platform slice covering a representative Terraform-based Azure workload: nine Azure
+  Resource Definitions (`azure_resource_group`, `azure_virtual_network`, `azure_subnet`,
   `azure_network_security_group`, `azure_linux_virtual_machine`, `azure_key_vault`,
   `azure_postgresql_flexible_server`, `azure_log_analytics_workspace`,
   `azure_compute_gallery`) under `packages/catalog/src/azure/`, cited exclusively from
@@ -741,14 +740,13 @@ is outside this document's current record and should be verified directly agains
   implementing three new Specification Artifacts under
   `specification/convention-packs/`; catalog, integration, and CLI test coverage for
   all of the above; and a runnable Terraform example,
-  [`examples/terraform/azure-lamassu/`](examples/terraform/azure-lamassu/), naming the
-  Azure resource types `lamassu-azure`'s own Terraform modules provision. This
-  milestone explicitly does not attempt to reproduce `lamassu-azure`'s existing
-  generated names — see [`examples/terraform/azure-lamassu/README.md`](examples/terraform/azure-lamassu/README.md#migration-notes-maintaining-lamassu-azures-existing-generated-names-is-not-required).
+  [`examples/terraform/azure-workload/`](examples/terraform/azure-workload/), naming a
+  representative set of Azure resource types. This milestone explicitly does not
+  attempt to reproduce any existing hand-written naming module's generated names —
+  see [`examples/terraform/azure-workload/README.md`](examples/terraform/azure-workload/README.md#migration-notes-preserving-an-existing-hand-written-naming-scheme-is-not-required).
   No Specification concept changed, no core provider logic was added (Azure-specific
-  data lives entirely in catalog `ResourceDefinition`/`ConventionPack` values), no new
-  runtime dependency was added, and the `lamassu-azure` project itself was not
-  modified.
+  data lives entirely in catalog `ResourceDefinition`/`ConventionPack` values), and no
+  new runtime dependency was added.
 
 ## Package Naming Policy
 

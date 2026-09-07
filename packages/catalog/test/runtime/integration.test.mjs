@@ -123,13 +123,13 @@ test("integration: azure-workload-default names an azure_resource_group", () => 
     },
     convention_pack: conventionPack,
     evaluation_context: {
-      shared_organizational_context: { system: "lamassu" },
+      shared_organizational_context: { system: "workload" },
       shared_deployment_context: { environment: "production", location: "westeurope" },
     },
     resource_definition: resourceDefinition,
   });
 
-  assert.equal(result.outputs.name, "rg-lamassu-platform-prod-weu");
+  assert.equal(result.outputs.name, "rg-workload-platform-prod-weu");
   assert.equal(result.validation.valid, true);
 });
 
@@ -147,13 +147,13 @@ test("integration: azure-workload-compact keeps azure_key_vault within its 24-ch
     },
     convention_pack: conventionPack,
     evaluation_context: {
-      shared_organizational_context: { system: "lamassu" },
+      shared_organizational_context: { system: "workload" },
       shared_deployment_context: { environment: "production" },
     },
     resource_definition: resourceDefinition,
   });
 
-  assert.equal(result.outputs.name, "kv-lamassu-prod");
+  assert.equal(result.outputs.name, "kv-workload-prod");
   assert.equal(result.validation.valid, true);
 });
 
@@ -171,13 +171,13 @@ test("integration: azure-workload-underscore produces a hyphen-free name for azu
     },
     convention_pack: conventionPack,
     evaluation_context: {
-      shared_organizational_context: { system: "lamassu" },
+      shared_organizational_context: { system: "workload" },
       shared_deployment_context: { environment: "production" },
     },
     resource_definition: resourceDefinition,
   });
 
-  assert.equal(result.outputs.name, "gal_lamassu_prod");
+  assert.equal(result.outputs.name, "gal_workload_prod");
   assert.equal(result.validation.valid, true);
   assert.ok(!result.outputs.name.includes("-"), "expected no hyphens in a compute gallery name");
 });

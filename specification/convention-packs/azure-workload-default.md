@@ -150,8 +150,8 @@ omitted from the generated name, together with its surrounding separator (see
 [Component ordering](../convention-pack.md#component-ordering)).
 
 For example, a `production` `azure_resource_group` resource for the `platform` service
-of the `lamassu` system, deployed to `westeurope`, with no instance resolved, generates
-the name `rg-lamassu-platform-prod-weu`.
+of the `workload` system, deployed to `westeurope`, with no instance resolved, generates
+the name `rg-workload-platform-prod-weu`.
 
 ## Metadata projection
 

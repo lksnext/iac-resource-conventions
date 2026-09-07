@@ -6,7 +6,7 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  *
  * Source: {@link https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules}
  * ("Naming rules and restrictions for Azure resources", `Microsoft.Network` section,
- * `virtualNetworks` row, retrieved for the Azure Lamassu portability slice).
+ * `virtualNetworks` row, retrieved for the Azure portability slice).
  *
  * Findings:
  * - **Uniqueness / scope** — "virtualNetworks | resource group | 2-64". Modeled as

@@ -66,8 +66,8 @@ itself hyphen-free, so no field besides `separator` needs to change to keep the
 rendered name valid.
 
 For example, a `production` `azure_compute_gallery` resource for the `platform` service
-of the `lamassu` system, deployed to `westeurope`, with no instance resolved, generates
-the name `gal_lamassu_platform_prod_weu`.
+of the `workload` system, deployed to `westeurope`, with no instance resolved, generates
+the name `gal_workload_platform_prod_weu`.
 
 ## Metadata projection
 

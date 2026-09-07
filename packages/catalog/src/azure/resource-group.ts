@@ -6,7 +6,7 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  *
  * Source: {@link https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules}
  * ("Naming rules and restrictions for Azure resources", `Microsoft.Resources`
- * section, retrieved for the Azure Lamassu portability slice).
+ * section, retrieved for the Azure portability slice).
  *
  * Findings:
  * - **Uniqueness / scope** — "resourcegroups | subscription | 1-90". Modeled as

@@ -6,7 +6,7 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  *
  * Source: {@link https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules}
  * ("Naming rules and restrictions for Azure resources", `Microsoft.Network` section,
- * `networkSecurityGroups` row, retrieved for the Azure Lamassu portability slice).
+ * `networkSecurityGroups` row, retrieved for the Azure portability slice).
  *
  * Findings:
  * - **Uniqueness / scope** — "networkSecurityGroups | resource group | 1-80". Modeled

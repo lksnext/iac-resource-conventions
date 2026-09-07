@@ -6,7 +6,7 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  *
  * Source: {@link https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules}
  * ("Naming rules and restrictions for Azure resources", `Microsoft.OperationalInsights`
- * section, `workspaces` row, retrieved for the Azure Lamassu portability slice).
+ * section, `workspaces` row, retrieved for the Azure portability slice).
  *
  * Findings:
  * - **Uniqueness / scope** — "workspaces | resource group | 4-63". Modeled as

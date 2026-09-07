@@ -72,8 +72,8 @@ No `deployment.location` abbreviation is declared: `deployment.location` is not 
 this pack's naming projection at all, precisely because it is one of the two
 components dropped to keep names short.
 
-For example, a `production` `azure_key_vault` resource for the `lamassu` system, with
-no instance resolved, generates the name `kv-lamassu-prod` — 15 characters, comfortably
+For example, a `production` `azure_key_vault` resource for the `workload` system, with
+no instance resolved, generates the name `kv-workload-prod` — 16 characters, comfortably
 within the 24-character maximum, and with headroom for a longer `organizational.system`
 value or an instance discriminator when global uniqueness requires one (see
 [`resource-definition.md`](../resource-definition.md) for the note that this catalog

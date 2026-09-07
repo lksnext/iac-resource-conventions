@@ -94,7 +94,7 @@ output "valid" {
 A full, runnable copy of this example lives at
 [`../../examples/terraform/external/`](../../examples/terraform/external/), including
 setup instructions. A second example,
-[`../../examples/terraform/azure-lamassu/`](../../examples/terraform/azure-lamassu/),
+[`../../examples/terraform/azure-workload/`](../../examples/terraform/azure-workload/),
 shows the same pattern for `azure_resource_group`, `azure_virtual_network`, and
 `azure_key_vault`, selecting `azure-workload-default` and `azure-workload-compact`
 respectively — the same bridge, protocol, and limitations apply regardless of platform

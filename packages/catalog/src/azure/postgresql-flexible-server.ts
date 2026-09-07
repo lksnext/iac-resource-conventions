@@ -5,7 +5,7 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  * Azure Database for PostgreSQL Flexible Server
  * (`Microsoft.DBforPostgreSQL/flexibleServers`).
  *
- * Sources (retrieved for the Azure Lamassu portability slice):
+ * Sources (retrieved for the Azure portability slice):
  * - {@link https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules}
  *   ("Naming rules and restrictions for Azure resources", `Microsoft.DBforPostgreSQL`
  *   section, `servers` row): "servers | global | 3-63 | Lowercase letters, hyphens,
