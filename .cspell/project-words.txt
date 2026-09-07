@@ -92,3 +92,29 @@ specificationruntime
 # point at a disposable, untracked .npmrc for the post-publication GitHub Packages smoke
 # test — not itself a prose word.
 userconfig
+
+# Azure CAF abbreviations and ARM resource-type path segments cited verbatim from
+# official Microsoft Learn documentation (Azure portability slice)
+vnet
+snet
+resourcegroups
+virtualnetworks
+pgsql
+mydemoserver
+
+# Azure region short names (Azure CAF abbreviations table), cited verbatim
+eastus
+westus
+centralus
+northeurope
+uksouth
+ukwest
+
+# Azure Resource Manager naming-rules documentation terminology
+# (packages/catalog/src/azure/resource-group.ts)
+Titlecase
+
+# Milestone 5 (Azure portability slice) scoping terminology
+# (docs/architecture/resource-definition-catalog.md)
+unmodeled
+

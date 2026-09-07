@@ -37,6 +37,14 @@ what a Convention Pack fundamentally *is*, that change belongs in
   Pack, describing an organizational naming, governance, and metadata policy for AWS
   workload accounts, and demonstrating how Platform Convention, Organization
   Convention, and Deployment Convention compose into a single effective Convention Pack.
+- [`azure-workload-default.md`](./azure-workload-default.md) — the general-purpose,
+  hyphen-separated Convention Pack for Azure workload subscriptions.
+- [`azure-workload-compact.md`](./azure-workload-compact.md) — a shorter-name variant
+  of `azure-workload-default` for Azure Resource Types (such as `azure_key_vault`)
+  whose maximum length is too tight for the default pack's full naming component set.
+- [`azure-workload-underscore.md`](./azure-workload-underscore.md) — an
+  underscore-separated variant of `azure-workload-default` for Azure Resource Types
+  (such as `azure_compute_gallery`) whose naming grammar forbids hyphens.
 
 ## Scope of this iteration
 

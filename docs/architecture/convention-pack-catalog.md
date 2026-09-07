@@ -19,7 +19,10 @@ Artifacts under
 [`specification/convention-packs/`](../../specification/convention-packs/), expressed
 as Markdown policy documents, not executable data (see
 [`specification/convention-packs/README.md`](../../specification/convention-packs/README.md)).
-`aws-workload-default` is currently the only such artifact.
+`aws-workload-default` was the first such artifact; the Azure portability slice
+added three more — `azure-workload-default`, `azure-workload-compact`, and
+`azure-workload-underscore` (see [Azure portability slice](#azure-portability-slice)
+below).
 
 The catalog implements each artifact it carries; it does not extend, reinterpret, or
 duplicate the policy those artifacts define. Every catalog entry is a `ConventionPack`
@@ -138,7 +141,36 @@ field — the Specification defines no provenance field, consistent with
 `specification/convention-packs/aws-workload-default.md` (its `id`, naming projection
 YAML example, required attributes, and override policy), without parsing the Markdown
 file itself. `test/runtime/integration.test.mjs` additionally exercises the artifact's
-own worked naming example end-to-end through `evaluate()`.
+own worked naming example end-to-end through `evaluate()`. The same fidelity and
+integration tests exist for the three Azure packs added by the Azure portability
+slice.
+
+## Azure portability slice
+
+The Azure portability slice added three executable Convention Packs (under
+`packages/catalog/src/convention-packs/`), implementing three new Specification
+Artifacts under `specification/convention-packs/`:
+
+- **`azure-workload-default`** — the general-purpose, hyphen-separated Convention
+  Pack for Azure workload subscriptions. Its `naming_component_order` leads with the
+  abbreviated `functional.resource_type`, unlike `aws-workload-default`, which places
+  it near the end — a deliberate difference following Microsoft's own Cloud Adoption
+  Framework convention of prefixing a resource-type code (for example, `rg-`, `vnet-`),
+  not an inconsistency with the AWS pack.
+- **`azure-workload-compact`** — a shorter-name variant of `azure-workload-default`,
+  its only current consumer being `azure_key_vault` (`max_length: 24`, too tight for
+  the default pack's full naming component set). It drops `functional.service` and
+  `deployment.location` from `naming_component_order` rather than truncating a
+  generated name, which Specification v1.2 forbids.
+- **`azure-workload-underscore`** — an underscore-separated variant of
+  `azure-workload-default`, its only current consumer being `azure_compute_gallery`
+  (whose naming grammar forbids hyphens entirely). Only `separator` differs from
+  `azure-workload-default`.
+
+Each pack is deliberately scoped to the Resource Types that actually need it, rather
+than a single pack attempting to cover every Azure Resource Type in this catalog slice
+— see [`docs/architecture/resource-definition-catalog.md#azure-portability-slice`](resource-definition-catalog.md#azure-portability-slice)
+for the corresponding Resource Definition slice these packs name.
 
 ## CLI relationship
 

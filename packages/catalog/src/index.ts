@@ -23,7 +23,19 @@ import { AWS_ACM_CERTIFICATE } from "./aws/acm-certificate.js";
 import { AWS_IAM_ROLE } from "./aws/iam-role.js";
 import { AWS_LAMBDA_FUNCTION } from "./aws/lambda-function.js";
 import { AWS_S3_BUCKET } from "./aws/s3-bucket.js";
+import { AZURE_COMPUTE_GALLERY } from "./azure/compute-gallery.js";
+import { AZURE_KEY_VAULT } from "./azure/key-vault.js";
+import { AZURE_LINUX_VIRTUAL_MACHINE } from "./azure/linux-virtual-machine.js";
+import { AZURE_LOG_ANALYTICS_WORKSPACE } from "./azure/log-analytics-workspace.js";
+import { AZURE_NETWORK_SECURITY_GROUP } from "./azure/network-security-group.js";
+import { AZURE_POSTGRESQL_FLEXIBLE_SERVER } from "./azure/postgresql-flexible-server.js";
+import { AZURE_RESOURCE_GROUP } from "./azure/resource-group.js";
+import { AZURE_SUBNET } from "./azure/subnet.js";
+import { AZURE_VIRTUAL_NETWORK } from "./azure/virtual-network.js";
 import { AWS_WORKLOAD_DEFAULT } from "./convention-packs/aws-workload-default.js";
+import { AZURE_WORKLOAD_COMPACT } from "./convention-packs/azure-workload-compact.js";
+import { AZURE_WORKLOAD_DEFAULT } from "./convention-packs/azure-workload-default.js";
+import { AZURE_WORKLOAD_UNDERSCORE } from "./convention-packs/azure-workload-underscore.js";
 import { deepFreeze } from "./internal/deep-freeze.js";
 
 /**
@@ -44,6 +56,15 @@ const resourceDefinitions: Readonly<Record<ResourceType, ResourceDefinition>> = 
   [AWS_IAM_ROLE.resource_type]: AWS_IAM_ROLE,
   [AWS_LAMBDA_FUNCTION.resource_type]: AWS_LAMBDA_FUNCTION,
   [AWS_S3_BUCKET.resource_type]: AWS_S3_BUCKET,
+  [AZURE_COMPUTE_GALLERY.resource_type]: AZURE_COMPUTE_GALLERY,
+  [AZURE_KEY_VAULT.resource_type]: AZURE_KEY_VAULT,
+  [AZURE_LINUX_VIRTUAL_MACHINE.resource_type]: AZURE_LINUX_VIRTUAL_MACHINE,
+  [AZURE_LOG_ANALYTICS_WORKSPACE.resource_type]: AZURE_LOG_ANALYTICS_WORKSPACE,
+  [AZURE_NETWORK_SECURITY_GROUP.resource_type]: AZURE_NETWORK_SECURITY_GROUP,
+  [AZURE_POSTGRESQL_FLEXIBLE_SERVER.resource_type]: AZURE_POSTGRESQL_FLEXIBLE_SERVER,
+  [AZURE_RESOURCE_GROUP.resource_type]: AZURE_RESOURCE_GROUP,
+  [AZURE_SUBNET.resource_type]: AZURE_SUBNET,
+  [AZURE_VIRTUAL_NETWORK.resource_type]: AZURE_VIRTUAL_NETWORK,
 });
 
 /**
@@ -80,6 +101,9 @@ export function listResourceTypes(): ReadonlyArray<ResourceType> {
  */
 const conventionPacks: Readonly<Record<ConventionPackId, ConventionPack>> = deepFreeze({
   [AWS_WORKLOAD_DEFAULT.id]: AWS_WORKLOAD_DEFAULT,
+  [AZURE_WORKLOAD_COMPACT.id]: AZURE_WORKLOAD_COMPACT,
+  [AZURE_WORKLOAD_DEFAULT.id]: AZURE_WORKLOAD_DEFAULT,
+  [AZURE_WORKLOAD_UNDERSCORE.id]: AZURE_WORKLOAD_UNDERSCORE,
 });
 
 /**

@@ -37,7 +37,9 @@
   "ignorePaths": [
     "node_modules/**",
     "dist/**",
+    "**/dist/**",
     "build/**",
+    "**/build/**",
     // Auto-generated dependency-resolution data (package names and integrity hashes),
     // not authored prose — spell-checking it would only flag hashes, never real words.
     "package-lock.json",

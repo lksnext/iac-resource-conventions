@@ -1,6 +1,6 @@
 {
   "name": "@lksnext/iac-conventions-catalog",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "Static Resource Definition catalog for the iac-resource-conventions Specification.",
   "license": "Apache-2.0",
   "type": "module",
@@ -29,7 +29,7 @@
     "NOTICE"
   ],
   "dependencies": {
-    "@lksnext/iac-conventions-core": "0.1.0-alpha.0"
+    "@lksnext/iac-conventions-core": "0.1.0-alpha.1"
   },
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",

@@ -239,6 +239,44 @@ need for a resource type whose valid characters are not single-byte ASCII.
   entirely, since ACM certificates have no user-supplied name. This confirms the field's
   optionality is load-bearing, not merely a type-level nicety.
 
+## Azure portability slice
+
+The Azure portability slice added a second, equally small, evidence-backed
+platform slice: `azure_resource_group`, `azure_virtual_network`, `azure_subnet`,
+`azure_network_security_group`, `azure_linux_virtual_machine`, `azure_key_vault`,
+`azure_postgresql_flexible_server`, `azure_log_analytics_workspace`, and
+`azure_compute_gallery` (under `packages/catalog/src/azure/`). Every technical
+constraint is sourced from official Microsoft Learn documentation
+(`learn.microsoft.com`), cited in a provenance comment next to each definition, using
+the same Explicit/Derived evidence-classification convention the AWS slice already
+established (see [Definition provenance and modeling findings](#definition-provenance-and-modeling-findings)
+above).
+
+This slice was selected to validate Azure portability against a representative
+Terraform-based Azure workload (a resource group, virtual network, and subnet with a
+network security group, a Linux virtual machine, a Key Vault, a PostgreSQL Flexible
+Server, a Log Analytics workspace, and a Compute Gallery), covering a management
+resource with no location-dependent naming rule
+(`azure_resource_group`), two resources whose uniqueness scope narrows below their
+containing resource group (`azure_subnet`, scoped to its virtual network), two
+resources with a global uniqueness scope despite being regionally placed
+(`azure_key_vault`, `azure_postgresql_flexible_server` — the same "global uniqueness
+scope, regional placement" distinction the Specification itself documents for
+identity constraints), a Linux-only compute resource with a materially different
+Windows host-name limit deliberately left unmodeled (`azure_linux_virtual_machine`,
+mirroring `aws_s3_bucket`'s general-purpose-only scoping precedent), and a resource
+whose naming grammar forbids the hyphen every other entry in this slice accepts
+(`azure_compute_gallery`) — the single fact that justifies a dedicated,
+underscore-separated Convention Pack rather than a character-substitution workaround
+(see [`docs/architecture/convention-pack-catalog.md`](convention-pack-catalog.md)).
+
+`azure_postgresql_flexible_server`'s ARM naming-rules citation applies a general
+`Microsoft.DBforPostgreSQL/servers` rule to the `flexibleServers` resource type by
+corroboration (the flexible-server quickstart's own globally-unique, lowercase-hyphenated
+example name is consistent with it), not by an explicit `flexibleServers`-specific line
+item in Microsoft's naming-rules table — recorded as **Derived**, not **Explicit**,
+evidence in that definition's own provenance comment.
+
 ## Testing strategy
 
 - **Package boundary** —

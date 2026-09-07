@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: 'Type "publish-alpha" to confirm publishing 0.1.0-alpha.0 to GitHub Packages'
+        description: 'Type "publish-alpha" to confirm publishing 0.1.0-alpha.1 to GitHub Packages'
         required: true
         type: string
 

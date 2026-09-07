@@ -79,7 +79,12 @@ test("a returned ConventionPack's nested identity_defaults cannot be mutated", (
 // --- Listing --------------------------------------------------------------------------
 
 test("listConventionPackIds returns exactly the expected catalog entries in lexical order", () => {
-  assert.deepEqual(listConventionPackIds(), ["aws-workload-default"]);
+  assert.deepEqual(listConventionPackIds(), [
+    "aws-workload-default",
+    "azure-workload-compact",
+    "azure-workload-default",
+    "azure-workload-underscore",
+  ]);
 });
 
 test("listConventionPackIds is deterministic across repeated calls", () => {
@@ -172,4 +177,70 @@ test("aws-workload-default: the artifact's worked naming example reproduces tele
   assert.equal(pack.abbreviations["deployment.environment"].production, "prod");
   assert.equal(pack.separator, "-");
   assert.equal(pack.casing, "lower");
+});
+
+// --- Fidelity: azure-workload-default matches
+// specification/convention-packs/azure-workload-default.md --------------------------
+
+test("azure-workload-default: identity_defaults.deployment.platform defaults to azure", () => {
+  const pack = getConventionPack("azure-workload-default");
+  assert.equal(pack.identity_defaults.deployment.platform, "azure");
+});
+
+test("azure-workload-default: required_attributes matches the artifact's Required attributes section", () => {
+  const pack = getConventionPack("azure-workload-default");
+  assert.deepEqual(pack.required_attributes, [
+    "organizational.system",
+    "deployment.environment",
+    "functional.resource_type",
+  ]);
+});
+
+test("azure-workload-default: naming_component_order leads with the abbreviated resource type", () => {
+  const pack = getConventionPack("azure-workload-default");
+  assert.deepEqual(pack.naming_component_order, [
+    "functional.resource_type",
+    "organizational.system",
+    "functional.service",
+    "deployment.environment",
+    "deployment.location",
+    "deployment.instance",
+  ]);
+});
+
+test("azure-workload-default: separator and casing", () => {
+  const pack = getConventionPack("azure-workload-default");
+  assert.equal(pack.separator, "-");
+  assert.equal(pack.casing, "lower");
+});
+
+// --- Fidelity: azure-workload-compact matches
+// specification/convention-packs/azure-workload-compact.md --------------------------
+
+test("azure-workload-compact: naming_component_order drops service and location", () => {
+  const pack = getConventionPack("azure-workload-compact");
+  assert.deepEqual(pack.naming_component_order, [
+    "functional.resource_type",
+    "organizational.system",
+    "deployment.environment",
+    "deployment.instance",
+  ]);
+});
+
+test("azure-workload-compact: abbreviates azure_key_vault to kv", () => {
+  const pack = getConventionPack("azure-workload-compact");
+  assert.equal(pack.abbreviations["functional.resource_type"].azure_key_vault, "kv");
+});
+
+// --- Fidelity: azure-workload-underscore matches
+// specification/convention-packs/azure-workload-underscore.md ------------------------
+
+test("azure-workload-underscore: separator is an underscore", () => {
+  const pack = getConventionPack("azure-workload-underscore");
+  assert.equal(pack.separator, "_");
+});
+
+test("azure-workload-underscore: abbreviates azure_compute_gallery to gal", () => {
+  const pack = getConventionPack("azure-workload-underscore");
+  assert.equal(pack.abbreviations["functional.resource_type"].azure_compute_gallery, "gal");
 });
