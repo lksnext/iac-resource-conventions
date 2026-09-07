@@ -1451,10 +1451,12 @@ implemented.
   (see [Package Naming Policy](#package-naming-policy) above); `@lksnext/iac-conventions`
   itself is reserved for a possible future convenience package and is not created yet.
 - `core`, `catalog`, and `cli` are publishable (no `"private"` field) as of Milestone 4.5, each
-  at the synchronized prerelease version `0.1.0-alpha.0`, with `publishConfig.registry` pointed
-  at GitHub Packages (see [Release Readiness](#release-readiness) below). The monorepo root
-  itself remains `"private": true` and is never published. No package has actually been
-  published yet, and no publish credentials are configured.
+  at the synchronized prerelease version declared in each package's `package.json` (currently
+  `0.1.0-alpha.1`), with `publishConfig.registry` pointed at GitHub Packages (see [Release
+  Readiness](#release-readiness) below). The monorepo root itself remains `"private": true` and
+  is never published. The first alpha, `0.1.0-alpha.0`, has been published to GitHub Packages
+  via [`publish-alpha.yml`](.github/workflows/publish-alpha.yml); the current synchronized
+  version, `0.1.0-alpha.1`, is prepared but not yet published.
 - During this initial implementation phase, package versions are kept synchronized
   (single repository version) rather than independently versioned; independent
   versioning is only introduced once a package has an actual reason to release on its
@@ -1590,12 +1592,17 @@ rule was added, and Specification semantics were not touched.
   tooling (no new release-automation dependency such as Changesets/Lerna/Rush, warranted for
   three synchronously versioned packages). The manual `npm publish` sequence documented in
   [`docs/release-notes/publishing.md`](docs/release-notes/publishing.md) remains a fallback.
-- **Git tag strategy (recommendation only, not created in this milestone):** a single tag,
-  `v0.1.0-alpha.0`, covering all three synchronized packages — no per-package tags, consistent
-  with the synchronized-versioning decision above.
+- **Git tag strategy (recommendation only):** a single tag matching the published synchronized
+  version (for example, `v0.1.0-alpha.0` for the first alpha), covering all three packages — no
+  per-package tags, consistent with the synchronized-versioning decision above. No such tag has
+  been created yet for any alpha release.
 - **Draft release notes:** [`docs/release-notes/v0.1.0-alpha.0.md`](docs/release-notes/v0.1.0-alpha.0.md)
-  summarizes current scope and limitations for the first alpha; it is explicitly marked as a
-  draft, since no package has been published and no tag exists yet.
+  summarizes scope and limitations for the first alpha. It was marked as a draft at the time
+  this milestone was written, since no package had yet been published and no tag existed; the
+  first alpha has since been published, and its status note has been updated accordingly. Each
+  subsequent alpha (for example,
+  [`docs/release-notes/v0.1.0-alpha.1.md`](docs/release-notes/v0.1.0-alpha.1.md)) follows the
+  same draft-until-published convention.
 - **Documentation corrections:** the root [`README.md`](README.md)'s Quick Start, Supported
   Adapters table, and Roadmap, and this document's own top [Status](#status) section, were
   corrected where they described capabilities (Placement Constraint validation,
@@ -1626,21 +1633,22 @@ and no product behavior changed.
   `.../tree/main/<path>` for directories. Links to content the tarball actually ships (for
   example, `cli`'s own `package.json`) were left as repository-relative, since they resolve
   correctly both inside the monorepo and inside an extracted tarball.
-- **`main`, not a version tag:** links point at the `main` branch, not `v0.1.0-alpha.0` — no
-  release tag exists yet (only `specification-v1.0` does), so a tag-scoped link would 404 until
-  a tag is actually created. This does mean a reader following a link from an old published
-  tarball could see documentation that has since changed on `main`; re-pointing links at a
-  release tag once one exists is a reasonable follow-up, not done here to avoid inventing a tag
-  that does not exist.
+- **`main`, not a version tag:** links point at the `main` branch, not a version tag — no
+  release tag exists yet for any alpha (only `specification-v1.0` does), so a tag-scoped link
+  would 404 until one is actually created. This does mean a reader following a link from an old
+  published tarball could see documentation that has since changed on `main`; re-pointing links
+  at a release tag once one exists is a reasonable follow-up, not done here to avoid inventing a
+  tag that does not exist.
 - **`packages/cli/README.md`'s stale claim corrected:** "This package is not published yet
   (`\"private\": true\`)" was false since Milestone 4.5 removed `private` from
   `packages/cli/package.json`; the Install/run section now shows
   `npm install @lksnext/iac-conventions-cli@alpha` as the primary path, with the from-source
   build kept as an alternative.
 - **Publication order:** `core`, then `catalog`, then `cli` — required by the exact-pinned
-  internal dependency versions (`catalog` depends on `core@0.1.0-alpha.0`; `cli` depends on
-  both at `0.1.0-alpha.0`); publishing a dependent before its dependency exists on the registry
-  would fail the dependent's own install.
+  internal dependency versions (`catalog` depends on `core` at the synchronized version; `cli`
+  depends on both `catalog` and `core` at that same version — currently `0.1.0-alpha.1`);
+  publishing a dependent before its dependency exists on the registry would fail the dependent's
+  own install.
 - **Registry target: GitHub Packages only (decided during first-alpha release-readiness
   review):** pre-publish verification against `registry.npmjs.org` surfaced that this
   development machine's global npm configuration silently redirected the `@lksnext` scope to a

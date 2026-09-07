@@ -1,13 +1,14 @@
-# Publishing runbook (first alpha)
+# Publishing runbook (alpha releases)
 
 This is release-process documentation, not a Specification or product change. It records the
-approved sequence for the first alpha publication of `@lksnext/iac-conventions-core`,
-`@lksnext/iac-conventions-catalog`, and `@lksnext/iac-conventions-cli`. No package has been
-published under this runbook yet; see
+approved sequence for the alpha publication of `@lksnext/iac-conventions-core`,
+`@lksnext/iac-conventions-catalog`, and `@lksnext/iac-conventions-cli`. The first alpha
+(`0.1.0-alpha.0`) has been published under this runbook; see
 [IMPLEMENTATION.md#alpha-package-conformance](../../IMPLEMENTATION.md#alpha-package-conformance)
 and
 [IMPLEMENTATION.md#release-readiness](../../IMPLEMENTATION.md#release-readiness)
-for the full rationale behind each decision below.
+for the full rationale behind each decision below. This document remains the authoritative
+process for every subsequent alpha publication (for example, `0.1.0-alpha.1`).
 
 The preferred publication method is the
 [`publish-alpha.yml`](../../.github/workflows/publish-alpha.yml) GitHub Actions workflow (see
@@ -34,9 +35,9 @@ communicated to consumers (see the package READMEs and
 
 - Working from a clean checkout of `main` (`git status` clean, `git pull --ff-only` up to
   date).
-- All three packages at the intended synchronized version (currently `0.1.0-alpha.0`), with
-  exact-pinned internal dependency versions (`catalog` and `cli` depend on the others by exact
-  version, not a range).
+- All three packages at the intended synchronized version declared in each package's
+  `package.json` (the release candidate version), with exact-pinned internal dependency
+  versions (`catalog` and `cli` depend on the others by exact version, not a range).
 - A GitHub personal access token (classic or fine-grained) with at least `write:packages` (and
   `read:packages`) scope for the `lksnext` organization, supplied only through a securely
   configured environment variable (for example `NODE_AUTH_TOKEN`) or a GitHub Actions
@@ -94,10 +95,10 @@ can never drift from this document:
    publishing its dependents. A failure at any point stops the workflow immediately — see
    [Partial-publication failure and recovery](#partial-publication-failure-and-recovery).
 6. `node scripts/smoke-test-github-packages.mjs` — a real consumer install of
-   `@lksnext/iac-conventions-cli@0.1.0-alpha.0` from `https://npm.pkg.github.com` (never a local
-   tarball), verifying the installed `core`/`catalog`/`cli` versions and that each resolved from
-   GitHub Packages, then exercising the installed binary's `--version`, `evaluate`, and
-   `terraform-external` commands.
+   `@lksnext/iac-conventions-cli` at the just-published release version from
+   `https://npm.pkg.github.com` (never a local tarball), verifying the installed
+   `core`/`catalog`/`cli` versions and that each resolved from GitHub Packages, then exercising
+   the installed binary's `--version`, `evaluate`, and `terraform-external` commands.
 7. Writes a `GITHUB_STEP_SUMMARY` with the version, commit, registry, dist-tag, and result — no
    secrets.
 
@@ -182,9 +183,11 @@ consumer project outside this repository:
 1. Configure `@lksnext:registry=https://npm.pkg.github.com` in that consumer's `.npmrc`.
 2. Authenticate with a newly issued, appropriately scoped GitHub read credential (or a CI
    token) — never the credential exposed in this environment's `~/.npmrc`.
-3. `npm install @lksnext/iac-conventions-cli@0.1.0-alpha.0`.
-4. Confirm the installed `core`, `catalog`, and `cli` transitive versions are all exactly
-   `0.1.0-alpha.0` and resolve from `npm.pkg.github.com`, not a local path.
+3. `npm install @lksnext/iac-conventions-cli@<release version>` (for example,
+   `@lksnext/iac-conventions-cli@0.1.0-alpha.0` for the first alpha), or
+   `@lksnext/iac-conventions-cli@alpha` to resolve the latest alpha dist-tag.
+4. Confirm the installed `core`, `catalog`, and `cli` transitive versions are all exactly the
+   release version and resolve from `npm.pkg.github.com`, not a local path.
 5. Run `npx iac-conventions --version` and a minimal `evaluate` call to confirm the installed
    package graph works end-to-end.
 
@@ -206,7 +209,7 @@ If publication fails partway through step 7 (for example, `core` and `catalog` s
   time-limits unpublishing, and a partially visible alpha under the `alpha` dist-tag is not
   itself harmful to existing consumers (nothing installs it without opting in).
 - Fix the failure, bump all three packages to the next synchronized prerelease (for example,
-  `0.1.0-alpha.1`), and republish the full coordinated set together. This preserves the
+  `0.1.0-alpha.2`), and republish the full coordinated set together. This preserves the
   invariant the exact-pinned dependencies rely on: all three packages always resolve to the
   same prerelease version.
 
