@@ -36,6 +36,7 @@ unrepresentable
 nexe
 lycheeverse
 pipx
+smol
 
 # Author of the license-checker-rseidelsohn devDependency (see
 # CONTRIBUTING.md#dependency-license-compliance), referenced in its own package name
