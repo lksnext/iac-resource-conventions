@@ -51,10 +51,10 @@ locals {
   convention_result = jsondecode(data.external.convention.result.result_json)
 
   # The AWS tags aws-workload-default projects (Specification v1.3), for example
-  # { Name = "telemetry-platform-ingestion-prod-aws_iam_role", Project = "telemetry-platform",
-  # Environment = "production", Service = "ingestion", Owner = "platform-team",
-  # ManagedBy = "terraform" }. Merge them into a resource's `tags`, or into the AWS
-  # provider's `default_tags` (without `Name`, which is per resource).
+  # { Project = "telemetry-platform", Environment = "production", Service = "ingestion",
+  # Owner = "platform-team", ManagedBy = "terraform" }. Resource types that accept no
+  # name, such as aws_acm_certificate, also get a `Name` tag. Merge them into a
+  # resource's `tags`, or into the AWS provider's `default_tags`.
   tags = jsondecode(data.external.convention.result.tags_json)
 }
 

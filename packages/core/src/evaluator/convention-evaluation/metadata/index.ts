@@ -1,1 +1,1 @@
-export { projectTags, type TagProjection } from "./project-tags.js";
+export { projectTags, type TagProjectionResult } from "./project-tags.js";

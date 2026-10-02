@@ -169,7 +169,7 @@ test("aws-workload-default: override_policy matches the artifact's Override poli
 test("aws-workload-default: tag_projections match the artifact's Metadata projection example, in order", () => {
   const pack = getConventionPack("aws-workload-default");
   assert.deepEqual(Object.entries(pack.tag_projections), [
-    ["Name", "outputs.name"],
+    ["Name", { source: "outputs.name", only_when_resource_accepts_no_name: true }],
     ["Project", "organizational.system"],
     ["Environment", "deployment.environment"],
     ["Service", "functional.service"],

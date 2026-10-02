@@ -126,12 +126,36 @@ test("integration: aws-workload-default reproduces the artifact's worked tag exa
 
   assert.deepEqual(result.outputs.metadata, {
     tags: {
-      Name: "telemetry-platform-ingestion-prod-aws_s3_bucket",
       Project: "telemetry-platform",
       Environment: "production",
       Service: "ingestion",
       Owner: "platform-team",
     },
+  });
+});
+
+test("integration: aws-workload-default adds the Name tag for aws_acm_certificate, which accepts no name", () => {
+  const result = evaluate({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_acm_certificate",
+      functional: { service: "ingestion" },
+      governance: { owner: "platform-team" },
+    },
+    convention_pack: getConventionPack("aws-workload-default"),
+    evaluation_context: {
+      shared_organizational_context: { system: "telemetry-platform" },
+      shared_deployment_context: { environment: "production" },
+    },
+    resource_definition: getResourceDefinition("aws_acm_certificate"),
+  });
+
+  assert.deepEqual(result.outputs.metadata.tags, {
+    Name: "telemetry-platform-ingestion-prod-aws_acm_certificate",
+    Project: "telemetry-platform",
+    Environment: "production",
+    Service: "ingestion",
+    Owner: "platform-team",
   });
 });
 

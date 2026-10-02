@@ -5,9 +5,11 @@
 // contracts.
 
 import type {
+  ConditionalTagProjection,
   ConventionPack,
   GovernanceContextAttribute,
   MetadataSourceReference,
+  ResourceDefinition,
 } from "../../src/index.js";
 
 export const governanceReference: GovernanceContextAttribute = "governance.owner";
@@ -36,4 +38,25 @@ export const invalidTagProjection: ConventionPack = {
     // @ts-expect-error -- a tag projection source must be a metadata source reference.
     Project: "system",
   },
+};
+
+export const conditionalNameTag: ConditionalTagProjection = {
+  source: "outputs.name",
+  only_when_resource_accepts_no_name: true,
+};
+
+export const conventionPackWithConditionalTag: ConventionPack = {
+  id: "test-pack",
+  tag_projections: { Name: conditionalNameTag, Project: { source: "organizational.system" } },
+};
+
+// @ts-expect-error -- the object form requires a source.
+export const conditionalTagWithoutSource: ConditionalTagProjection = {
+  only_when_resource_accepts_no_name: true,
+};
+
+export const unnamedResourceDefinition: ResourceDefinition = {
+  resource_type: "aws_acm_certificate",
+  platform: "aws",
+  accepts_name: false,
 };

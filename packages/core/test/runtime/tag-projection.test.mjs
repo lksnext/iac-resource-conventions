@@ -255,3 +255,82 @@ test("tag projection: outputs.name carries a generated name even when validation
   assert.equal(result.validation.valid, false);
   assert.deepEqual(result.outputs.metadata.tags, { Name: result.outputs.name });
 });
+
+// --- only_when_resource_accepts_no_name (specification/convention-pack.md#tag-projections) ---
+
+function conditionalNameInput(resourceDefinition) {
+  return deepFreeze({
+    resolved_context: {
+      resource_identity: {
+        organizational: { system: "telemetry-platform" },
+        deployment: { environment: "production" },
+        functional: { resource_type: resourceDefinition.resource_type },
+      },
+      governance_context: {},
+    },
+    resource_definition: resourceDefinition,
+    convention_pack: {
+      id: "test-pack",
+      naming_component_order: [
+        "organizational.system",
+        "deployment.environment",
+        "functional.resource_type",
+      ],
+      separator: "-",
+      casing: "lower",
+      abbreviations: { "deployment.environment": { production: "prod" } },
+      tag_projections: {
+        Name: { source: "outputs.name", only_when_resource_accepts_no_name: true },
+        Environment: "deployment.environment",
+      },
+    },
+  });
+}
+
+test("tag projection: the normative conditional example projects Name only for a resource that accepts no name", () => {
+  const certificate = evaluateConvention(
+    conditionalNameInput({
+      resource_type: "aws_acm_certificate",
+      platform: "aws",
+      accepts_name: false,
+    }),
+  );
+  const role = evaluateConvention(
+    conditionalNameInput({ resource_type: "aws_iam_role", platform: "aws" }),
+  );
+
+  assert.deepEqual(certificate.outputs.metadata.tags, {
+    Name: "telemetry-platform-prod-aws_acm_certificate",
+    Environment: "production",
+  });
+  assert.deepEqual(role.outputs.metadata.tags, { Environment: "production" });
+  assert.deepEqual(role.validation, { valid: true });
+});
+
+test("tag projection: accepts_name: true behaves like an omitted accepts_name", () => {
+  const result = evaluateConvention(
+    conditionalNameInput({ resource_type: "aws_iam_role", platform: "aws", accepts_name: true }),
+  );
+
+  assert.deepEqual(result.outputs.metadata.tags, { Environment: "production" });
+});
+
+test("tag projection: the object form without a condition projects like the string form", () => {
+  const result = evaluateConvention(
+    input({ tag_projections: { Project: { source: "organizational.system" } } }),
+  );
+
+  assert.deepEqual(result.outputs.metadata.tags, { Project: "Telemetry-Platform" });
+});
+
+test("tag projection: an object entry without a valid source is reported", () => {
+  const result = evaluateConvention(input({ tag_projections: { Name: { source: "outputs.id" } } }));
+
+  assert.equal(Object.hasOwn(result.outputs, "metadata"), false);
+  assert.deepEqual(result.validation.failures, [
+    {
+      message:
+        'tag_projections declared by convention pack "test-pack" maps tag key "Name" to unknown metadata source reference "outputs.id".',
+    },
+  ]);
+});

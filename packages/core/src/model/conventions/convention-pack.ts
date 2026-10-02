@@ -67,11 +67,11 @@ export interface ConventionPack {
   >;
 
   /**
-   * Tag keys mapped to the metadata source reference whose resolved value each tag
-   * carries verbatim, in output order (Specification v1.3; see
+   * Tag keys mapped to the metadata source whose resolved value each tag carries
+   * verbatim, in output order (Specification v1.3; see
    * `specification/convention-pack.md#tag-projections`).
    */
-  readonly tag_projections?: Readonly<Record<string, MetadataSourceReference>>;
+  readonly tag_projections?: Readonly<Record<string, TagProjection>>;
 
   /**
    * Which Evaluation Context source is authoritative for a specific canonical
@@ -82,6 +82,21 @@ export interface ConventionPack {
 
   /** Which attributes may be overridden on a Naming Request, and which are protected. */
   readonly override_policy?: ConventionPackOverridePolicy;
+}
+
+/**
+ * One `tag_projections` entry: a metadata source reference, or the object form with an
+ * optional condition (Specification v1.3; see
+ * `specification/convention-pack.md#tag-projections`).
+ */
+export type TagProjection = MetadataSourceReference | ConditionalTagProjection;
+
+/** The object form of a `tag_projections` entry. */
+export interface ConditionalTagProjection {
+  readonly source: MetadataSourceReference;
+
+  /** Project the tag only when the Resource Definition declares `accepts_name: false`. */
+  readonly only_when_resource_accepts_no_name?: boolean;
 }
 
 /**

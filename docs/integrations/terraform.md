@@ -119,7 +119,6 @@ above, `aws-workload-default` produces:
 
 ```hcl
 {
-  Name        = "telemetry-platform-ingestion-prod-aws_iam_role"
   Project     = "telemetry-platform"
   Environment = "production"
   Service     = "ingestion"
@@ -129,10 +128,12 @@ above, `aws-workload-default` produces:
 ```
 
 Tag values are the resolved values, not the abbreviated, lowercased forms used in the
-name (`Environment = "production"`, while the name contains `prod`); `Name` is the
-generated name itself, so resources without a name argument (for example,
-`aws_acm_certificate`) still carry it. A tag whose attribute is not resolved is
-omitted. Merge the decoded map into a resource's `tags`:
+name (`Environment = "production"`, while the name contains `prod`). A `Name` tag
+carrying the generated name is added only for resource types that accept no name,
+such as `aws_acm_certificate`; an `aws_iam_role` already carries the name as its
+`name` argument, so the remaining tags can also go into the AWS provider's
+`default_tags`. A tag whose attribute is not resolved is omitted. Merge the decoded
+map into a resource's `tags`:
 
 ```hcl
 resource "aws_iam_role" "this" {

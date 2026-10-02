@@ -630,11 +630,32 @@ tag_projections:
   example, key or value length and allowed characters): that is a deferred Non-Goal of
   Specification v1.3.
 
+A `tag_projections` entry is either a metadata source reference, as above, or an
+object:
+
+```yaml
+tag_projections:
+  Name:
+    source: outputs.name
+    only_when_resource_accepts_no_name: true
+```
+
+- `source` is required and is a metadata source reference, exactly like the string
+  form.
+- `only_when_resource_accepts_no_name` is optional and defaults to `false`. When
+  `true`, the tag is projected only when the selected Resource Definition declares
+  `accepts_name: false` (see
+  [`resource-definition.md#name-acceptance-specification-v13`](./resource-definition.md#name-acceptance-specification-v13));
+  otherwise it is omitted, which is neither a validation failure nor a warning. This
+  lets a pack carry the generated name in a tag only for resource types that cannot
+  carry it as their name.
+- No other property is defined. An object without a valid `source` is invalid.
+
 ### Tag projection fields
 
 | Field | Required | Default | Invalid values |
 | --- | --- | --- | --- |
-| `tag_projections` | No | No tags are projected | An empty tag key; a source outside the metadata source reference vocabulary |
+| `tag_projections` | No | No tags are projected | An empty tag key; a source outside the metadata source reference vocabulary; an object entry without a valid `source` |
 
 ### Tag projection examples
 
@@ -702,6 +723,29 @@ functional:
 name: telemetry-platform-prod-aws_acm_certificate
 tags:
   Name: telemetry-platform-prod-aws_acm_certificate
+  Environment: production
+```
+
+**Only for resources that accept no name** — the same pack names an
+`aws_acm_certificate` (Resource Definition `accepts_name: false`) and an
+`aws_iam_role` (`accepts_name` omitted, so `true`):
+
+```yaml
+tag_projections:
+  Name:
+    source: outputs.name
+    only_when_resource_accepts_no_name: true
+  Environment: deployment.environment
+
+# aws_acm_certificate
+name: telemetry-platform-prod-aws_acm_certificate
+tags:
+  Name: telemetry-platform-prod-aws_acm_certificate
+  Environment: production
+
+# aws_iam_role
+name: telemetry-platform-prod-aws_iam_role
+tags:
   Environment: production
 ```
 

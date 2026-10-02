@@ -246,7 +246,8 @@ carries `outputs.metadata.tags`, but no Specification rule populated it: metadat
 projection was an explicit Non-Goal of Specification v1.1 and v1.2, so the consumer
 could not generate tags from the same resolved Resource Identity and Governance
 Context it uses for naming. Specification v1.3 closes that gap for tags only,
-additively, changing [`convention-pack.md`](./convention-pack.md#metadata-projections)
+additively, changing [`convention-pack.md`](./convention-pack.md#metadata-projections),
+[`resource-definition.md`](./resource-definition.md#name-acceptance-specification-v13),
 and [`convention-result.md`](./convention-result.md), and the concrete
 [`aws-workload-default`](./convention-packs/aws-workload-default.md#metadata-projection)
 Convention Pack.
@@ -263,13 +264,19 @@ Convention Pack.
 - a new, optional Convention Pack field, **`tag_projections`**, mapping a tag key to a
   metadata source reference, with verbatim values, omission of absent sources, and
   declaration-order output (see
-  [`convention-pack.md#tag-projections`](./convention-pack.md#tag-projections)).
+  [`convention-pack.md#tag-projections`](./convention-pack.md#tag-projections));
+- a new, optional Resource Definition field, **`accepts_name`**, and an optional
+  `only_when_resource_accepts_no_name` condition on a tag projection entry, so a pack
+  can carry the generated name in a `Name` tag only for resource types, such as
+  `aws_acm_certificate`, that cannot carry it as their name (see
+  [`resource-definition.md#name-acceptance-specification-v13`](./resource-definition.md#name-acceptance-specification-v13)).
 
 ### Delta from Specification v1.2
 
 | Field | v1.2 | v1.3 |
 | --- | --- | --- |
 | `tag_projections` | Did not exist; metadata projection was prose only. | New, optional. Additive. |
+| `accepts_name` (Resource Definition) | Did not exist. | New, optional; defaults to `true`. Additive. |
 | `outputs.metadata.tags` | Defined in shape only; never populated. | Populated from `tag_projections`. A Convention Pack that declares no `tag_projections` produces the same Convention Result as before. |
 
 Adding `tag_projections` to an existing concrete Convention Pack changes the tags that
@@ -285,7 +292,8 @@ Specification v1.3 intentionally does **not** define:
 - value transformations for tags (abbreviation, casing, templates, or concatenation);
 - literal (fixed-value) tags;
 - validation of tag keys or values against a platform's tag constraints;
-- per-resource-type tag projection rules;
+- per-resource-type tag projection rules, beyond the single
+  `only_when_resource_accepts_no_name` condition;
 - merging caller-supplied tags or projecting `custom_metadata`.
 
 These remain deferred until implementation evidence demonstrates a genuine need to

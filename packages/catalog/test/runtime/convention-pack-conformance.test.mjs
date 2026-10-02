@@ -52,6 +52,30 @@ test("a tag_projections source outside the metadata source reference vocabulary 
   ]);
 });
 
+test("tag_projections object entries with an invalid source or non-boolean condition are reported", () => {
+  const issues = validateConventionPack(
+    fixture({
+      tag_projections: {
+        Name: { source: "outputs.id" },
+        Owner: { source: "governance.owner", only_when_resource_accepts_no_name: "yes" },
+        Ok: { source: "outputs.name", only_when_resource_accepts_no_name: true },
+      },
+    }),
+  );
+  assert.deepEqual(issues, [
+    {
+      convention_pack_id: "test-pack",
+      path: "tag_projections.Name.source",
+      message: '"outputs.id" is not a metadata source reference',
+    },
+    {
+      convention_pack_id: "test-pack",
+      path: "tag_projections.Owner.only_when_resource_accepts_no_name",
+      message: "must be a boolean when declared",
+    },
+  ]);
+});
+
 test("an empty tag_projections key is reported", () => {
   const issues = validateConventionPack(
     fixture({ tag_projections: { "": "organizational.system" } }),

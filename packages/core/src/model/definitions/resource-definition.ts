@@ -33,6 +33,12 @@ export interface ResourceDefinition {
   /** A broader technical grouping the resource type belongs to (for example, storage, compute, networking). */
   readonly category?: string;
 
+  /**
+   * Whether the provider accepts a caller-supplied name; `false` means the generated
+   * name can only be carried as metadata. Defaults to `true` (Specification v1.3).
+   */
+  readonly accepts_name?: boolean;
+
   /** Whether and how instances of this resource type must be distinguished from one another. */
   readonly identity_constraints?: ResourceIdentityConstraints;
 

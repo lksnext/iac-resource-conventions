@@ -193,7 +193,9 @@ see [`convention-pack.md#tag-projections`](../convention-pack.md#tag-projections
 
 ```yaml
 tag_projections:
-  Name: outputs.name
+  Name:
+    source: outputs.name
+    only_when_resource_accepts_no_name: true
   Project: organizational.system
   Environment: deployment.environment
   Service: functional.service
@@ -204,10 +206,13 @@ tag_projections:
 ```
 
 `Project` and `Environment` match the tag keys of the AWS CDK project the first
-Terraform consumer of this pack replaced. `Name` carries the generated name — the AWS
-console's display name for a resource, and the only place a resource without a name
-argument (for example, `aws_acm_certificate`) can carry it; it is omitted when no name
-is generated. Every other tag value is the resolved value, exactly
+Terraform consumer of this pack replaced. `Name` carries the generated name only for a
+resource type whose Resource Definition declares `accepts_name: false` (for example,
+`aws_acm_certificate`), since such a resource can carry its generated name nowhere
+else; a resource that accepts a name already carries it as its name, and keeping
+`Name` off it lets the AWS provider's `default_tags` carry the remaining tags
+unchanged. `Name` is also omitted when no name is generated. Every other tag value is
+the resolved value, exactly
 as resolved: unlike the generated name, they are not abbreviated or lowercased (for
 example, `deployment.environment: production` produces `Environment: production`, not
 `prod`). A tag whose attribute has no resolved value is omitted.
@@ -216,12 +221,14 @@ For example, a `production` `aws_s3_bucket` resource for the `ingestion` service
 `telemetry-platform` system, owned by `platform-team`, generates these tags:
 
 ```yaml
-Name: telemetry-platform-ingestion-prod-aws_s3_bucket
 Project: telemetry-platform
 Environment: production
 Service: ingestion
 Owner: platform-team
 ```
+
+The same request for an `aws_acm_certificate` additionally generates
+`Name: telemetry-platform-ingestion-prod-aws_acm_certificate`.
 
 ## Override policy
 

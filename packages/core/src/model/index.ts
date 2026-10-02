@@ -29,10 +29,12 @@ export type {
   SharedOrganizationalContext,
 } from "./contexts/index.js";
 export type {
+  ConditionalTagProjection,
   ConventionPack,
   ConventionPackIdentityDefaults,
   ConventionPackOverridePolicy,
   NamingCasing,
+  TagProjection,
 } from "./conventions/index.js";
 export type {
   PlacementConstraint,

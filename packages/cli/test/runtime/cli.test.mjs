@@ -121,7 +121,6 @@ test("evaluate: a valid input produces a valid ConventionResult on stdout, exit 
   assert.equal(result.outputs.name, "telemetry-platform-ingestion-prod-aws_iam_role");
   assert.deepEqual(result.outputs.metadata, {
     tags: {
-      Name: "telemetry-platform-ingestion-prod-aws_iam_role",
       Project: "telemetry-platform",
       Environment: "production",
       Service: "ingestion",

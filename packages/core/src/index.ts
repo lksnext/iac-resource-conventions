@@ -20,6 +20,7 @@ export type { EvaluateInput } from "./evaluator/evaluate-input.js";
 
 export type {
   CanonicalResourceIdentityAttribute,
+  ConditionalTagProjection,
   ConventionMetadata,
   ConventionOutputs,
   ConventionPack,
@@ -66,6 +67,7 @@ export type {
   RuntimeContext,
   SharedDeploymentContext,
   SharedOrganizationalContext,
+  TagProjection,
   TenantId,
 } from "./model/index.js";
 

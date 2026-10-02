@@ -17,7 +17,8 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  * Findings:
  * - **No name to render (gap, not modeled)** — `RequestCertificate` never accepts a
  *   name; a certificate is identified by its ARN (assigned by ACM) and addressed by
- *   its `DomainName`. This Resource Definition therefore declares no
+ *   its `DomainName`. This Resource Definition therefore declares
+ *   `accepts_name: false` (Specification v1.3) and no
  *   `rendering_constraints` at all — the catalog does not fabricate a `max_length` or
  *   `allowed_characters` value this resource type has no evidence for. This is the
  *   first catalog entry to omit `rendering_constraints` entirely, proving the field's
@@ -46,6 +47,7 @@ export const AWS_ACM_CERTIFICATE: ResourceDefinition = deepFreeze({
   resource_type: "aws_acm_certificate",
   platform: "aws",
   category: "security",
+  accepts_name: false,
   placement_constraints: [
     {
       statement:

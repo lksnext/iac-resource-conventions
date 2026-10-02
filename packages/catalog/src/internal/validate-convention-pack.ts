@@ -165,7 +165,7 @@ export function validateConventionPack(
     }
   }
 
-  for (const [key, source] of Object.entries(pack.tag_projections ?? {})) {
+  for (const [key, entry] of Object.entries(pack.tag_projections ?? {})) {
     const path = `tag_projections.${key}`;
     if (key.length === 0) {
       issues.push({
@@ -174,11 +174,21 @@ export function validateConventionPack(
         message: "tag key must not be empty",
       });
     }
+    const source = typeof entry === "string" ? entry : entry?.source;
     if (!METADATA_SOURCE_REFERENCES.has(source as MetadataSourceReference)) {
       issues.push({
         convention_pack_id: String(packId),
-        path,
+        path: typeof entry === "string" ? path : `${path}.source`,
         message: `"${String(source)}" is not a metadata source reference`,
+      });
+    }
+    const condition =
+      typeof entry === "string" ? undefined : entry?.only_when_resource_accepts_no_name;
+    if (condition !== undefined && typeof condition !== "boolean") {
+      issues.push({
+        convention_pack_id: String(packId),
+        path: `${path}.only_when_resource_accepts_no_name`,
+        message: "must be a boolean when declared",
       });
     }
   }
