@@ -145,6 +145,24 @@ resource "aws_iam_role" "this" {
 
 The same tags are also available at `local.convention_result.outputs.metadata.tags`.
 
+### Hierarchical SSM parameter names
+
+Select `aws-ssm-parameter-path` to generate an `aws_ssm_parameter` name as a path,
+supplying the leaf name as `deployment.instance`:
+
+```hcl
+naming_request = {
+  convention    = "aws-ssm-parameter-path"
+  resource_type = "aws_ssm_parameter"
+  functional    = { component = "dns-validation" }
+  deployment    = { instance = "example-com" }
+}
+```
+
+With `system = "lamassu"` and `environment = "dev"`, `result.name` is
+`/lamassu/dev/dns-validation/example-com`. See
+[`../../specification/convention-packs/aws-ssm-parameter-path.md`](../../specification/convention-packs/aws-ssm-parameter-path.md).
+
 ### Optional attributes and `null`
 
 Terraform's `jsonencode` emits `null` for an unset optional object attribute (for

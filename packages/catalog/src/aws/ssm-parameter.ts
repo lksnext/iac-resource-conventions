@@ -65,10 +65,10 @@ const RESERVED_PREFIX_WORDS = ["aws", "ssm"] as const;
  *   fifteen levels." Neither rule is representable by Specification v1.2: the first
  *   is conditional (a leading `/` is required only when the name contains another
  *   `/`), and the second counts occurrences of a character. A flat name such as
- *   `lamassu-dev-dns-validation-aws_ssm_parameter` is fully valid; see
- *   `docs/architecture/resource-definition-catalog.md#hierarchical-names-aws_ssm_parameter`
- *   for why the naming model cannot render a hierarchical path, and the smallest
- *   proposed Specification change.
+ *   `lamassu-dev-dns-validation-aws_ssm_parameter` is fully valid, and the
+ *   `aws-ssm-parameter-path` Convention Pack renders hierarchical names with a leading
+ *   `/` (see
+ *   `docs/architecture/resource-definition-catalog.md#hierarchical-names-aws_ssm_parameter`).
  * - **Case sensitivity** — "Parameter names are case sensitive." No model field
  *   represents this; recorded here only.
  * - **Placement** — regional, with no additional conditional rule documented.

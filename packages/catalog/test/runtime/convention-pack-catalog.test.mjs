@@ -80,6 +80,7 @@ test("a returned ConventionPack's nested identity_defaults cannot be mutated", (
 
 test("listConventionPackIds returns exactly the expected catalog entries in lexical order", () => {
   assert.deepEqual(listConventionPackIds(), [
+    "aws-ssm-parameter-path",
     "aws-workload-default",
     "azure-workload-compact",
     "azure-workload-default",
@@ -257,4 +258,35 @@ test("azure-workload-underscore: separator is an underscore", () => {
 test("azure-workload-underscore: abbreviates azure_compute_gallery to gal", () => {
   const pack = getConventionPack("azure-workload-underscore");
   assert.equal(pack.abbreviations["functional.resource_type"].azure_compute_gallery, "gal");
+});
+
+// --- Fidelity: aws-ssm-parameter-path matches
+// specification/convention-packs/aws-ssm-parameter-path.md ---------------------------
+
+test("aws-ssm-parameter-path: naming projection matches the artifact's YAML example", () => {
+  const pack = getConventionPack("aws-ssm-parameter-path");
+  assert.deepEqual(pack.naming_component_order, [
+    "organizational.system",
+    "deployment.environment",
+    "functional.service",
+    "functional.component",
+    "deployment.instance",
+  ]);
+  assert.equal(pack.separator, "/");
+  assert.equal(pack.prefix, "/");
+  assert.equal(pack.casing, "lower");
+});
+
+test("aws-ssm-parameter-path: every non-naming field is identical to aws-workload-default", () => {
+  const pack = getConventionPack("aws-ssm-parameter-path");
+  const base = getConventionPack("aws-workload-default");
+  for (const field of [
+    "identity_defaults",
+    "required_attributes",
+    "abbreviations",
+    "override_policy",
+    "tag_projections",
+  ]) {
+    assert.deepEqual(pack[field], base[field], field);
+  }
 });

@@ -430,3 +430,60 @@ test("casing follows Unicode Default Case Conversion, mapping one code point to 
   // locale-insensitive) maps it to "i" followed by U+0307 COMBINING DOT ABOVE.
   assert.equal(result.outputs.name, "i\u0307stanbul");
 });
+
+// --- prefix (specification/convention-pack.md#prefix-specification-v14) -----------------
+
+test("prefix: the normative example prepends the prefix verbatim and omits an absent component", () => {
+  const input = baseInput({
+    resolved_context: {
+      resource_identity: {
+        organizational: { system: "Lamassu" },
+        deployment: { environment: "development", instance: "example-com" },
+        functional: { component: "dns-validation", resource_type: "aws_ssm_parameter" },
+      },
+      governance_context: {},
+    },
+    convention_pack: {
+      id: "test-pack",
+      naming_component_order: [
+        "organizational.system",
+        "deployment.environment",
+        "functional.service",
+        "functional.component",
+        "deployment.instance",
+      ],
+      separator: "/",
+      casing: "lower",
+      prefix: "/",
+      abbreviations: { "deployment.environment": { development: "dev" } },
+    },
+  });
+
+  assert.equal(evaluateConvention(input).outputs.name, "/lamassu/dev/dns-validation/example-com");
+});
+
+test("prefix: casing never applies to the prefix", () => {
+  const input = baseInput({
+    convention_pack: {
+      id: "test-pack",
+      naming_component_order: ["organizational.system"],
+      casing: "lower",
+      prefix: "ABC-",
+    },
+  });
+
+  assert.equal(evaluateConvention(input).outputs.name, "ABC-telemetry-platform");
+});
+
+test("prefix: no name is generated when a required naming component is absent", () => {
+  const input = baseInput({
+    convention_pack: {
+      id: "test-pack",
+      naming_component_order: ["organizational.system", "functional.component"],
+      required_attributes: ["functional.component"],
+      prefix: "/",
+    },
+  });
+
+  assert.equal(evaluateConvention(input).outputs.name, undefined);
+});

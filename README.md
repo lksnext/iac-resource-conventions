@@ -305,7 +305,8 @@ for the full API contract, design rationale, and current capability scope.
 - ✓ Executable Convention Packs (Milestone 4.2 — complete; a first pack,
   `aws-workload-default`, is implemented, and the Azure portability slice added
   three Azure packs (`azure-workload-default`, `azure-workload-compact`,
-  `azure-workload-underscore`), see
+  `azure-workload-underscore`), and `aws-ssm-parameter-path` renders hierarchical SSM
+  parameter names, see
   [`docs/architecture/convention-pack-catalog.md`](docs/architecture/convention-pack-catalog.md)).
 - Contract Tests
 - ✓ CLI (Milestone 4 — complete for its planned scope; `evaluate` and `terraform-external`

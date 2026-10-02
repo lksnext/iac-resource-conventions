@@ -22,7 +22,7 @@ as Markdown policy documents, not executable data (see
 `aws-workload-default` was the first such artifact; the Azure portability slice
 added three more — `azure-workload-default`, `azure-workload-compact`, and
 `azure-workload-underscore` (see [Azure portability slice](#azure-portability-slice)
-below).
+below); `aws-ssm-parameter-path` followed (see [AWS path pack](#aws-path-pack) below).
 
 The catalog implements each artifact it carries; it does not extend, reinterpret, or
 duplicate the policy those artifacts define. Every catalog entry is a `ConventionPack`
@@ -171,6 +171,15 @@ Each pack is deliberately scoped to the Resource Types that actually need it, ra
 than a single pack attempting to cover every Azure Resource Type in this catalog slice
 — see [`docs/architecture/resource-definition-catalog.md#azure-portability-slice`](resource-definition-catalog.md#azure-portability-slice)
 for the corresponding Resource Definition slice these packs name.
+
+## AWS path pack
+
+`aws-ssm-parameter-path` renders hierarchical `aws_ssm_parameter` names, such as
+`/lamassu/dev/dns-validation/example-com`, using `separator: "/"` and the
+Specification v1.4 naming `prefix: "/"`. Every non-naming field matches
+`aws-workload-default`, which a fidelity test asserts. Like the Azure variants, it is
+scoped to the one Resource Type that needs it (see
+[`docs/architecture/resource-definition-catalog.md#hierarchical-names-aws_ssm_parameter`](resource-definition-catalog.md#hierarchical-names-aws_ssm_parameter)).
 
 ## CLI relationship
 

@@ -156,6 +156,31 @@ test("terraform-external: aws_ssm_parameter is a known resource_type with a vali
   assert.equal(output.valid, "true");
 });
 
+test("terraform-external: aws-ssm-parameter-path renders a hierarchical aws_ssm_parameter name", async () => {
+  const requestJson = JSON.stringify({
+    naming_request: {
+      convention: "aws-ssm-parameter-path",
+      resource_type: "aws_ssm_parameter",
+      functional: { component: "certificates" },
+      deployment: { instance: "example-com" },
+    },
+    evaluation_context: {
+      shared_organizational_context: { system: "lamassu" },
+      shared_deployment_context: { environment: "dev" },
+    },
+  });
+
+  const { exitCode, stdout } = await runCli(
+    ["terraform-external"],
+    JSON.stringify({ request_json: requestJson }),
+  );
+
+  assert.equal(exitCode, 0);
+  const output = JSON.parse(stdout);
+  assert.equal(output.name, "/lamassu/dev/certificates/example-com");
+  assert.equal(output.valid, "true");
+});
+
 // --- domain-invalid result ---------------------------------------------------------------
 
 test("terraform-external: a domain-invalid ConventionResult still completes with exit 0", async () => {

@@ -55,6 +55,9 @@ export interface ConventionPack {
   /** The literal separator inserted between adjacent naming components, if any. */
   readonly separator?: string;
 
+  /** Literal text prepended verbatim to a generated name (Specification v1.4). */
+  readonly prefix?: string;
+
   /** The casing transformation applied to each naming component before joining. */
   readonly casing?: NamingCasing;
 

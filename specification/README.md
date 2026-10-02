@@ -4,12 +4,12 @@ This directory contains the Specification for `iac-resource-conventions`.
 
 ## Specification Status
 
-**Current version:** Specification v1.3
+**Current version:** Specification v1.4
 **Status:** Additive extension of the frozen v1.0 baseline (v1.2 changes one field's
 shape from v1.1, `placement_constraints`, and renames `allowed_characters`; see
 [Specification v1.2: Executable Resource Constraints](#specification-v12-executable-resource-constraints)
 below for why this is treated as a deliberate, low-risk pre-release migration rather
-than a purely additive change; v1.3 is purely additive)
+than a purely additive change; v1.3 and v1.4 are purely additive)
 
 The conceptual Specification described in this directory — Resource Identity,
 Governance Context, Naming Request, Context Resolution, Resource Definition, Convention
@@ -28,7 +28,9 @@ necessary by the AWS Resource Definition catalog — see [Specification v1.2: Ex
 Resource Constraints](#specification-v12-executable-resource-constraints) below.
 Specification v1.3 adds executable tag projection, demonstrated necessary by a
 Terraform consumer — see [Specification v1.3: Executable Tag
-Projection](#specification-v13-executable-tag-projection) below.
+Projection](#specification-v13-executable-tag-projection) below. Specification v1.4
+adds a literal naming prefix for hierarchical names — see [Specification v1.4: Naming
+Prefix](#specification-v14-naming-prefix) below.
 
 The Reference Evaluator, Resource Definitions, Convention Packs, and adapters are
 expected to validate this Specification rather than redefine it. (The Reference
@@ -299,6 +301,37 @@ Specification v1.3 intentionally does **not** define:
 These remain deferred until implementation evidence demonstrates a genuine need to
 address them.
 
+## Specification v1.4: Naming Prefix
+
+The same Terraform consumer writes AWS Systems Manager parameters with hierarchical
+names such as `/lamassu/<env>/dns-validation/<name>`. AWS requires a hierarchical
+parameter name to start with `/`, but a generated name was only its naming components
+joined by `separator`, and Specification v1.1 deliberately excluded literal naming
+components, so no Convention Pack could render it. Specification v1.4 adds one
+optional, additive Convention Pack field, **`prefix`**: literal text prepended verbatim
+to a generated name (see
+[`convention-pack.md#prefix-specification-v14`](./convention-pack.md#prefix-specification-v14)).
+It also adds the concrete
+[`aws-ssm-parameter-path`](./convention-packs/aws-ssm-parameter-path.md) Convention
+Pack, which uses it.
+
+### Delta from Specification v1.3
+
+| Field | v1.3 | v1.4 |
+| --- | --- | --- |
+| `prefix` | Did not exist. | New, optional; defaults to `""`. A pack that declares no `prefix` generates the same name as before. Additive. |
+
+### Specification v1.4 Non-Goals
+
+Specification v1.4 intentionally does **not** define:
+
+- a suffix, or literal text between naming components;
+- a Resource Definition constraint for hierarchy depth (for example, Systems
+  Manager's fifteen-level limit) or for a conditional leading delimiter.
+
+These remain deferred until implementation evidence demonstrates a genuine need to
+address them.
+
 ## Purpose
 
 The Specification defines the conventions for Infrastructure as Code (IaC) resources —
@@ -529,7 +562,9 @@ implementation experience, not a theoretical redesign. Specification v1.2 (see
 above) is the second, driven by the Resource Definition catalog's own implementation
 experience rather than a theoretical redesign. Specification v1.3 (see
 [Specification v1.3: Executable Tag Projection](#specification-v13-executable-tag-projection)
-above) is the third, driven by a Terraform consumer's adoption. Future changes should
+above) is the third, driven by a Terraform consumer's adoption, and Specification v1.4
+(see [Specification v1.4: Naming Prefix](#specification-v14-naming-prefix) above) the
+fourth, driven by the same consumer. Future changes should
 follow these principles:
 
 - **Implementation first** — build the Reference Evaluator, a Resource Definition

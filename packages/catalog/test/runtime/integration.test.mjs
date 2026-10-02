@@ -284,3 +284,39 @@ test("integration: aws_ssm_parameter forbids every letter-case spelling of aws a
     assert.ok(prefixes.includes(prefix), prefix);
   }
 });
+
+function evaluateSsmParameterPath(system, instance) {
+  return evaluate({
+    naming_request: {
+      convention: "aws-ssm-parameter-path",
+      resource_type: "aws_ssm_parameter",
+      functional: { component: "dns-validation" },
+      deployment: { instance },
+    },
+    convention_pack: getConventionPack("aws-ssm-parameter-path"),
+    evaluation_context: {
+      shared_organizational_context: { system },
+      shared_deployment_context: { environment: "development" },
+    },
+    resource_definition: getResourceDefinition("aws_ssm_parameter"),
+  });
+}
+
+test("integration: aws-ssm-parameter-path reproduces the consumer's hierarchical parameter name", () => {
+  const result = evaluateSsmParameterPath("lamassu", "example-com");
+
+  assert.equal(result.outputs.name, "/lamassu/dev/dns-validation/example-com");
+  assert.equal(result.validation.valid, true);
+  assert.deepEqual(result.outputs.metadata.tags, {
+    Project: "lamassu",
+    Environment: "development",
+    Component: "dns-validation",
+  });
+});
+
+test("integration: aws-ssm-parameter-path reports a reserved /aws path prefix", () => {
+  const result = evaluateSsmParameterPath("aws-tools", "example-com");
+
+  assert.equal(result.outputs.name, "/aws-tools/dev/dns-validation/example-com");
+  assert.ok(result.validation.failures.some((failure) => failure.code === "forbidden-prefix"));
+});

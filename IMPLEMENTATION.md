@@ -43,8 +43,9 @@ This is the **implementation foundation** only. As of this writing:
   `azure_linux_virtual_machine`, `azure_key_vault`, `azure_postgresql_flexible_server`,
   `azure_log_analytics_workspace`, `azure_compute_gallery`) — and an executable
   Convention Pack Catalog (Milestone 4.2, extended by the Azure portability
-  slice) — a `getConventionPack` / `listConventionPackIds` lookup API over four packs,
-  `aws-workload-default`, `azure-workload-default`, `azure-workload-compact`, and
+  slice) — a `getConventionPack` / `listConventionPackIds` lookup API over five packs,
+  `aws-workload-default`, `aws-ssm-parameter-path`, `azure-workload-default`,
+  `azure-workload-compact`, and
   `azure-workload-underscore`. See [Milestones](#milestones) below,
   [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md),
   and

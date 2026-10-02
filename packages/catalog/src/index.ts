@@ -33,6 +33,7 @@ import { AZURE_POSTGRESQL_FLEXIBLE_SERVER } from "./azure/postgresql-flexible-se
 import { AZURE_RESOURCE_GROUP } from "./azure/resource-group.js";
 import { AZURE_SUBNET } from "./azure/subnet.js";
 import { AZURE_VIRTUAL_NETWORK } from "./azure/virtual-network.js";
+import { AWS_SSM_PARAMETER_PATH } from "./convention-packs/aws-ssm-parameter-path.js";
 import { AWS_WORKLOAD_DEFAULT } from "./convention-packs/aws-workload-default.js";
 import { AZURE_WORKLOAD_COMPACT } from "./convention-packs/azure-workload-compact.js";
 import { AZURE_WORKLOAD_DEFAULT } from "./convention-packs/azure-workload-default.js";
@@ -102,6 +103,7 @@ export function listResourceTypes(): ReadonlyArray<ResourceType> {
  * docs/architecture/convention-pack-catalog.md#package-ownership).
  */
 const conventionPacks: Readonly<Record<ConventionPackId, ConventionPack>> = deepFreeze({
+  [AWS_SSM_PARAMETER_PATH.id]: AWS_SSM_PARAMETER_PATH,
   [AWS_WORKLOAD_DEFAULT.id]: AWS_WORKLOAD_DEFAULT,
   [AZURE_WORKLOAD_COMPACT.id]: AZURE_WORKLOAD_COMPACT,
   [AZURE_WORKLOAD_DEFAULT.id]: AZURE_WORKLOAD_DEFAULT,

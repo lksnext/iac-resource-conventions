@@ -290,6 +290,8 @@ in what order. Rendering order always matches declaration order.
   implementation evidence demonstrated a need for one, and introducing one
   speculatively would be inconsistent with this Specification's evidence-driven
   evolution principle (see [`README.md#future-evolution`](./README.md#future-evolution)).
+  Specification v1.4 adds only a leading literal, [`prefix`](#prefix-specification-v14),
+  demonstrated necessary by hierarchical AWS Systems Manager parameter names.
 
 ### Separator
 
@@ -395,6 +397,23 @@ Convention Pack defines one (see
 Formalizing the field for the first time, rather than reusing an under-specified shape
 that was never exercised, is treated as the smaller-risk option.
 
+### Prefix (Specification v1.4)
+
+`prefix` is a new, optional string a Convention Pack declares to place literal text
+before the first naming component. When omitted, its value is the empty string.
+
+- `prefix` is inserted verbatim: casing and abbreviations never apply to it, the same
+  way they never apply to `separator`.
+- `prefix` is prepended only to a generated name. When no name is generated (no
+  naming components are declared, or a required naming component is absent), there is
+  no name to prefix.
+- No other literal is defined: there is no suffix and no literal between components.
+
+Evidence: an AWS Systems Manager parameter in a hierarchy "must include a leading
+forward slash character (/)" (see `packages/catalog/src/aws/ssm-parameter.ts`). With
+`separator: "/"` alone, a pack can render `lamassu/dev/dns-validation`, which AWS
+treats as not fully qualified; `prefix: "/"` renders `/lamassu/dev/dns-validation`.
+
 ### Naming rule execution order
 
 A conforming implementation of Specification v1.1 naming rules produces the following
@@ -415,7 +434,8 @@ sequence, in this exact order, for every reference declared by
    [Casing](#casing)).
 5. **Omit** every absent-and-optional component from the sequence.
 6. **Join** the remaining, ordered per-component values using `separator` (see
-   [Separator](#separator)).
+   [Separator](#separator)), then prepend `prefix`, if declared (see
+   [Prefix](#prefix-specification-v14)).
 7. The joined string is the resource's generated name, validated against the resource's
    Resource Definition constraints exactly as already described in
    [`convention-result.md`](./convention-result.md#convention-evaluation-pipeline).
@@ -436,6 +456,7 @@ Non-Goals](./README.md#specification-v11-non-goals).
 | `separator` | No | `""` (components are concatenated directly) | None beyond being a string |
 | `casing` | No | `preserve` | Any value other than `preserve`, `lower`, or `upper` |
 | `abbreviations` | No | No abbreviation applies to any component | An outer key outside the canonical attribute vocabulary |
+| `prefix` | No | `""` (nothing is prepended) | None beyond being a string |
 
 ### Naming rule examples
 
@@ -552,6 +573,35 @@ validation:
   valid: false
   failures:
     - message: "name exceeds max_length of 24 characters"
+```
+
+**Prefix** — `prefix` is prepended verbatim after joining, and an absent optional
+component leaves no doubled separator:
+
+```yaml
+naming_component_order:
+  - organizational.system
+  - deployment.environment
+  - functional.service
+  - functional.component
+  - deployment.instance
+separator: "/"
+casing: lower
+prefix: "/"
+abbreviations:
+  deployment.environment:
+    development: dev
+
+organizational:
+  system: Lamassu
+deployment:
+  environment: development
+  instance: example-com
+functional:
+  component: dns-validation
+# functional.service is not resolved for this resource
+
+name: /lamassu/dev/dns-validation/example-com
 ```
 
 ## Metadata projections
