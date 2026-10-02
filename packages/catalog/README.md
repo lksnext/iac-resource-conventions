@@ -53,6 +53,8 @@ the `terraform-external` bridge, with every constraint cited from the Systems Ma
 `aws-ssm-parameter-path` Convention Pack, which renders hierarchical parameter paths
 (`/a/b/c`) using the Specification v1.4 naming `prefix`; see
 [`docs/architecture/resource-definition-catalog.md#hierarchical-names-aws_ssm_parameter`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/resource-definition-catalog.md#hierarchical-names-aws_ssm_parameter).
+`aws-workload-compact` is `aws-workload-default` with abbreviated resource types
+(`acm`, `role`, `lambda`, `s3`, `param`).
 
 ## Intended responsibilities
 

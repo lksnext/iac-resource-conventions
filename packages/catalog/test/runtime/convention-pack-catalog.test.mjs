@@ -81,6 +81,7 @@ test("a returned ConventionPack's nested identity_defaults cannot be mutated", (
 test("listConventionPackIds returns exactly the expected catalog entries in lexical order", () => {
   assert.deepEqual(listConventionPackIds(), [
     "aws-ssm-parameter-path",
+    "aws-workload-compact",
     "aws-workload-default",
     "azure-workload-compact",
     "azure-workload-default",
@@ -258,6 +259,33 @@ test("azure-workload-underscore: separator is an underscore", () => {
 test("azure-workload-underscore: abbreviates azure_compute_gallery to gal", () => {
   const pack = getConventionPack("azure-workload-underscore");
   assert.equal(pack.abbreviations["functional.resource_type"].azure_compute_gallery, "gal");
+});
+
+// --- Fidelity: aws-workload-compact matches
+// specification/convention-packs/aws-workload-compact.md -----------------------------
+
+test("aws-workload-compact: abbreviations match the artifact's Naming projection example", () => {
+  const pack = getConventionPack("aws-workload-compact");
+  assert.deepEqual(pack.abbreviations, {
+    "deployment.environment": { production: "prod", staging: "stg", development: "dev" },
+    "functional.resource_type": {
+      aws_acm_certificate: "acm",
+      aws_iam_role: "role",
+      aws_lambda_function: "lambda",
+      aws_s3_bucket: "s3",
+      aws_ssm_parameter: "param",
+    },
+  });
+});
+
+test("aws-workload-compact: every field except id and abbreviations is identical to aws-workload-default", () => {
+  const { id, abbreviations, ...pack } = getConventionPack("aws-workload-compact");
+  const {
+    id: baseId,
+    abbreviations: baseAbbreviations,
+    ...base
+  } = getConventionPack("aws-workload-default");
+  assert.deepEqual(pack, base);
 });
 
 // --- Fidelity: aws-ssm-parameter-path matches

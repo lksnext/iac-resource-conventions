@@ -320,3 +320,60 @@ test("integration: aws-ssm-parameter-path reports a reserved /aws path prefix", 
   assert.equal(result.outputs.name, "/aws-tools/dev/dns-validation/example-com");
   assert.ok(result.validation.failures.some((failure) => failure.code === "forbidden-prefix"));
 });
+
+function evaluateCompact(resourceType) {
+  return evaluate({
+    naming_request: {
+      convention: "aws-workload-compact",
+      resource_type: resourceType,
+      functional: { service: "ingestion" },
+    },
+    convention_pack: getConventionPack("aws-workload-compact"),
+    evaluation_context: {
+      shared_organizational_context: { system: "telemetry-platform" },
+      shared_deployment_context: { environment: "production" },
+    },
+    resource_definition: getResourceDefinition(resourceType),
+  });
+}
+
+test("integration: aws-workload-compact makes an aws_s3_bucket name valid", () => {
+  const compact = evaluateCompact("aws_s3_bucket");
+  const defaultResult = evaluate({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_s3_bucket",
+      functional: { service: "ingestion" },
+    },
+    convention_pack: getConventionPack("aws-workload-default"),
+    evaluation_context: {
+      shared_organizational_context: { system: "telemetry-platform" },
+      shared_deployment_context: { environment: "production" },
+    },
+    resource_definition: getResourceDefinition("aws_s3_bucket"),
+  });
+
+  assert.equal(compact.outputs.name, "telemetry-platform-ingestion-prod-s3");
+  assert.equal(compact.validation.valid, true);
+  assert.equal(defaultResult.validation.valid, false);
+});
+
+test("integration: aws-workload-compact abbreviates every AWS resource type in the catalog", () => {
+  const expected = {
+    aws_acm_certificate: "telemetry-platform-ingestion-prod-acm",
+    aws_iam_role: "telemetry-platform-ingestion-prod-role",
+    aws_lambda_function: "telemetry-platform-ingestion-prod-lambda",
+    aws_s3_bucket: "telemetry-platform-ingestion-prod-s3",
+    aws_ssm_parameter: "telemetry-platform-ingestion-prod-param",
+  };
+
+  for (const [resourceType, name] of Object.entries(expected)) {
+    const result = evaluateCompact(resourceType);
+    assert.equal(result.outputs.name, name, resourceType);
+    assert.equal(result.validation.valid, true, resourceType);
+  }
+  assert.equal(
+    evaluateCompact("aws_acm_certificate").outputs.metadata.tags.Name,
+    "telemetry-platform-ingestion-prod-acm",
+  );
+});

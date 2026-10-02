@@ -39,6 +39,8 @@ what a Convention Pack fundamentally *is*, that change belongs in
   Convention, and Deployment Convention compose into a single effective Convention Pack.
 - [`aws-ssm-parameter-path.md`](./aws-ssm-parameter-path.md) — a hierarchical-path
   variant of `aws-workload-default` for `aws_ssm_parameter` (Specification v1.4).
+- [`aws-workload-compact.md`](./aws-workload-compact.md) — `aws-workload-default` with
+  abbreviated resource types, for shorter names and valid `aws_s3_bucket` names.
 - [`azure-workload-default.md`](./azure-workload-default.md) — the general-purpose,
   hyphen-separated Convention Pack for Azure workload subscriptions.
 - [`azure-workload-compact.md`](./azure-workload-compact.md) — a shorter-name variant
