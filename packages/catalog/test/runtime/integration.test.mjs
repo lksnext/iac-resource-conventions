@@ -377,3 +377,71 @@ test("integration: aws-workload-compact abbreviates every AWS resource type in t
     "telemetry-platform-ingestion-prod-acm",
   );
 });
+
+// --- Specification v1.5: tag and hierarchy constraints --------------------------------
+
+test("integration: aws_ssm_parameter reports a path deeper than fifteen levels", () => {
+  const deep = evaluateSsmParameterPath("lamassu", "l4/l5/l6/l7/l8/l9/l10/l11/l12/l13/l14/l15/l16");
+  const atLimit = evaluateSsmParameterPath("lamassu", "l4/l5/l6/l7/l8/l9/l10/l11/l12/l13/l14/l15");
+
+  assert.ok(deep.validation.failures.some((failure) => failure.code === "max-segments"));
+  assert.equal(atLimit.validation.valid, true);
+});
+
+test("integration: aws_ssm_parameter reports a name longer than its derived 955-character maximum", () => {
+  const atLimit = evaluateSsmParameterPath(
+    "lamassu",
+    "x".repeat(955 - "/lamassu/dev/dns-validation/".length),
+  );
+  const tooLong = evaluateSsmParameterPath(
+    "lamassu",
+    "x".repeat(956 - "/lamassu/dev/dns-validation/".length),
+  );
+
+  assert.equal(atLimit.outputs.name.length, 955);
+  assert.equal(atLimit.validation.valid, true);
+  assert.ok(tooLong.validation.failures.some((failure) => failure.code === "max-length"));
+});
+
+function evaluateTagged(resourceType, governance) {
+  return evaluate({
+    naming_request: {
+      convention: "aws-workload-compact",
+      resource_type: resourceType,
+      functional: { service: "ingestion" },
+      governance,
+    },
+    convention_pack: getConventionPack("aws-workload-compact"),
+    evaluation_context: {
+      shared_organizational_context: { system: "telemetry-platform" },
+      shared_deployment_context: { environment: "production" },
+    },
+    resource_definition: getResourceDefinition(resourceType),
+  });
+}
+
+test("integration: AWS tag constraints accept non-ASCII values and report invalid characters and lengths", () => {
+  assert.equal(
+    evaluateTagged("aws_s3_bucket", { owner: "caf\u00e9 \u00f1u" }).validation.valid,
+    true,
+  );
+
+  const invalid = evaluateTagged("aws_s3_bucket", {
+    owner: "team#1",
+    cost_center: "c".repeat(257),
+  });
+  assert.deepEqual(
+    invalid.validation.failures.map((failure) => failure.code),
+    ["tag-value-character", "tag-value-length"],
+  );
+});
+
+test("integration: only IAM reserves the aws: prefix for tag values", () => {
+  const governance = { managed_by: "aws:cloudformation" };
+
+  assert.deepEqual(
+    evaluateTagged("aws_iam_role", governance).validation.failures.map((failure) => failure.code),
+    ["tag-value-forbidden-prefix"],
+  );
+  assert.equal(evaluateTagged("aws_s3_bucket", governance).validation.valid, true);
+});

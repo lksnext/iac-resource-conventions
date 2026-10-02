@@ -676,9 +676,11 @@ tag_projections:
   [`convention-result.md`](./convention-result.md#convention-outputs)). When
   `tag_projections` is absent or empty, or no declared tag resolves, `outputs.metadata`
   is omitted.
-- Tag keys and values are not validated against a platform's own tag constraints (for
-  example, key or value length and allowed characters): that is a deferred Non-Goal of
-  Specification v1.3.
+- Tag keys and values are not validated by the Convention Pack. Since Specification
+  v1.5, the selected Resource Definition may declare `tag_constraints` (for example,
+  key or value length and allowed characters), and Convention Evaluation validates
+  the projected tags against them (see
+  [`resource-definition.md#tag-constraints`](./resource-definition.md#tag-constraints)).
 
 A `tag_projections` entry is either a metadata source reference, as above, or an
 object:

@@ -7,7 +7,11 @@ export type {
 export type {
   ResourceDefinition,
   ResourceIdentityConstraints,
+  ResourceLengthBounds,
+  ResourceNameSegmentLimit,
   ResourceRenderingConstraints,
+  ResourceTagConstraints,
+  ResourceTagTextConstraints,
 } from "./resource-definition.js";
 export type { ResourceNameCharacterClass } from "./resource-name-character-class.js";
 export type { ResourceNameCharacterSet } from "./resource-name-character-set.js";

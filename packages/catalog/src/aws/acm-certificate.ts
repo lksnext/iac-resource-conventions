@@ -1,5 +1,6 @@
 import type { ResourceDefinition } from "@lksnext/iac-conventions-core";
 import { deepFreeze } from "../internal/deep-freeze.js";
+import { AWS_TAG_CONSTRAINTS } from "./tag-constraints.js";
 
 /**
  * AWS Certificate Manager (ACM) certificate.
@@ -42,6 +43,8 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  * - **Uniqueness** — no uniqueness or identity constraint is documented by AWS for
  *   certificates beyond their ARN, which ACM itself assigns (not user-supplied);
  *   `identity_constraints` is therefore omitted entirely rather than guessed.
+ * - **Tags** — {@link AWS_TAG_CONSTRAINTS} (see `./tag-constraints.ts`); the ACM `Tag`
+ *   API publishes the same lengths and pattern. Evidence: Explicit.
  */
 export const AWS_ACM_CERTIFICATE: ResourceDefinition = deepFreeze({
   resource_type: "aws_acm_certificate",
@@ -58,4 +61,5 @@ export const AWS_ACM_CERTIFICATE: ResourceDefinition = deepFreeze({
         "when associated with a CloudFront distribution, the Region must be us-east-1, overriding the general regional rule above",
     },
   ],
+  tag_constraints: AWS_TAG_CONSTRAINTS,
 });

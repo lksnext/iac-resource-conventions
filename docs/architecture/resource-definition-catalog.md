@@ -273,13 +273,23 @@ pack uses `separator: "/"` and `prefix: "/"` to render, for example,
 `/lamassu/dev/dns-validation/example-com`, with the consumer's `<name>` segment
 supplied as `deployment.instance`.
 
-Two hierarchy rules remain unvalidated, because they are not representable as
-Resource Definition constraints: the conditional leading-`/` rule (always met by
-`aws-ssm-parameter-path`, which always emits it), and "a maximum depth of fifteen
-levels" (a count of `/` occurrences; `aws-ssm-parameter-path` emits at most five levels
-unless a resolved value contains `/`). Validating the depth limit would need a
-Resource Definition constraint counting a delimiter, which should be proposed once a
-second resource type needs it.
+Specification v1.5 adds `max_segments`, so `aws_ssm_parameter` now validates the
+fifteen-level depth limit (`max_segments: { delimiter: "/", max: 15 }`), and a Derived
+`max_length: 955`: AWS's 1011-character limit includes the ARN that precedes the name,
+and the longest documented ARN prefix (`aws-us-gov` partition, `us-gov-*` Region) is 56
+characters. Only the conditional leading-`/` rule remains unvalidated, because no
+constraint represents it; `aws-ssm-parameter-path` always emits the leading `/`.
+
+### Tag constraints (AWS)
+
+Specification v1.5 also lets a Resource Definition declare `tag_constraints`. Every
+AWS entry declares the AWS tag limits shared in
+[`packages/catalog/src/aws/tag-constraints.ts`](../../packages/catalog/src/aws/tag-constraints.ts):
+at most 50 tags; keys 1–128 and values 0–256 Unicode characters; letters, numbers,
+separators, and `_ . : / = + - @`; and the reserved `aws:` key prefix (also reserved
+for values on `aws_iam_role`). The character set is Explicit for ACM, IAM, and Systems
+Manager, whose `Tag` APIs publish the pattern `[\p{L}\p{Z}\p{N}_.:/=+\-@]`, and
+Derived for S3 and Lambda, which defer to the general AWS tag requirements.
 
 ## Azure portability slice
 

@@ -1,5 +1,6 @@
 import type { ResourceDefinition } from "@lksnext/iac-conventions-core";
 import { deepFreeze } from "../internal/deep-freeze.js";
+import { AWS_TAG_CONSTRAINTS } from "./tag-constraints.js";
 
 /**
  * AWS Lambda function.
@@ -55,6 +56,9 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  *   caller supplies at creation time, not the ARN or the value AWS may echo back.
  * - **Placement** — regional, with no additional conditional rule documented (unlike
  *   `aws_acm_certificate`, see `./acm-certificate.ts`).
+ * - **Tags** — {@link AWS_TAG_CONSTRAINTS} (see `./tag-constraints.ts`). Lambda's
+ *   tagging guide defers to the general AWS tag requirements, so lengths and count
+ *   are Explicit and the character set is **Derived**.
  */
 export const AWS_LAMBDA_FUNCTION: ResourceDefinition = deepFreeze({
   resource_type: "aws_lambda_function",
@@ -76,4 +80,5 @@ export const AWS_LAMBDA_FUNCTION: ResourceDefinition = deepFreeze({
     },
   },
   placement_constraints: [{ statement: "regional; location chosen by the deployment" }],
+  tag_constraints: AWS_TAG_CONSTRAINTS,
 });

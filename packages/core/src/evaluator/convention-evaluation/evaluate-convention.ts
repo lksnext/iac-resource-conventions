@@ -13,6 +13,7 @@ import { resolveAttributeReference } from "./resolve-attribute-reference.js";
 import {
   validatePlacementConstraints,
   validateRenderingConstraints,
+  validateTagConstraints,
 } from "./resource-constraints/index.js";
 
 /**
@@ -79,7 +80,9 @@ function explain(
   const tagProjectionSummary =
     tagProjectionFailures.length === 0
       ? ""
-      : ` ${tagProjectionFailures.map((failure) => failure.message).join(" ")}`;
+      : ` ${tagProjectionFailures
+          .map(({ message }) => (message.endsWith(".") ? message : `${message}.`))
+          .join(" ")}`;
 
   return `${requiredAttributesSummary}${duplicateNamingReferencesSummary}${renderingConstraintSummary}${placementConstraintSummary}${tagProjectionSummary}`;
 }
@@ -197,6 +200,7 @@ export function evaluateConvention(input: ConventionEvaluationInput): Convention
     resourceDefinition,
   );
   const tagProjection = projectTags(resolvedContext, conventionPack, resourceDefinition, name);
+  const tagConstraintFailures = validateTagConstraints(tagProjection.tags, resourceDefinition);
 
   const failures: ConventionValidationFailure[] = [
     ...missing.map(
@@ -212,6 +216,7 @@ export function evaluateConvention(input: ConventionEvaluationInput): Convention
     ...renderingConstraintFailures,
     ...placementConstraintFailures,
     ...tagProjection.failures,
+    ...tagConstraintFailures,
   ];
 
   const validation: ConventionValidation =
@@ -234,7 +239,7 @@ export function evaluateConvention(input: ConventionEvaluationInput): Convention
       duplicateNamingReferences,
       renderingConstraintFailures,
       placementConstraintFailures,
-      tagProjection.failures,
+      [...tagProjection.failures, ...tagConstraintFailures],
     ),
   };
 }

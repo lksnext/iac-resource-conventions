@@ -1,5 +1,6 @@
 import type { ResourceDefinition } from "@lksnext/iac-conventions-core";
 import { deepFreeze } from "../internal/deep-freeze.js";
+import { AWS_TAG_CONSTRAINTS } from "./tag-constraints.js";
 
 /** Every ASCII letter-case spelling of `word`, because `forbidden_prefixes` matching is case-sensitive. */
 function caseVariants(word: string): ReadonlyArray<string> {
@@ -26,6 +27,11 @@ const RESERVED_PREFIX_WORDS = ["aws", "ssm"] as const;
  *   ("Parameter Store reference — Parameter name constraints").
  * - {@link https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-paramstore-hierarchies.html}
  *   ("Working with parameter hierarchies in Parameter Store").
+ * - {@link https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html}
+ *   ("Identify AWS resources with Amazon Resource Names") — the ARN format and the
+ *   `aws`, `aws-cn`, and `aws-us-gov` partitions.
+ * - {@link https://docs.aws.amazon.com/general/latest/gr/ssm.html} ("AWS Systems Manager
+ *   endpoints and quotas") — the Region codes Systems Manager is available in.
  *
  * Findings:
  * - **Uniqueness / regional** — "A parameter name must be unique within an AWS
@@ -36,14 +42,20 @@ const RESERVED_PREFIX_WORDS = ["aws", "ssm"] as const;
  *   `aws_lambda_function` uses (see `./lambda-function.ts`).
  * - **Minimum length** — `Name` "Length Constraints: Minimum length of 1." Modeled as
  *   `min_length: 1`. Evidence: Explicit.
- * - **Maximum length (gap, not modeled)** — "The maximum length for a parameter name
- *   that you specify is 1011 characters. This count of 1011 characters includes the
- *   characters in the ARN that precede the name you specify", for example the 45
- *   characters of `arn:aws:ssm:us-east-2:111122223333:parameter/`. The bound depends
- *   on the partition and Region, so no fixed `max_length` represents it; `max_length`
- *   is omitted rather than fabricated. (The API's `Maximum length of 2048` includes
- *   1037 characters reserved for internal use, so it is not the caller's limit
- *   either.)
+ * - **Maximum length** — "The maximum length for a parameter name that you specify is
+ *   1011 characters. This count of 1011 characters includes the characters in the ARN
+ *   that precede the name you specify", for example the 45 characters of
+ *   `arn:aws:ssm:us-east-2:111122223333:parameter/`. That prefix is
+ *   `arn:` + partition + `:ssm:` + Region + `:` + 12-digit account ID + `:parameter/`,
+ *   33 characters plus the partition and Region codes. The longest documented pair is
+ *   `aws-us-gov` with `us-gov-east-1`/`us-gov-west-1` (23 characters; the longest
+ *   commercial pair, `aws` with `ap-southeast-N`, is 17), so the longest prefix is 56
+ *   characters. Modeled as `max_length: 955` (1011 − 56), a bound every documented
+ *   Region accepts; a name between 956 and 966 characters may still be accepted in a
+ *   Region with a shorter code, but is reported invalid. Evidence: **Derived**. A
+ *   new partition or a longer Region code requires re-deriving this bound. (The API's
+ *   `Maximum length of 2048` includes 1037 characters reserved for internal use, so it
+ *   is not the caller's limit.)
  * - **Length unit** — every allowed character (see below) is single-byte ASCII, so
  *   `code_points` and `utf8_bytes` coincide; `code_points` is used for the same reason
  *   as `aws_s3_bucket` (see `./s3-bucket.ts`).
@@ -59,16 +71,22 @@ const RESERVED_PREFIX_WORDS = ["aws", "ssm"] as const;
  *   `aws` and `ssm` is listed (Evidence: Explicit). The same spellings preceded by a
  *   leading `/` are also listed: `/aws/testparam1` is Explicit evidence for `/aws`;
  *   `/ssm` is **Derived** by applying the same documented rule to a hierarchical name.
- * - **Hierarchical names (gap, not modeled)** — "For parameters in a hierarchy, you
- *   must include a leading forward slash character (/)" (`MyParameter3/L1` is "not
- *   fully qualified"), and "Parameter hierarchies are limited to a maximum depth of
- *   fifteen levels." Neither rule is representable by Specification v1.2: the first
- *   is conditional (a leading `/` is required only when the name contains another
- *   `/`), and the second counts occurrences of a character. A flat name such as
- *   `lamassu-dev-dns-validation-aws_ssm_parameter` is fully valid, and the
- *   `aws-ssm-parameter-path` Convention Pack renders hierarchical names with a leading
- *   `/` (see
+ * - **Hierarchy depth** — "Parameter hierarchies are limited to a maximum depth of
+ *   fifteen levels": `/Level-1/L2/…/L14/parameter-name` (fifteen segments) is valid and
+ *   a seventeen-segment name fails with `HierarchyLevelLimitExceededException`.
+ *   Modeled as `max_segments: { delimiter: "/", max: 15 }` (Specification v1.5).
+ *   Evidence: Explicit.
+ * - **Leading `/` for hierarchical names (gap, not modeled)** — "For parameters in a
+ *   hierarchy, you must include a leading forward slash character (/)"
+ *   (`MyParameter3/L1` is "not fully qualified"). The rule is conditional (a leading
+ *   `/` is required only when the name contains another `/`), which no constraint
+ *   represents. A flat name such as `lamassu-dev-dns-validation-aws_ssm_parameter` is
+ *   fully valid, and the `aws-ssm-parameter-path` Convention Pack always emits the
+ *   leading `/` (see
  *   `docs/architecture/resource-definition-catalog.md#hierarchical-names-aws_ssm_parameter`).
+ * - **Tags** — {@link AWS_TAG_CONSTRAINTS} (see `./tag-constraints.ts`); the
+ *   Systems Manager `Tag` API publishes the same lengths and pattern. Evidence:
+ *   Explicit.
  * - **Case sensitivity** — "Parameter names are case sensitive." No model field
  *   represents this; recorded here only.
  * - **Placement** — regional, with no additional conditional rule documented.
@@ -84,6 +102,7 @@ export const AWS_SSM_PARAMETER: ResourceDefinition = deepFreeze({
   },
   rendering_constraints: {
     min_length: 1,
+    max_length: 955,
     length_unit: "code_points",
     allowed_characters_description:
       "letters, digits, '_', '.', '-', and '/' (hierarchy delimiter); no spaces",
@@ -95,6 +114,8 @@ export const AWS_SSM_PARAMETER: ResourceDefinition = deepFreeze({
       ...caseVariants(word),
       ...caseVariants(word).map((variant) => `/${variant}`),
     ]),
+    max_segments: { delimiter: "/", max: 15 },
   },
   placement_constraints: [{ statement: "regional; location chosen by the deployment" }],
+  tag_constraints: AWS_TAG_CONSTRAINTS,
 });

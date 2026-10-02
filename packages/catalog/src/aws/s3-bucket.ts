@@ -1,5 +1,6 @@
 import type { ResourceDefinition } from "@lksnext/iac-conventions-core";
 import { deepFreeze } from "../internal/deep-freeze.js";
+import { AWS_TAG_CONSTRAINTS } from "./tag-constraints.js";
 
 /**
  * Amazon S3 general purpose bucket.
@@ -63,6 +64,9 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  *   reserved-pattern gap (see
  *   `docs/architecture/resource-definition-catalog-conformance.md#reserved-pattern-gap`).
  *   Evidence: Explicit.
+ * - **Tags** — {@link AWS_TAG_CONSTRAINTS} (see `./tag-constraints.ts`). S3 states the
+ *   key and value lengths and the 50-tag limit (Explicit); the character set comes
+ *   from the general AWS tag requirements (**Derived**).
  */
 export const AWS_S3_BUCKET: ResourceDefinition = deepFreeze({
   resource_type: "aws_s3_bucket",
@@ -88,4 +92,5 @@ export const AWS_S3_BUCKET: ResourceDefinition = deepFreeze({
     forbidden_suffixes: ["-s3alias"],
   },
   placement_constraints: [{ statement: "regional; location chosen by the deployment" }],
+  tag_constraints: AWS_TAG_CONSTRAINTS,
 });

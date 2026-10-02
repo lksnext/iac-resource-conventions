@@ -25,7 +25,9 @@
 import type {
   CanonicalResourceIdentityAttribute,
   ResourceDefinition,
+  ResourceLengthBounds,
   ResourceNameLengthUnit,
+  ResourceTagTextConstraints,
 } from "@lksnext/iac-conventions-core";
 import { CANONICAL_RESOURCE_IDENTITY_ATTRIBUTES } from "./canonical-attributes.js";
 
@@ -49,6 +51,9 @@ const CHARACTER_CLASSES = new Set([
   "ascii_uppercase",
   "ascii_letters",
   "ascii_digits",
+  "unicode_letters",
+  "unicode_numbers",
+  "unicode_separators",
 ]);
 
 /**
@@ -151,6 +156,89 @@ function validateStringList(
       });
     }
   }
+}
+
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
+
+/** Validates a `min_length`/`max_length`/`length_unit` triple at `path`. */
+function validateLengthBounds(
+  resourceType: string,
+  path: string,
+  bounds: ResourceLengthBounds,
+  issues: CatalogConformanceIssue[],
+): void {
+  const hasMinLength = bounds.min_length !== undefined;
+  const hasMaxLength = bounds.max_length !== undefined;
+  const hasLengthUnit = bounds.length_unit !== undefined;
+
+  const validMinLength = hasMinLength && isNonNegativeInteger(bounds.min_length);
+  const validMaxLength = hasMaxLength && isNonNegativeFiniteNumber(bounds.max_length);
+
+  if (hasMinLength && !validMinLength) {
+    issues.push({
+      resource_type: resourceType,
+      path: `${path}.min_length`,
+      message: "must be a non-negative integer",
+    });
+  }
+  if (hasMaxLength && !validMaxLength) {
+    issues.push({
+      resource_type: resourceType,
+      path: `${path}.max_length`,
+      message: "must be a non-negative finite number",
+    });
+  }
+  if ((hasMinLength || hasMaxLength) && !hasLengthUnit) {
+    issues.push({
+      resource_type: resourceType,
+      path: `${path}.length_unit`,
+      message: "must be declared whenever min_length or max_length is declared",
+    });
+  }
+  if (hasLengthUnit && !LENGTH_UNITS.has(bounds.length_unit as ResourceNameLengthUnit)) {
+    issues.push({
+      resource_type: resourceType,
+      path: `${path}.length_unit`,
+      message: `"${String(bounds.length_unit)}" is not "code_points" or "utf8_bytes"`,
+    });
+  }
+  if (
+    validMinLength &&
+    validMaxLength &&
+    (bounds.min_length as number) > (bounds.max_length as number)
+  ) {
+    issues.push({
+      resource_type: resourceType,
+      path: `${path}.min_length`,
+      message: "must not exceed max_length",
+    });
+  }
+}
+
+function validateTagText(
+  resourceType: string,
+  path: string,
+  constraints: ResourceTagTextConstraints | undefined,
+  issues: CatalogConformanceIssue[],
+): void {
+  if (constraints === undefined) {
+    return;
+  }
+  validateLengthBounds(resourceType, path, constraints, issues);
+  validateCharacterSet(
+    resourceType,
+    `${path}.character_constraints`,
+    constraints.character_constraints,
+    issues,
+  );
+  validateStringList(
+    resourceType,
+    `${path}.forbidden_prefixes`,
+    constraints.forbidden_prefixes,
+    issues,
+  );
 }
 
 function validatePlacementOperator(
@@ -264,52 +352,7 @@ export function validateResourceDefinition(
 
   const rendering = definition.rendering_constraints;
   if (rendering !== undefined) {
-    const hasMinLength = rendering.min_length !== undefined;
-    const hasMaxLength = rendering.max_length !== undefined;
-    const hasLengthUnit = rendering.length_unit !== undefined;
-
-    const validMinLength = hasMinLength && isNonNegativeInteger(rendering.min_length);
-    const validMaxLength = hasMaxLength && isNonNegativeFiniteNumber(rendering.max_length);
-
-    if (hasMinLength && !validMinLength) {
-      issues.push({
-        resource_type: String(resourceType),
-        path: "rendering_constraints.min_length",
-        message: "must be a non-negative integer",
-      });
-    }
-    if (hasMaxLength && !validMaxLength) {
-      issues.push({
-        resource_type: String(resourceType),
-        path: "rendering_constraints.max_length",
-        message: "must be a non-negative finite number",
-      });
-    }
-    if ((hasMinLength || hasMaxLength) && !hasLengthUnit) {
-      issues.push({
-        resource_type: String(resourceType),
-        path: "rendering_constraints.length_unit",
-        message: "must be declared whenever min_length or max_length is declared",
-      });
-    }
-    if (hasLengthUnit && !LENGTH_UNITS.has(rendering.length_unit as ResourceNameLengthUnit)) {
-      issues.push({
-        resource_type: String(resourceType),
-        path: "rendering_constraints.length_unit",
-        message: `"${String(rendering.length_unit)}" is not "code_points" or "utf8_bytes"`,
-      });
-    }
-    if (
-      validMinLength &&
-      validMaxLength &&
-      (rendering.min_length as number) > (rendering.max_length as number)
-    ) {
-      issues.push({
-        resource_type: String(resourceType),
-        path: "rendering_constraints.min_length",
-        message: "must not exceed max_length",
-      });
-    }
+    validateLengthBounds(String(resourceType), "rendering_constraints", rendering, issues);
 
     validateCharacterSet(
       String(resourceType),
@@ -341,6 +384,37 @@ export function validateResourceDefinition(
       rendering.forbidden_suffixes,
       issues,
     );
+
+    const segments = rendering.max_segments;
+    if (segments !== undefined) {
+      if (typeof segments.delimiter !== "string" || [...segments.delimiter].length !== 1) {
+        issues.push({
+          resource_type: String(resourceType),
+          path: "rendering_constraints.max_segments.delimiter",
+          message: "must contain exactly one Unicode code point",
+        });
+      }
+      if (!isPositiveInteger(segments.max)) {
+        issues.push({
+          resource_type: String(resourceType),
+          path: "rendering_constraints.max_segments.max",
+          message: "must be a positive integer",
+        });
+      }
+    }
+  }
+
+  const tags = definition.tag_constraints;
+  if (tags !== undefined) {
+    if (tags.max_count !== undefined && !isPositiveInteger(tags.max_count)) {
+      issues.push({
+        resource_type: String(resourceType),
+        path: "tag_constraints.max_count",
+        message: "must be a positive integer",
+      });
+    }
+    validateTagText(String(resourceType), "tag_constraints.key", tags.key, issues);
+    validateTagText(String(resourceType), "tag_constraints.value", tags.value, issues);
   }
 
   for (const [index, constraint] of (definition.placement_constraints ?? []).entries()) {

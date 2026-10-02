@@ -43,10 +43,14 @@ export type {
   PlacementConstraintRule,
   ResourceDefinition,
   ResourceIdentityConstraints,
+  ResourceLengthBounds,
   ResourceNameCharacterClass,
   ResourceNameCharacterSet,
   ResourceNameLengthUnit,
+  ResourceNameSegmentLimit,
   ResourceRenderingConstraints,
+  ResourceTagConstraints,
+  ResourceTagTextConstraints,
 } from "./definitions/index.js";
 export type { GovernanceContext } from "./governance/index.js";
 export type {

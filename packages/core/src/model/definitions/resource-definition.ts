@@ -53,6 +53,9 @@ export interface ResourceDefinition {
    * `specification/resource-definition.md#structured-placement-constraints-specification-v12`).
    */
   readonly placement_constraints?: ReadonlyArray<PlacementConstraint>;
+
+  /** The platform's limits on this resource type's tags (Specification v1.5). */
+  readonly tag_constraints?: ResourceTagConstraints;
 }
 
 /**
@@ -126,7 +129,16 @@ export type ResourceRenderingConstraints = {
 
   /** Exact, case-sensitive suffixes a rendered name must not end with. */
   readonly forbidden_suffixes?: ReadonlyArray<string>;
-} & (
+
+  /** The maximum number of non-empty delimiter-separated segments (Specification v1.5). */
+  readonly max_segments?: ResourceNameSegmentLimit;
+} & ResourceLengthBounds;
+
+/**
+ * Optional `min_length`/`max_length` sharing one `length_unit`, which is required
+ * whenever either bound is declared.
+ */
+export type ResourceLengthBounds =
   | {
       readonly min_length?: undefined;
       readonly max_length?: undefined;
@@ -150,5 +162,28 @@ export type ResourceRenderingConstraints = {
       readonly min_length: number;
       readonly max_length: number;
       readonly length_unit: ResourceNameLengthUnit;
-    }
-);
+    };
+
+/** A rendered name may contain at most `max` non-empty segments separated by `delimiter`. */
+export interface ResourceNameSegmentLimit {
+  /** Exactly one Unicode code point. */
+  readonly delimiter: string;
+  readonly max: number;
+}
+
+/**
+ * The platform's limits on the tags of a resource type, validated against projected
+ * tags (Specification v1.5; see `specification/resource-definition.md#tag-constraints`).
+ */
+export interface ResourceTagConstraints {
+  /** The maximum number of projected tags. */
+  readonly max_count?: number;
+  readonly key?: ResourceTagTextConstraints;
+  readonly value?: ResourceTagTextConstraints;
+}
+
+/** Constraints on a tag key or a tag value, with the same semantics as the rendering constraints of the same name. */
+export type ResourceTagTextConstraints = {
+  readonly character_constraints?: ResourceNameCharacterSet;
+  readonly forbidden_prefixes?: ReadonlyArray<string>;
+} & ResourceLengthBounds;
