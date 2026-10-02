@@ -56,7 +56,10 @@ conceptually include:
   [`convention-pack.md#naming-projections`](./convention-pack.md#naming-projections).
 - **Metadata** — platform-specific metadata projected from Resource Identity and
   Governance Context:
-  - **Tags** — platform-specific tags (for example, AWS or Azure tags).
+  - **Tags** — platform-specific tags (for example, AWS or Azure tags). As of
+    Specification v1.3, tags are deterministically projected from the selected
+    Convention Pack's `tag_projections` (see
+    [`convention-pack.md#tag-projections`](./convention-pack.md#tag-projections)).
   - **Labels** — platform-specific labels (for example, Kubernetes labels).
   - **Annotations** — platform-specific annotations (for example, Kubernetes
     annotations).
@@ -90,8 +93,10 @@ Result from a Naming Request:
    of Specification v1.1, generating the name follows the normative naming rule
    execution order defined in
    [`convention-pack.md#naming-projections`](./convention-pack.md#naming-projections);
-   generating tags, labels, and annotations remains conceptual (see [Specification v1.1
-   Non-Goals](./README.md#specification-v11-non-goals)).
+   as of Specification v1.3, generating tags follows
+   [`convention-pack.md#tag-projections`](./convention-pack.md#tag-projections);
+   generating labels and annotations remains conceptual (see [Specification v1.3
+   Non-Goals](./README.md#specification-v13-non-goals)).
 7. **Validate outputs** — check the generated outputs, and the resolved Resource
    Identity, against the constraints declared by the Resource Definition — including its
    technical constraints, uniqueness, normalization, and Placement Constraints — and the

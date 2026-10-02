@@ -31,9 +31,11 @@ protocol:
    `query` argument only supports string values, so this is the only field the query
    ever carries (see
    [`docs/architecture/cli.md`](../../../docs/architecture/cli.md#terraform-integration-boundary)).
-3. It reads back `result.name`, `result.valid`, and `result.result_json` — all strings,
-   per the same protocol constraint — and exposes them as outputs, additionally
-   decoding `result.result_json` into `local.convention_result` for full structured
+3. It reads back `result.name`, `result.valid`, `result.tags_json`, and
+   `result.result_json` — all strings, per the same protocol constraint — and exposes
+   them as outputs, decoding `result.tags_json` into `local.tags` (the AWS tags
+   `aws-workload-default` projects, ready to merge into a resource's `tags`) and
+   `result.result_json` into `local.convention_result` for full structured
    access to the underlying `ConventionResult` (resolved identity, governance context,
    validation failures, and warnings).
 

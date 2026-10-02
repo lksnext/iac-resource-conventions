@@ -296,7 +296,7 @@ terraform-external command
       ↓ parseEvaluateRequest                (../../packages/cli/src/internal/parse-evaluate-request.ts — reused, unchanged)
       ↓ executeEvaluationRequest            (../../packages/cli/src/internal/execute-evaluation-request.ts — reused, unchanged)
       ↓ serializeTerraformExternalResult     (../../packages/cli/src/internal/serialize-terraform-external-result.ts)
-      ↓ stdout: { "name": "...", "valid": "true"|"false", "result_json": "<the full ConventionResult, as a string>" }
+      ↓ stdout: { "name": "...", "valid": "true"|"false", "tags_json": "<the projected tags, as a string>", "result_json": "<the full ConventionResult, as a string>" }
 ```
 
 This is transport reuse, not a second evaluator: `terraform-external` never calls
@@ -329,6 +329,12 @@ attribute:
   Never a placeholder or invented value.
 - `valid` — `result.validation.valid` converted to the literal string `"true"` or
   `"false"`. Never independently recomputed.
+- `tags_json` — `result.outputs.metadata.tags` (Specification v1.3 tag projection),
+  compactly JSON-encoded as a string, or `"{}"` when no tag was projected, so a
+  caller can always decode it with `jsondecode(...)`. The `external` protocol cannot
+  return a map directly; this is a dedicated field for the one nested output
+  Terraform callers routinely need, alongside `name`. It carries the same tags as
+  `result_json` and is never computed independently.
 - `result_json` — the full `ConventionResult`, compactly JSON-encoded as a string, so
   every field (validation failures, warnings, resolved identity, and governance
   context) remains available to a caller that decodes it (for example, with

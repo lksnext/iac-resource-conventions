@@ -1,6 +1,7 @@
 import type {
   CanonicalResourceIdentityAttribute,
   ConventionPackId,
+  MetadataSourceReference,
 } from "../common/identifiers.js";
 import type { EvaluationContextSource } from "../contexts/evaluation-context-source.js";
 import type { GovernanceContext } from "../governance/governance-context.js";
@@ -18,12 +19,10 @@ import type { NamingCasing } from "./naming-casing.js";
  *
  * The Specification defines this concept only in prose and explicitly does not define a
  * JSON Schema, concrete syntax, or composition/merge algorithm for it (see
- * `specification/convention-pack.md`'s "Out of scope" section). Two named
- * responsibilities — normalization rules and metadata projection mappings — are
- * therefore intentionally not given a concrete shape here: the Specification itself
- * states no concrete naming syntax or key-mapping format is defined yet. Representing
- * them with an invented schema would exceed what the Specification defines; they are
- * deferred to a later Milestone 1 increment, once the Specification defines them.
+ * `specification/convention-pack.md`'s "Out of scope" section). Normalization rules,
+ * and label and annotation projection, are intentionally not given a concrete shape
+ * here: the Specification defines no concrete format for them yet. Tag projection is
+ * modeled by `tag_projections` (Specification v1.3).
  *
  * See `specification/convention-pack.md`.
  */
@@ -66,6 +65,13 @@ export interface ConventionPack {
   readonly abbreviations?: Readonly<
     Partial<Record<CanonicalResourceIdentityAttribute, Readonly<Record<string, string>>>>
   >;
+
+  /**
+   * Tag keys mapped to the metadata source reference whose resolved value each tag
+   * carries verbatim, in output order (Specification v1.3; see
+   * `specification/convention-pack.md#tag-projections`).
+   */
+  readonly tag_projections?: Readonly<Record<string, MetadataSourceReference>>;
 
   /**
    * Which Evaluation Context source is authoritative for a specific canonical

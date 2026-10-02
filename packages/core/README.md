@@ -13,7 +13,8 @@ Specification.
 The Executable Domain Model (Milestone 1) and the Reference Evaluator (Milestone 2) are
 implemented: domain contracts for every core Specification concept, Context Resolution,
 Convention Evaluation (including Specification v1.1 executable naming), and the public
-`evaluate()` orchestration API (Milestone 2.7). Metadata projection, general normalization,
+`evaluate()` orchestration API (Milestone 2.7), and Specification v1.3 tag projection.
+Label and annotation projection, general normalization,
 truncation, hashing, and global uniqueness remain unimplemented. See
 [`IMPLEMENTATION.md`](https://github.com/lksnext/iac-resource-conventions/blob/main/IMPLEMENTATION.md)
 at the repository root for the monorepo architecture, package boundaries, milestone history,

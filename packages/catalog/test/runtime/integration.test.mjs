@@ -108,6 +108,32 @@ test("integration: a catalog-looked-up ConventionPack and ResourceDefinition can
   assert.equal(result.validation.valid, true);
 });
 
+test("integration: aws-workload-default reproduces the artifact's worked tag example", () => {
+  const result = evaluate({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_s3_bucket",
+      functional: { service: "ingestion" },
+      governance: { owner: "platform-team" },
+    },
+    convention_pack: getConventionPack("aws-workload-default"),
+    evaluation_context: {
+      shared_organizational_context: { system: "telemetry-platform" },
+      shared_deployment_context: { environment: "production" },
+    },
+    resource_definition: getResourceDefinition("aws_s3_bucket"),
+  });
+
+  assert.deepEqual(result.outputs.metadata, {
+    tags: {
+      Project: "telemetry-platform",
+      Environment: "production",
+      Service: "ingestion",
+      Owner: "platform-team",
+    },
+  });
+});
+
 test("integration: azure-workload-default names an azure_resource_group", () => {
   const conventionPack = getConventionPack("azure-workload-default");
   assert.ok(conventionPack, "expected the catalog to know azure-workload-default");

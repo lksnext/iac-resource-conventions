@@ -7,7 +7,7 @@
 // already covered by cli.test.mjs's `evaluate` tests (unknown top-level fields,
 // missing/empty `resource_type`/`convention`, and so on). It covers only what is
 // specific to this command: the `{ request_json }` query envelope, the string-only
-// `{ name, valid, result_json }` output shape, and a focused sample proving the shared
+// `{ name, valid, tags_json, result_json }` output shape, and a focused sample proving the shared
 // functions really are reused rather than reimplemented.
 
 import assert from "node:assert/strict";
@@ -63,7 +63,7 @@ test("terraform-external: a valid query produces a string-only result object, ex
   assert.equal(stderr, "");
 
   const output = JSON.parse(stdout);
-  assert.deepEqual(Object.keys(output).sort(), ["name", "result_json", "valid"]);
+  assert.deepEqual(Object.keys(output).sort(), ["name", "result_json", "tags_json", "valid"]);
   for (const value of Object.values(output)) {
     assert.equal(typeof value, "string");
   }
@@ -74,6 +74,57 @@ test("terraform-external: a valid query produces a string-only result object, ex
   const result = JSON.parse(output.result_json);
   assert.equal(result.validation.valid, true);
   assert.equal(result.outputs.name, "telemetry-platform-ingestion-prod-aws_iam_role");
+});
+
+// --- projected tags ----------------------------------------------------------------------
+
+test("terraform-external: projected tags are exposed as tags_json and in result_json", async () => {
+  const requestJson = JSON.stringify({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_acm_certificate",
+      functional: { component: "cloudfront" },
+      governance: { owner: "platform-team", managed_by: "terraform" },
+    },
+    evaluation_context: {
+      shared_organizational_context: { system: "lamassu" },
+      shared_deployment_context: { environment: "dev", location: "us-east-1" },
+    },
+  });
+
+  const { exitCode, stdout, stderr } = await runCli(
+    ["terraform-external"],
+    JSON.stringify({ request_json: requestJson }),
+  );
+
+  assert.equal(exitCode, 0);
+  assert.equal(stderr, "");
+
+  const output = JSON.parse(stdout);
+  const expectedTags = {
+    Project: "lamassu",
+    Environment: "dev",
+    Component: "cloudfront",
+    Owner: "platform-team",
+    ManagedBy: "terraform",
+  };
+  assert.equal(output.tags_json, JSON.stringify(expectedTags));
+  assert.deepEqual(JSON.parse(output.result_json).outputs.metadata.tags, expectedTags);
+});
+
+test("terraform-external: tags_json is an empty JSON object when no tag is projected", async () => {
+  const { serializeTerraformExternalResult } = await import(
+    "../../dist/internal/serialize-terraform-external-result.js"
+  );
+
+  const output = serializeTerraformExternalResult({
+    resource_identity: {},
+    governance_context: {},
+    outputs: { name: "n" },
+    validation: { valid: true },
+  });
+
+  assert.equal(output.tags_json, "{}");
 });
 
 // --- domain-invalid result ---------------------------------------------------------------

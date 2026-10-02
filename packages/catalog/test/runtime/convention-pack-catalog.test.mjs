@@ -166,6 +166,19 @@ test("aws-workload-default: override_policy matches the artifact's Override poli
   });
 });
 
+test("aws-workload-default: tag_projections match the artifact's Metadata projection example, in order", () => {
+  const pack = getConventionPack("aws-workload-default");
+  assert.deepEqual(Object.entries(pack.tag_projections), [
+    ["Project", "organizational.system"],
+    ["Environment", "deployment.environment"],
+    ["Service", "functional.service"],
+    ["Component", "functional.component"],
+    ["Owner", "governance.owner"],
+    ["ManagedBy", "governance.managed_by"],
+    ["CostCenter", "governance.cost_center"],
+  ]);
+});
+
 test("aws-workload-default: the artifact's worked naming example reproduces telemetry-platform-ingestion-prod-aws_s3_bucket", () => {
   // Reproduces the artifact's own worked example: "a production aws_s3_bucket resource
   // for the ingestion service of the telemetry-platform system, with no location,

@@ -17,6 +17,8 @@
 // - `result_json` is the full `ConventionResult`, compactly JSON-encoded, so every
 //   field (including failures, warnings, resolved identity, and governance context)
 //   remains available to the caller without any lossy transformation.
+// - `tags_json` is `result.outputs.metadata.tags`, compactly JSON-encoded, or `"{}"`
+//   when no tag was projected, so a caller can always `jsondecode` it.
 
 import type { ConventionResult } from "@lksnext/iac-conventions-core";
 
@@ -24,6 +26,7 @@ import type { ConventionResult } from "@lksnext/iac-conventions-core";
 export interface TerraformExternalResult {
   readonly name: string;
   readonly valid: string;
+  readonly tags_json: string;
   readonly result_json: string;
 }
 
@@ -34,6 +37,7 @@ export function serializeTerraformExternalResult(
   return {
     name: result.outputs?.name ?? "",
     valid: String(result.validation.valid),
+    tags_json: JSON.stringify(result.outputs?.metadata?.tags ?? {}),
     result_json: JSON.stringify(result),
   };
 }

@@ -89,7 +89,11 @@ This is the **implementation foundation** only. As of this writing:
   Specification v1.2's executable Resource Constraints — `min_length`/`max_length`,
   `character_constraints`, and Placement Constraint validation — are also implemented (see
   [`packages/core/src/evaluator/convention-evaluation/resource-constraints/`](packages/core/src/evaluator/convention-evaluation/resource-constraints/)).
-  Metadata projection, general normalization, truncation-by-the-evaluator, hashing, and global
+  Specification v1.3's executable tag projection (`tag_projections` into
+  `outputs.metadata.tags`) is implemented in
+  [`packages/core/src/evaluator/convention-evaluation/metadata/`](packages/core/src/evaluator/convention-evaluation/metadata/).
+  Label and annotation projection, general normalization, truncation-by-the-evaluator,
+  hashing, and global
   uniqueness remain unimplemented. Adapter integration is no longer purely future: `packages/cli`
   (Milestone 4) is an implemented adapter, including a Terraform integration via the
   `terraform-external` command (Milestone 4.4); a native Terraform/CDK/Ansible provider/adapter
@@ -324,7 +328,8 @@ This is the **implementation foundation** only. As of this writing:
     [`docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented`](docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented)
     and
     [`docs/architecture/convention-evaluation-executability.md#length-and-truncation`](docs/architecture/convention-evaluation-executability.md#length-and-truncation).
-  - Not yet started: metadata projection, general normalization, Governance Profile defaults,
+  - Not yet started: label and annotation projection (tag projection is implemented for
+    Specification v1.3), general normalization, Governance Profile defaults,
     truncation, hashing, and global uniqueness. Every one of these is a Specification v1.1
     Non-Goal (see
     [`specification/README.md#specification-v11-non-goals`](specification/README.md#specification-v11-non-goals)),

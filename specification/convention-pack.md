@@ -110,7 +110,9 @@ undefined in Specification v1.1 (see [Specification v1.1
 Non-Goals](./README.md#specification-v11-non-goals)).
 
 **Metadata projection rules** — how resolved Resource Identity and Governance Context
-attributes map onto platform-specific tags, labels, and annotations.
+attributes map onto platform-specific tags, labels, and annotations. Formalized
+normatively for tags in Specification v1.3 (see [Metadata
+projections](#metadata-projections) below).
 
 **Context authority rules** — which Evaluation Context source is considered
 authoritative for a specific canonical attribute whenever more than one source could
@@ -556,10 +558,128 @@ validation:
 
 A Convention Pack defines how resolved Resource Identity and Governance Context become
 platform-specific metadata, such as AWS Tags, Azure Tags, Kubernetes Labels, and
-Kubernetes Annotations. This document does not define concrete key mappings or value
-formats; it only describes that this is a Convention Pack responsibility, consistent
-with the metadata projection described in
+Kubernetes Annotations, consistent with the metadata projection described in
 [`governance-context.md`](./governance-context.md#metadata-projection).
+
+Specification v1.0–v1.2 described this responsibility in prose only. Specification
+v1.3 adds the normative rules below for **tags only** — additively, the same way
+Specification v1.1 added naming rules — because a Terraform consumer of the
+`terraform-external` bridge could not generate the tags it previously configured by
+hand (see [Specification v1.3: Executable Tag
+Projection](./README.md#specification-v13-executable-tag-projection) for the evidence,
+scope, and Non-Goals). Labels and annotations remain conceptual.
+
+### Metadata source references
+
+A tag projection refers to the value it projects using a **metadata source
+reference**, from a closed vocabulary:
+
+- every canonical Resource Identity attribute reference (see [Canonical attribute
+  references](#canonical-attribute-references));
+- `governance.owner`, `governance.managed_by`, `governance.cost_center`, and
+  `governance.profile` — the Governance Context attributes (see
+  [`governance-context.md`](./governance-context.md#governance-attributes)).
+
+A reference outside this vocabulary is invalid. Governance Context references are
+valid only in metadata projections; they remain invalid in naming rules.
+
+### Tag projections
+
+`tag_projections` is a new, optional mapping from a tag key to a metadata source
+reference:
+
+```yaml
+tag_projections:
+  Project: organizational.system
+  Environment: deployment.environment
+  Owner: governance.owner
+```
+
+- The tag key is emitted exactly as declared. An empty tag key is invalid.
+- The tag value is the source's resolved value, exactly as resolved. Abbreviations,
+  casing, and separator are naming rules only (see [Naming
+  projections](#naming-projections)); none of them applies to a tag value, and no
+  other normalization or truncation is applied.
+- When the source has no resolved value, the tag is omitted. This is neither a
+  validation failure nor a warning: whether an attribute must be available is decided
+  only by [Required attributes](#required-attributes).
+- Tags are emitted in `tag_projections` declaration order, so the serialized output is
+  deterministic.
+- A tag projection that declares an empty key or an invalid metadata source reference
+  is reported as a validation failure, and that tag is omitted; every other declared
+  tag is still projected.
+- Tag projection does not depend on naming: tags are projected even when no name is
+  generated.
+- Projected tags appear in the Convention Result's `outputs.metadata.tags` (see
+  [`convention-result.md`](./convention-result.md#convention-outputs)). When
+  `tag_projections` is absent or empty, or no declared tag resolves, `outputs.metadata`
+  is omitted.
+- Tag keys and values are not validated against a platform's own tag constraints (for
+  example, key or value length and allowed characters): that is a deferred Non-Goal of
+  Specification v1.3.
+
+### Tag projection fields
+
+| Field | Required | Default | Invalid values |
+| --- | --- | --- | --- |
+| `tag_projections` | No | No tags are projected | An empty tag key; a source outside the metadata source reference vocabulary |
+
+### Tag projection examples
+
+These are normative test vectors: given the `tag_projections` and resolved attributes
+shown, the projected `tags` are exactly as shown.
+
+**Verbatim values, absent source omitted** — `deployment.environment` is abbreviated
+in the name, but not in the tag; `functional.component` is not resolved, so its tag is
+omitted:
+
+```yaml
+naming_component_order:
+  - organizational.system
+  - deployment.environment
+separator: "-"
+casing: lower
+abbreviations:
+  deployment.environment:
+    production: prod
+tag_projections:
+  Project: organizational.system
+  Environment: deployment.environment
+  Component: functional.component
+  Owner: governance.owner
+
+organizational:
+  system: Telemetry-Platform
+deployment:
+  environment: production
+governance:
+  owner: platform-team
+
+name: telemetry-platform-prod
+tags:
+  Project: Telemetry-Platform
+  Environment: production
+  Owner: platform-team
+```
+
+**Invalid source** — a reference outside the vocabulary is reported, and only that tag
+is omitted:
+
+```yaml
+tag_projections:
+  Project: organizational.system
+  Cost: governance.budget
+
+organizational:
+  system: telemetry-platform
+
+tags:
+  Project: telemetry-platform
+validation:
+  valid: false
+  failures:
+    - message: 'tag_projections maps tag key "Cost" to unknown metadata source reference "governance.budget"'
+```
 
 ## Context authority rules
 

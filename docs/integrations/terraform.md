@@ -32,7 +32,7 @@ Terraform `data "external"`
       ↓ (reuses the same parseEvaluateRequest / executeEvaluationRequest
       ↓  functions the generic `evaluate` command uses — see
       ↓  ../architecture/cli.md#terraform-integration-boundary)
-      ↓ stdout: { "name": "...", "valid": "true"|"false", "result_json": "<JSON string>" }
+      ↓ stdout: { "name": "...", "valid": "true"|"false", "tags_json": "<JSON string>", "result_json": "<JSON string>" }
 Terraform `data.external.<name>.result`
 ```
 
@@ -65,6 +65,10 @@ data "external" "convention" {
         functional = {
           service = "ingestion"
         }
+        governance = {
+          owner      = "platform-team"
+          managed_by = "terraform"
+        }
       }
       evaluation_context = {
         shared_organizational_context = {
@@ -80,6 +84,7 @@ data "external" "convention" {
 
 locals {
   convention_result = jsondecode(data.external.convention.result.result_json)
+  tags              = jsondecode(data.external.convention.result.tags_json)
 }
 
 output "generated_name" {
@@ -88,6 +93,10 @@ output "generated_name" {
 
 output "valid" {
   value = data.external.convention.result.valid
+}
+
+output "tags" {
+  value = local.tags
 }
 ```
 
@@ -99,6 +108,38 @@ shows the same pattern for `azure_resource_group`, `azure_virtual_network`, and
 `azure_key_vault`, selecting `azure-workload-default` and `azure-workload-compact`
 respectively — the same bridge, protocol, and limitations apply regardless of platform
 or Convention Pack.
+
+### Consuming projected tags
+
+`data.external.convention.result.tags_json` carries the tags the selected Convention
+Pack projects (Specification v1.3; see
+[`../../specification/convention-pack.md#tag-projections`](../../specification/convention-pack.md#tag-projections)),
+JSON-encoded as a string, or `"{}"` when the pack projects none. For the example
+above, `aws-workload-default` produces:
+
+```hcl
+{
+  Project     = "telemetry-platform"
+  Environment = "production"
+  Service     = "ingestion"
+  Owner       = "platform-team"
+  ManagedBy   = "terraform"
+}
+```
+
+Tag values are the resolved values, not the abbreviated, lowercased forms used in the
+name (`Environment = "production"`, while the name contains `prod`). A tag whose
+attribute is not resolved is omitted. Merge the decoded map into a resource's `tags`:
+
+```hcl
+resource "aws_iam_role" "this" {
+  name               = data.external.convention.result.name
+  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+  tags               = merge(local.tags, var.extra_tags)
+}
+```
+
+The same tags are also available at `local.convention_result.outputs.metadata.tags`.
 
 ### Optional attributes and `null`
 
@@ -161,9 +202,9 @@ execution mode.
 - **No caching beyond Terraform's own data source lifecycle**: `external` data sources
   are expected to have no observable side effects, and Terraform re-runs the program on
   every refresh — this is inherent to the protocol, not specific to this CLI.
-- **String-only protocol**: `result_json` must be decoded with `jsondecode(...)` to
-  access anything beyond `name`/`valid`; this bridge cannot expose a native Terraform
-  object/map type directly.
+- **String-only protocol**: `tags_json` and `result_json` must be decoded with
+  `jsondecode(...)` to access anything beyond `name`/`valid`; this bridge cannot expose
+  a native Terraform object/map type directly.
 
 ## Future evolution
 

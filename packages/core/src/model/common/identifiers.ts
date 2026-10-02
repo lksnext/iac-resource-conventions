@@ -32,6 +32,25 @@ export type CanonicalResourceIdentityAttribute =
   | "functional.resource_type";
 
 /**
+ * The Governance Context attribute references, valid only as metadata source
+ * references, never in naming rules (Specification v1.3; see
+ * `specification/convention-pack.md#metadata-source-references`).
+ */
+export type GovernanceContextAttribute =
+  | "governance.owner"
+  | "governance.managed_by"
+  | "governance.cost_center"
+  | "governance.profile";
+
+/**
+ * The closed vocabulary a tag projection may address (Specification v1.3; see
+ * `specification/convention-pack.md#metadata-source-references`).
+ */
+export type MetadataSourceReference =
+  | CanonicalResourceIdentityAttribute
+  | GovernanceContextAttribute;
+
+/**
  * The canonical technical resource kind used to select a resource's
  * `ResourceDefinition` (see `../definitions/resource-definition.ts`).
  *

@@ -843,13 +843,14 @@ named concept:
 | Normalization | [`ResourceDefinition.rendering_constraints.normalization`](../../packages/core/src/model/definitions/resource-definition.ts) | No — documented as free text, not a machine-executable rule |
 | Separators and casing | [`specification/convention-pack.md#separator`](../../specification/convention-pack.md#separator), [`specification/convention-pack.md#casing`](../../specification/convention-pack.md#casing) | **Yes** — implemented by `evaluateName` via `separator` and `applyCasing` |
 | Truncation and hashing | *(none — not named as structured data anywhere)* | No — no field or normative rule defines any of these |
-| Metadata projection (Tags, Labels, Annotations) | [`specification/convention-result.md#conceptual-contents`](../../specification/convention-result.md#conceptual-contents) | No — `ConventionPack` has no metadata projection mapping field at all |
+| Metadata projection (Tags, Labels, Annotations) | [`specification/convention-pack.md#tag-projections`](../../specification/convention-pack.md#tag-projections) | **Tags only** — implemented by `projectTags` (Specification v1.3); labels and annotations are not defined |
 | Resource Definition technical-constraint validation (`min_length`, `max_length`, character/boundary/reserved constraints) | [`ResourceDefinition.rendering_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | **Yes** — implemented by `validateRenderingConstraints`, once a rendered name exists |
 | Placement Constraint validation | [`ResourceDefinition.placement_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | **Yes within v1.2 limits** — implemented by `validatePlacementConstraints` for structured rules over canonical Resource Identity attributes; statement-only entries and ACM/CloudFront remain descriptive |
 | Collision / uniqueness handling | [`ResourceDefinition.identity_constraints`](../../packages/core/src/model/definitions/resource-definition.ts) | No — proving uniqueness needs an external registry, which the evaluator must not consult |
 
-Required-attribute completeness, executable naming, and the v1.2 Resource Definition
-constraint families are implemented. Truncation, hashing, metadata projection,
+Required-attribute completeness, executable naming, the v1.2 Resource Definition
+constraint families, and v1.3 tag projection are implemented. Truncation, hashing, label and
+annotation projection,
 interpretation of the descriptive `allowed_characters_description` field, the ACM/CloudFront
 cross-resource relationship, and collision handling remain the cited
 blocking gaps. Each is also documented as a "deliberately not implemented" case directly in
@@ -888,8 +889,9 @@ fails (see [Validation and diagnostics](#validation-and-diagnostics)). `validati
 required attribute; `evaluateConvention` never throws for this condition.
 
 **Output shape.** `outputs.name` is now populated when the selected Convention Pack declares
-naming components and all declared required naming components resolve. `outputs.metadata` remains
-unpopulated in this increment. `warnings` is never populated by `evaluateConvention` itself, since
+naming components and all declared required naming components resolve. `outputs.metadata.tags` is
+populated when the Convention Pack's `tag_projections` (Specification v1.3) resolve at least one
+tag. `warnings` is never populated by `evaluateConvention` itself, since
 every currently-implementable warning-worthy transformation other than naming and `max_length`
 validation (for example, normalization or truncation) remains unimplemented. `resource_identity`
 and `governance_context` are copied through from the `ContextResolutionResult` unchanged.

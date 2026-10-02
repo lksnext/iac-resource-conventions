@@ -107,7 +107,8 @@ echo '{
 containing the same JSON document `evaluate` accepts. This matches
 `hashicorp/external`'s `query` argument, which only supports string values. It writes
 a JSON object of string values to stdout: `name` (the generated name, or `""` if none
-was produced), `valid` (`"true"`/`"false"`), and `result_json` (the full
+was produced), `valid` (`"true"`/`"false"`), `tags_json` (the projected tags,
+JSON-encoded as a string; `"{}"` if none), and `result_json` (the full
 `ConventionResult`, JSON-encoded as a string) — matching `hashicorp/external`'s
 `result` attribute, which is likewise string-only. It reuses the exact same
 `parseEvaluateRequest`/`executeEvaluationRequest` functions `evaluate` uses; no naming,

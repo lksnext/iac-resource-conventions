@@ -31,7 +31,7 @@ subtype, and no field the Specification does not already describe. Where an arti
 states a field only in prose (not a concrete YAML/JSON value), the executable value
 maps it faithfully rather than inventing policy the artifact does not state; where an
 artifact provides no value at all for a `ConventionPack` field (for example,
-`aws-workload-default.md` defines no concrete Governance Profile or tag mapping), that
+`aws-workload-default.md` defines no concrete Governance Profile), that
 field is omitted from the executable pack rather than given a fabricated default.
 
 ## Package ownership
