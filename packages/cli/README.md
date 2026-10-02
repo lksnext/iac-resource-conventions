@@ -135,6 +135,7 @@ for the full rationale.
   [`docs/integrations/terraform.md#limitations`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/integrations/terraform.md#limitations).
 - No `catalog` subcommand (for example, to list known `ResourceType`s or
   `ConventionPackId`s) exists yet.
-- Transport validation is intentionally minimal (structural checks only); it does not
+- Transport validation is intentionally structural: it checks JSON types (a known
+  attribute must be a string or omitted — `null` is rejected) but does not
   duplicate core's domain validation (see
   [`docs/architecture/cli.md#transport-and-domain-validation-boundary`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/cli.md#transport-and-domain-validation-boundary)).

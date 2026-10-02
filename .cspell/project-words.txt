@@ -8,6 +8,11 @@
 # Organization / project identifiers
 lksnext
 
+# Downstream consumer project and its GitHub organization (lamassuiot/lamassu-terraform-modules),
+# used in CLI regression fixtures and release notes
+lamassu
+lamassuiot
+
 # Convention Pack naming (specification/convention-packs/, README.md roadmap) — the
 # planned `aws-controltower` Convention Pack slug names the AWS service as a single
 # lowercase word, matching how it appears in package/slug identifiers.

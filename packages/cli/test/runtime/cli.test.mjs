@@ -355,9 +355,9 @@ test("evaluate: an evaluation_context as an array is a transport failure", async
   assert.equal(stderr, 'JSON input is missing a required "evaluation_context" object.\n');
 });
 
-// --- evaluate: malformed nested values do not crash core -------------------------------
+// --- evaluate: wrong-typed and null known fields are transport failures ----------------
 
-test("evaluate: a wrong-typed naming_request.overrides does not crash core and still completes", async () => {
+test("evaluate: a wrong-typed naming_request.overrides is a transport failure", async () => {
   const input = JSON.stringify({
     naming_request: {
       resource_type: "aws_s3_bucket",
@@ -372,11 +372,137 @@ test("evaluate: a wrong-typed naming_request.overrides does not crash core and s
 
   const { exitCode, stdout, stderr } = await runCli(["evaluate"], input);
 
+  assert.equal(exitCode, 1);
+  assert.equal(stdout, "");
+  assert.equal(
+    stderr,
+    '"naming_request.overrides" must be an object, not a string; omit the field to leave it unset.\n',
+  );
+});
+
+test("evaluate: a null naming attribute is a transport failure, not a crash", async () => {
+  const input = JSON.stringify({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_acm_certificate",
+      functional: { service: null },
+    },
+    evaluation_context: {
+      shared_organizational_context: { system: "lamassu" },
+      shared_deployment_context: { environment: "dev" },
+    },
+  });
+
+  const { exitCode, stdout, stderr } = await runCli(["evaluate"], input);
+
+  assert.equal(exitCode, 1);
+  assert.equal(stdout, "");
+  assert.equal(
+    stderr,
+    '"naming_request.functional.service" must be a string, not null; omit the field to leave it unset.\n',
+  );
+});
+
+test("evaluate: a numeric naming attribute is a transport failure, not a crash", async () => {
+  const input = JSON.stringify({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_s3_bucket",
+      functional: { service: 5 },
+    },
+    evaluation_context: {},
+  });
+
+  const { exitCode, stdout, stderr } = await runCli(["evaluate"], input);
+
+  assert.equal(exitCode, 1);
+  assert.equal(stdout, "");
+  assert.equal(
+    stderr,
+    '"naming_request.functional.service" must be a string, not a number; omit the field to leave it unset.\n',
+  );
+});
+
+test("evaluate: a null object field is a transport failure", async () => {
+  const input = JSON.stringify({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_s3_bucket",
+      functional: null,
+    },
+    evaluation_context: {},
+  });
+
+  const { exitCode, stdout, stderr } = await runCli(["evaluate"], input);
+
+  assert.equal(exitCode, 1);
+  assert.equal(stdout, "");
+  assert.equal(
+    stderr,
+    '"naming_request.functional" must be an object, not null; omit the field to leave it unset.\n',
+  );
+});
+
+test("evaluate: null values nested in evaluation_context and overrides are transport failures", async () => {
+  const cases = [
+    [
+      { shared_deployment_context: { environment: null } },
+      {},
+      '"evaluation_context.shared_deployment_context.environment" must be a string, not null; omit the field to leave it unset.\n',
+    ],
+    [
+      { runtime_context: { organizational: { tenant: null } } },
+      {},
+      '"evaluation_context.runtime_context.organizational.tenant" must be a string, not null; omit the field to leave it unset.\n',
+    ],
+    [
+      {},
+      { overrides: { deployment: { location: null } } },
+      '"naming_request.overrides.deployment.location" must be a string, not null; omit the field to leave it unset.\n',
+    ],
+    [
+      {},
+      { governance: { owner: null } },
+      '"naming_request.governance.owner" must be a string, not null; omit the field to leave it unset.\n',
+    ],
+  ];
+
+  for (const [evaluationContext, namingRequestFields, expectedStderr] of cases) {
+    const input = JSON.stringify({
+      naming_request: {
+        convention: "aws-workload-default",
+        resource_type: "aws_s3_bucket",
+        ...namingRequestFields,
+      },
+      evaluation_context: evaluationContext,
+    });
+
+    const { exitCode, stdout, stderr } = await runCli(["evaluate"], input);
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout, "");
+    assert.equal(stderr, expectedStderr);
+  }
+});
+
+test("evaluate: omitting an optional attribute still evaluates normally", async () => {
+  const input = JSON.stringify({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_acm_certificate",
+      functional: {},
+    },
+    evaluation_context: {
+      shared_organizational_context: { system: "lamassu" },
+      shared_deployment_context: { environment: "dev" },
+    },
+  });
+
+  const { exitCode, stdout, stderr } = await runCli(["evaluate"], input);
+
   assert.equal(exitCode, 0);
   assert.equal(stderr, "");
-
-  const result = JSON.parse(stdout);
-  assert.equal(typeof result.validation.valid, "boolean");
+  assert.equal(JSON.parse(stdout).outputs.name, "lamassu-dev-aws_acm_certificate");
 });
 
 // --- evaluate: deterministic output ----------------------------------------------------

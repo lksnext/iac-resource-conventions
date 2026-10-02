@@ -160,24 +160,42 @@ protected-value conflicts, naming/rendering/placement constraints), which remain
 [`parseEvaluateRequest`](../../packages/cli/src/internal/parse-evaluate-request.ts) is a
 small, plain internal function, not exposed as public API and not a class.
 
-core's Context Resolution (`packages/core/src/evaluator/context-resolution/`)
-dereferences every nested `NamingRequest`/`EvaluationContext` field using optional
-chaining only, so a malformed *nested* value (wrong type or an absent field) cannot
-throw there — it only resolves to `undefined`, which core's own required-attribute
-validation already reports. The CLI's transport validation is therefore limited to what
-core does **not** already defend against:
+core's `evaluate()` trusts its TypeScript input types. Context Resolution dereferences
+nested objects with optional chaining, but a known attribute whose value is not a
+string — for example, JSON `null`, which Terraform's `jsonencode` emits for an unset
+optional object attribute, or a number — reaches naming unchanged and throws there
+(this was reported against `v0.1.0-alpha.1` as a `TypeError` in `applyCasing`). The
+CLI's transport validation therefore covers what core does **not** defend against:
 
 - the JSON root, `naming_request`, and `evaluation_context` must each be a plain object
   (not an array, `null`, or a primitive);
 - `naming_request.resource_type` and `naming_request.convention` must each be a
   non-empty string, since both are used as object-map lookup keys before `evaluate()`
   is ever called;
+- every other known field must have the JSON type the Specification's JSON Schemas
+  (see [`specification/schemas/`](../../specification/schemas/)) and the
+  `EvaluationContext` model give it, whenever it is present: a string for every
+  Resource Identity and Governance Context attribute (and `provider_scope_id`), and an
+  object for every grouping (`functional`, `deployment`, `governance`, `overrides` and
+  its planes, `custom_metadata`, and each Evaluation Context source and plane);
 - only `naming_request` and `evaluation_context` are accepted at the top level.
 
-No deeper structural validation (for example, validating the shape of
-`naming_request.overrides` or `evaluation_context.runtime_context`) is implemented:
-doing so would duplicate domain validation that already belongs to core, and the
-reference evaluator safety review found no nested shape capable of crashing it.
+**`null` is rejected, not treated as absent.** The Specification's JSON Schemas type
+these attributes as `string`; an unset attribute is expressed by omitting it, and
+`null` has no Specification meaning. Silently treating `null` as absent would make the
+CLI accept documents the Specification rejects. A rejected field is reported with its
+full path, for example:
+
+```text
+"naming_request.functional.service" must be a string, not null; omit the field to leave it unset.
+```
+
+Terraform callers should drop `null` values before `jsonencode` (see
+[`docs/integrations/terraform.md#optional-attributes-and-null`](../integrations/terraform.md#optional-attributes-and-null)).
+
+Unknown nested fields and the contents of `custom_metadata` are not checked, and no
+domain rule (required attributes, protected-value conflicts, naming, rendering, or
+placement constraints) is checked here: those remain core's responsibility.
 
 ## No protocol versioning
 
@@ -232,7 +250,8 @@ depend on stdout carrying only machine-readable transport output.
   invalid name must check `validation.valid` in the returned JSON itself.
 - **`1`** — a CLI/transport failure: malformed JSON, an unknown top-level field, a
   missing or invalid required field (for example, `naming_request.resource_type` or
-  `naming_request.convention`), an unknown `resource_type`, an unknown `convention`, an
+  `naming_request.convention`), a known field with the wrong JSON type (including
+  `null`), an unknown `resource_type`, an unknown `convention`, an
   unknown or missing command, an unrecognized flag, or an unexpected internal error.
 
 This distinction is deliberate: it lets machine callers pipe the CLI's stdout to a JSON

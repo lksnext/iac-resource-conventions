@@ -100,6 +100,27 @@ shows the same pattern for `azure_resource_group`, `azure_virtual_network`, and
 respectively — the same bridge, protocol, and limitations apply regardless of platform
 or Convention Pack.
 
+### Optional attributes and `null`
+
+Terraform's `jsonencode` emits `null` for an unset optional object attribute (for
+example, a variable typed `object({ service = optional(string) })`). The CLI rejects
+`null` for any known attribute with a non-zero exit and a single stderr line naming
+the field, because the Specification's JSON Schemas type these attributes as strings
+and express "unset" by omission (see
+[`../architecture/cli.md#transport-and-domain-validation-boundary`](../architecture/cli.md#transport-and-domain-validation-boundary)):
+
+```text
+"naming_request.functional.service" must be a string, not null; omit the field to leave it unset.
+```
+
+Drop `null` values before encoding the request, for example:
+
+```hcl
+locals {
+  functional = { for key, value in var.functional : key => value if value != null }
+}
+```
+
 ### Handling an invalid result
 
 `data.external.convention.result.valid` is the string `"true"` or `"false"` — not a

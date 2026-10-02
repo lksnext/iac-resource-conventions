@@ -255,6 +255,21 @@ test("terraform-external: an unknown convention is a transport failure (reused e
   assert.match(stderr, /Unknown convention: "no-such-convention"/);
 });
 
+test("terraform-external: a null attribute from Terraform's jsonencode is a transport failure, not a crash", async () => {
+  // The exact query reported by the lamassu-terraform-modules aws-acm-certificate consumer.
+  const query =
+    '{"request_json":"{\\"naming_request\\":{\\"convention\\":\\"aws-workload-default\\",\\"resource_type\\":\\"aws_acm_certificate\\",\\"functional\\":{\\"service\\":null}},\\"evaluation_context\\":{\\"shared_organizational_context\\":{\\"system\\":\\"lamassu\\"},\\"shared_deployment_context\\":{\\"environment\\":\\"dev\\"}}}"}';
+
+  const { exitCode, stdout, stderr } = await runCli(["terraform-external"], query);
+
+  assert.equal(exitCode, 1);
+  assert.equal(stdout, "");
+  assert.equal(
+    stderr,
+    '"naming_request.functional.service" must be a string, not null; omit the field to leave it unset.\n',
+  );
+});
+
 // --- determinism and string-only invariant ------------------------------------------------
 
 test("terraform-external: the same query produces byte-for-byte identical stdout across two runs", async () => {

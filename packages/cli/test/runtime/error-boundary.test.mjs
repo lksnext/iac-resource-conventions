@@ -5,8 +5,8 @@
 // Both commands must not mislabel a genuine, unexpected internal error (anything that
 // is not a `CliError`) as "Malformed input.": that would hide real bugs behind a
 // misleading transport-failure message. Reproducing such an error end-to-end is not
-// practical — core's Context Resolution deliberately never throws for malformed
-// nested input (see ../../src/internal/parse-evaluate-request.ts) — so this file
+// practical — the transport parser rejects every input shape known to reach core unsafely
+// (see ../../src/internal/parse-evaluate-request.ts) — so this file
 // substitutes the internal parser each command calls with one that throws a plain
 // `Error`, using `node:test`'s module mocking, and asserts the command rethrows it
 // unchanged instead of catching and relabeling it. `cli.ts`'s own top-level `.catch()`

@@ -273,6 +273,8 @@ for the full API contract, design rationale, and current capability scope.
   for the first alpha prerelease (published).
 - [`docs/release-notes/v0.1.0-alpha.1.md`](docs/release-notes/v0.1.0-alpha.1.md) — draft release
   notes for the current alpha prerelease (pending publication).
+- [`docs/release-notes/v0.1.0-alpha.2.md`](docs/release-notes/v0.1.0-alpha.2.md) — draft release
+  notes for the next alpha prerelease (unreleased).
 - [`docs/`](docs/) — further reference documentation (planned).
 - Reference Documentation — planned.
 - [`examples/terraform/external/`](examples/terraform/external/) — a runnable Terraform
