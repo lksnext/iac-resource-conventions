@@ -317,6 +317,36 @@ test("a rule subject outside the canonical attribute vocabulary is reported", ()
   ]);
 });
 
+// --- Negative fixtures: accepts_name (Specification v1.3) ----------------------------
+
+test("accepts_name: false with rendering_constraints is reported", () => {
+  const issues = validateResourceDefinition(
+    fixture({ accepts_name: false, rendering_constraints: { normalization: "none" } }),
+  );
+  assert.deepEqual(issues, [
+    {
+      resource_type: "test_resource",
+      path: "rendering_constraints",
+      message: "must not be declared when accepts_name is false",
+    },
+  ]);
+});
+
+test("a non-boolean accepts_name is reported", () => {
+  const issues = validateResourceDefinition(fixture({ accepts_name: "no" }));
+  assert.deepEqual(issues, [
+    {
+      resource_type: "test_resource",
+      path: "accepts_name",
+      message: "must be a boolean when declared",
+    },
+  ]);
+});
+
+test("aws_acm_certificate declares accepts_name: false", () => {
+  assert.equal(getResourceDefinition("aws_acm_certificate").accepts_name, false);
+});
+
 // --- Negative fixtures: registration-level invariants --------------------------------
 
 test("a mismatched catalog key and resource_type is reported", () => {

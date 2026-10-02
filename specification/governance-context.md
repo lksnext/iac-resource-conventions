@@ -62,7 +62,9 @@ Governance Context is commonly projected into platform-specific metadata, such a
 - Kubernetes Annotations
 
 This document does not define the implementation details of these projections; that
-concern belongs to adapters.
+concern belongs to adapters. Which Governance Context attributes become tags, and
+under which keys, is declared by a Convention Pack's `tag_projections` (Specification
+v1.3; see [`convention-pack.md#tag-projections`](./convention-pack.md#tag-projections)).
 
 ## Future evolution
 

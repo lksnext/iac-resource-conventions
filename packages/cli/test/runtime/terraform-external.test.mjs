@@ -7,7 +7,7 @@
 // already covered by cli.test.mjs's `evaluate` tests (unknown top-level fields,
 // missing/empty `resource_type`/`convention`, and so on). It covers only what is
 // specific to this command: the `{ request_json }` query envelope, the string-only
-// `{ name, valid, result_json }` output shape, and a focused sample proving the shared
+// `{ name, valid, tags_json, result_json }` output shape, and a focused sample proving the shared
 // functions really are reused rather than reimplemented.
 
 import assert from "node:assert/strict";
@@ -63,7 +63,7 @@ test("terraform-external: a valid query produces a string-only result object, ex
   assert.equal(stderr, "");
 
   const output = JSON.parse(stdout);
-  assert.deepEqual(Object.keys(output).sort(), ["name", "result_json", "valid"]);
+  assert.deepEqual(Object.keys(output).sort(), ["name", "result_json", "tags_json", "valid"]);
   for (const value of Object.values(output)) {
     assert.equal(typeof value, "string");
   }
@@ -74,6 +74,111 @@ test("terraform-external: a valid query produces a string-only result object, ex
   const result = JSON.parse(output.result_json);
   assert.equal(result.validation.valid, true);
   assert.equal(result.outputs.name, "telemetry-platform-ingestion-prod-aws_iam_role");
+});
+
+// --- projected tags ----------------------------------------------------------------------
+
+test("terraform-external: projected tags are exposed as tags_json and in result_json", async () => {
+  const requestJson = JSON.stringify({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_acm_certificate",
+      functional: { component: "cloudfront" },
+      governance: { owner: "platform-team", managed_by: "terraform" },
+    },
+    evaluation_context: {
+      shared_organizational_context: { system: "lamassu" },
+      shared_deployment_context: { environment: "dev", location: "us-east-1" },
+    },
+  });
+
+  const { exitCode, stdout, stderr } = await runCli(
+    ["terraform-external"],
+    JSON.stringify({ request_json: requestJson }),
+  );
+
+  assert.equal(exitCode, 0);
+  assert.equal(stderr, "");
+
+  const output = JSON.parse(stdout);
+  const expectedTags = {
+    Name: "lamassu-dev-us-east-1-cloudfront-aws_acm_certificate",
+    Project: "lamassu",
+    Environment: "dev",
+    Component: "cloudfront",
+    Owner: "platform-team",
+    ManagedBy: "terraform",
+  };
+  assert.equal(output.tags_json, JSON.stringify(expectedTags));
+  assert.deepEqual(JSON.parse(output.result_json).outputs.metadata.tags, expectedTags);
+});
+
+test("terraform-external: tags_json is an empty JSON object when no tag is projected", async () => {
+  const { serializeTerraformExternalResult } = await import(
+    "../../dist/internal/serialize-terraform-external-result.js"
+  );
+
+  const output = serializeTerraformExternalResult({
+    resource_identity: {},
+    governance_context: {},
+    outputs: { name: "n" },
+    validation: { valid: true },
+  });
+
+  assert.equal(output.tags_json, "{}");
+});
+
+// --- aws_ssm_parameter ------------------------------------------------------------------
+
+test("terraform-external: aws_ssm_parameter is a known resource_type with a valid flat name", async () => {
+  const requestJson = JSON.stringify({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_ssm_parameter",
+      functional: { component: "dns-validation" },
+    },
+    evaluation_context: {
+      shared_organizational_context: { system: "lamassu" },
+      shared_deployment_context: { environment: "dev" },
+    },
+  });
+
+  const { exitCode, stdout, stderr } = await runCli(
+    ["terraform-external"],
+    JSON.stringify({ request_json: requestJson }),
+  );
+
+  assert.equal(exitCode, 0);
+  assert.equal(stderr, "");
+
+  const output = JSON.parse(stdout);
+  assert.equal(output.name, "lamassu-dev-dns-validation-aws_ssm_parameter");
+  assert.equal(output.valid, "true");
+});
+
+test("terraform-external: aws-ssm-parameter-path renders a hierarchical aws_ssm_parameter name", async () => {
+  const requestJson = JSON.stringify({
+    naming_request: {
+      convention: "aws-ssm-parameter-path",
+      resource_type: "aws_ssm_parameter",
+      functional: { component: "certificates" },
+      deployment: { instance: "example-com" },
+    },
+    evaluation_context: {
+      shared_organizational_context: { system: "lamassu" },
+      shared_deployment_context: { environment: "dev" },
+    },
+  });
+
+  const { exitCode, stdout } = await runCli(
+    ["terraform-external"],
+    JSON.stringify({ request_json: requestJson }),
+  );
+
+  assert.equal(exitCode, 0);
+  const output = JSON.parse(stdout);
+  assert.equal(output.name, "/lamassu/dev/certificates/example-com");
+  assert.equal(output.valid, "true");
 });
 
 // --- domain-invalid result ---------------------------------------------------------------
@@ -253,6 +358,21 @@ test("terraform-external: an unknown convention is a transport failure (reused e
   assert.notEqual(exitCode, 0);
   assert.equal(stdout, "");
   assert.match(stderr, /Unknown convention: "no-such-convention"/);
+});
+
+test("terraform-external: a null attribute from Terraform's jsonencode is a transport failure, not a crash", async () => {
+  // The exact query reported by the lamassu-terraform-modules aws-acm-certificate consumer.
+  const query =
+    '{"request_json":"{\\"naming_request\\":{\\"convention\\":\\"aws-workload-default\\",\\"resource_type\\":\\"aws_acm_certificate\\",\\"functional\\":{\\"service\\":null}},\\"evaluation_context\\":{\\"shared_organizational_context\\":{\\"system\\":\\"lamassu\\"},\\"shared_deployment_context\\":{\\"environment\\":\\"dev\\"}}}"}';
+
+  const { exitCode, stdout, stderr } = await runCli(["terraform-external"], query);
+
+  assert.equal(exitCode, 1);
+  assert.equal(stdout, "");
+  assert.equal(
+    stderr,
+    '"naming_request.functional.service" must be a string, not null; omit the field to leave it unset.\n',
+  );
 });
 
 // --- determinism and string-only invariant ------------------------------------------------

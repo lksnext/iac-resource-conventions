@@ -11,7 +11,7 @@
 // `hashicorp/external` data source requires via
 // `../internal/serialize-terraform-external-result.js`.
 //
-// stdout carries the resulting `{ name, valid, result_json }` object as compact JSON,
+// stdout carries the resulting `{ name, valid, tags_json, result_json }` object as compact JSON,
 // and nothing else. stderr carries every CLI/transport failure (malformed JSON, an
 // unknown top-level field, a missing/invalid `request_json`, or any failure
 // `parseEvaluateRequest`/`executeEvaluationRequest` themselves raise) as a single

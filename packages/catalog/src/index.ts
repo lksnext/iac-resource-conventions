@@ -23,6 +23,7 @@ import { AWS_ACM_CERTIFICATE } from "./aws/acm-certificate.js";
 import { AWS_IAM_ROLE } from "./aws/iam-role.js";
 import { AWS_LAMBDA_FUNCTION } from "./aws/lambda-function.js";
 import { AWS_S3_BUCKET } from "./aws/s3-bucket.js";
+import { AWS_SSM_PARAMETER } from "./aws/ssm-parameter.js";
 import { AZURE_COMPUTE_GALLERY } from "./azure/compute-gallery.js";
 import { AZURE_KEY_VAULT } from "./azure/key-vault.js";
 import { AZURE_LINUX_VIRTUAL_MACHINE } from "./azure/linux-virtual-machine.js";
@@ -32,6 +33,8 @@ import { AZURE_POSTGRESQL_FLEXIBLE_SERVER } from "./azure/postgresql-flexible-se
 import { AZURE_RESOURCE_GROUP } from "./azure/resource-group.js";
 import { AZURE_SUBNET } from "./azure/subnet.js";
 import { AZURE_VIRTUAL_NETWORK } from "./azure/virtual-network.js";
+import { AWS_SSM_PARAMETER_PATH } from "./convention-packs/aws-ssm-parameter-path.js";
+import { AWS_WORKLOAD_COMPACT } from "./convention-packs/aws-workload-compact.js";
 import { AWS_WORKLOAD_DEFAULT } from "./convention-packs/aws-workload-default.js";
 import { AZURE_WORKLOAD_COMPACT } from "./convention-packs/azure-workload-compact.js";
 import { AZURE_WORKLOAD_DEFAULT } from "./convention-packs/azure-workload-default.js";
@@ -56,6 +59,7 @@ const resourceDefinitions: Readonly<Record<ResourceType, ResourceDefinition>> = 
   [AWS_IAM_ROLE.resource_type]: AWS_IAM_ROLE,
   [AWS_LAMBDA_FUNCTION.resource_type]: AWS_LAMBDA_FUNCTION,
   [AWS_S3_BUCKET.resource_type]: AWS_S3_BUCKET,
+  [AWS_SSM_PARAMETER.resource_type]: AWS_SSM_PARAMETER,
   [AZURE_COMPUTE_GALLERY.resource_type]: AZURE_COMPUTE_GALLERY,
   [AZURE_KEY_VAULT.resource_type]: AZURE_KEY_VAULT,
   [AZURE_LINUX_VIRTUAL_MACHINE.resource_type]: AZURE_LINUX_VIRTUAL_MACHINE,
@@ -100,6 +104,8 @@ export function listResourceTypes(): ReadonlyArray<ResourceType> {
  * docs/architecture/convention-pack-catalog.md#package-ownership).
  */
 const conventionPacks: Readonly<Record<ConventionPackId, ConventionPack>> = deepFreeze({
+  [AWS_SSM_PARAMETER_PATH.id]: AWS_SSM_PARAMETER_PATH,
+  [AWS_WORKLOAD_COMPACT.id]: AWS_WORKLOAD_COMPACT,
   [AWS_WORKLOAD_DEFAULT.id]: AWS_WORKLOAD_DEFAULT,
   [AZURE_WORKLOAD_COMPACT.id]: AZURE_WORKLOAD_COMPACT,
   [AZURE_WORKLOAD_DEFAULT.id]: AZURE_WORKLOAD_DEFAULT,

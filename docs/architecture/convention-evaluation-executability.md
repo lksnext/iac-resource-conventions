@@ -494,6 +494,11 @@ Two properties must be kept separate:
 
 ## Metadata projection
 
+> **Update (Specification v1.3):** tag projection is now normative and executable (see
+> [`convention-pack.md#tag-projections`](../../specification/convention-pack.md#tag-projections)).
+> The analysis below describes the state before v1.3; labels and annotations remain
+> conceptual only.
+
 `ConventionPack` has no field representing a metadata projection mapping at all (see
 its own doc comment in
 [convention-pack.ts](../../packages/core/src/model/conventions/convention-pack.ts)).

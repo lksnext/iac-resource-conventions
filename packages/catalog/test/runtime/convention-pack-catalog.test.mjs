@@ -80,6 +80,8 @@ test("a returned ConventionPack's nested identity_defaults cannot be mutated", (
 
 test("listConventionPackIds returns exactly the expected catalog entries in lexical order", () => {
   assert.deepEqual(listConventionPackIds(), [
+    "aws-ssm-parameter-path",
+    "aws-workload-compact",
     "aws-workload-default",
     "azure-workload-compact",
     "azure-workload-default",
@@ -166,6 +168,20 @@ test("aws-workload-default: override_policy matches the artifact's Override poli
   });
 });
 
+test("aws-workload-default: tag_projections match the artifact's Metadata projection example, in order", () => {
+  const pack = getConventionPack("aws-workload-default");
+  assert.deepEqual(Object.entries(pack.tag_projections), [
+    ["Name", { source: "outputs.name", only_when_resource_accepts_no_name: true }],
+    ["Project", "organizational.system"],
+    ["Environment", "deployment.environment"],
+    ["Service", "functional.service"],
+    ["Component", "functional.component"],
+    ["Owner", "governance.owner"],
+    ["ManagedBy", "governance.managed_by"],
+    ["CostCenter", "governance.cost_center"],
+  ]);
+});
+
 test("aws-workload-default: the artifact's worked naming example reproduces telemetry-platform-ingestion-prod-aws_s3_bucket", () => {
   // Reproduces the artifact's own worked example: "a production aws_s3_bucket resource
   // for the ingestion service of the telemetry-platform system, with no location,
@@ -243,4 +259,62 @@ test("azure-workload-underscore: separator is an underscore", () => {
 test("azure-workload-underscore: abbreviates azure_compute_gallery to gal", () => {
   const pack = getConventionPack("azure-workload-underscore");
   assert.equal(pack.abbreviations["functional.resource_type"].azure_compute_gallery, "gal");
+});
+
+// --- Fidelity: aws-workload-compact matches
+// specification/convention-packs/aws-workload-compact.md -----------------------------
+
+test("aws-workload-compact: abbreviations match the artifact's Naming projection example", () => {
+  const pack = getConventionPack("aws-workload-compact");
+  assert.deepEqual(pack.abbreviations, {
+    "deployment.environment": { production: "prod", staging: "stg", development: "dev" },
+    "functional.resource_type": {
+      aws_acm_certificate: "acm",
+      aws_iam_role: "role",
+      aws_lambda_function: "lambda",
+      aws_s3_bucket: "s3",
+      aws_ssm_parameter: "param",
+    },
+  });
+});
+
+test("aws-workload-compact: every field except id and abbreviations is identical to aws-workload-default", () => {
+  const { id, abbreviations, ...pack } = getConventionPack("aws-workload-compact");
+  const {
+    id: baseId,
+    abbreviations: baseAbbreviations,
+    ...base
+  } = getConventionPack("aws-workload-default");
+  assert.deepEqual(pack, base);
+});
+
+// --- Fidelity: aws-ssm-parameter-path matches
+// specification/convention-packs/aws-ssm-parameter-path.md ---------------------------
+
+test("aws-ssm-parameter-path: naming projection matches the artifact's YAML example", () => {
+  const pack = getConventionPack("aws-ssm-parameter-path");
+  assert.deepEqual(pack.naming_component_order, [
+    "organizational.system",
+    "deployment.environment",
+    "functional.service",
+    "functional.component",
+    "deployment.instance",
+  ]);
+  assert.equal(pack.separator, "/");
+  assert.equal(pack.prefix, "/");
+  assert.equal(pack.casing, "lower");
+});
+
+test("aws-ssm-parameter-path: every non-naming field is identical to aws-workload-default", () => {
+  const pack = getConventionPack("aws-ssm-parameter-path");
+  const base = getConventionPack("aws-workload-default");
+  for (const field of [
+    "identity_defaults",
+    "required_attributes",
+    "abbreviations",
+    "override_policy",
+    "tag_projections",
+  ]) {
+    assert.deepEqual(pack[field], base[field], field);
+  }
 });

@@ -23,8 +23,12 @@ import type {
   CanonicalResourceIdentityAttribute,
   ConventionPack,
   EvaluationContextSource,
+  MetadataSourceReference,
 } from "@lksnext/iac-conventions-core";
-import { CANONICAL_RESOURCE_IDENTITY_ATTRIBUTES } from "./canonical-attributes.js";
+import {
+  CANONICAL_RESOURCE_IDENTITY_ATTRIBUTES,
+  METADATA_SOURCE_REFERENCES,
+} from "./canonical-attributes.js";
 /**
  * One static ConventionPack conformance problem. `convention_pack_id` identifies which
  * catalog entry the issue belongs to (the entry's own declared `id`, not necessarily
@@ -157,6 +161,34 @@ export function validateConventionPack(
         convention_pack_id: String(packId),
         path: `context_authority_rules.${attribute}`,
         message: `"${String(source)}" is not a recognized Evaluation Context source`,
+      });
+    }
+  }
+
+  for (const [key, entry] of Object.entries(pack.tag_projections ?? {})) {
+    const path = `tag_projections.${key}`;
+    if (key.length === 0) {
+      issues.push({
+        convention_pack_id: String(packId),
+        path,
+        message: "tag key must not be empty",
+      });
+    }
+    const source = typeof entry === "string" ? entry : entry?.source;
+    if (!METADATA_SOURCE_REFERENCES.has(source as MetadataSourceReference)) {
+      issues.push({
+        convention_pack_id: String(packId),
+        path: typeof entry === "string" ? path : `${path}.source`,
+        message: `"${String(source)}" is not a metadata source reference`,
+      });
+    }
+    const condition =
+      typeof entry === "string" ? undefined : entry?.only_when_resource_accepts_no_name;
+    if (condition !== undefined && typeof condition !== "boolean") {
+      issues.push({
+        convention_pack_id: String(packId),
+        path: `${path}.only_when_resource_accepts_no_name`,
+        message: "must be a boolean when declared",
       });
     }
   }

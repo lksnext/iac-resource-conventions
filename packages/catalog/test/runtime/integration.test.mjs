@@ -108,6 +108,57 @@ test("integration: a catalog-looked-up ConventionPack and ResourceDefinition can
   assert.equal(result.validation.valid, true);
 });
 
+test("integration: aws-workload-default reproduces the artifact's worked tag example", () => {
+  const result = evaluate({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_s3_bucket",
+      functional: { service: "ingestion" },
+      governance: { owner: "platform-team" },
+    },
+    convention_pack: getConventionPack("aws-workload-default"),
+    evaluation_context: {
+      shared_organizational_context: { system: "telemetry-platform" },
+      shared_deployment_context: { environment: "production" },
+    },
+    resource_definition: getResourceDefinition("aws_s3_bucket"),
+  });
+
+  assert.deepEqual(result.outputs.metadata, {
+    tags: {
+      Project: "telemetry-platform",
+      Environment: "production",
+      Service: "ingestion",
+      Owner: "platform-team",
+    },
+  });
+});
+
+test("integration: aws-workload-default adds the Name tag for aws_acm_certificate, which accepts no name", () => {
+  const result = evaluate({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_acm_certificate",
+      functional: { service: "ingestion" },
+      governance: { owner: "platform-team" },
+    },
+    convention_pack: getConventionPack("aws-workload-default"),
+    evaluation_context: {
+      shared_organizational_context: { system: "telemetry-platform" },
+      shared_deployment_context: { environment: "production" },
+    },
+    resource_definition: getResourceDefinition("aws_acm_certificate"),
+  });
+
+  assert.deepEqual(result.outputs.metadata.tags, {
+    Name: "telemetry-platform-ingestion-prod-aws_acm_certificate",
+    Project: "telemetry-platform",
+    Environment: "production",
+    Service: "ingestion",
+    Owner: "platform-team",
+  });
+});
+
 test("integration: azure-workload-default names an azure_resource_group", () => {
   const conventionPack = getConventionPack("azure-workload-default");
   assert.ok(conventionPack, "expected the catalog to know azure-workload-default");
@@ -180,4 +231,149 @@ test("integration: azure-workload-underscore produces a hyphen-free name for azu
   assert.equal(result.outputs.name, "gal_workload_prod");
   assert.equal(result.validation.valid, true);
   assert.ok(!result.outputs.name.includes("-"), "expected no hyphens in a compute gallery name");
+});
+
+function evaluateSsmParameter(system, component) {
+  return evaluate({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_ssm_parameter",
+      functional: { component },
+    },
+    convention_pack: getConventionPack("aws-workload-default"),
+    evaluation_context: {
+      shared_organizational_context: { system },
+      shared_deployment_context: { environment: "dev" },
+    },
+    resource_definition: getResourceDefinition("aws_ssm_parameter"),
+  });
+}
+
+test("integration: aws-workload-default renders a valid flat aws_ssm_parameter name", () => {
+  const result = evaluateSsmParameter("lamassu", "dns-validation");
+
+  assert.equal(result.outputs.name, "lamassu-dev-dns-validation-aws_ssm_parameter");
+  assert.equal(result.validation.valid, true);
+});
+
+test("integration: an aws_ssm_parameter name with a reserved aws/ssm prefix is invalid in any letter case", () => {
+  for (const system of ["aws-tools", "AWS-Tools", "ssm-store", "SsM-store"]) {
+    const result = evaluateSsmParameter(system, "dns-validation");
+
+    assert.equal(result.validation.valid, false, system);
+    assert.ok(
+      result.validation.failures.some((failure) => failure.code === "forbidden-prefix"),
+      `${system}: expected a forbidden-prefix failure`,
+    );
+  }
+});
+
+test("integration: aws_ssm_parameter rejects characters outside a-zA-Z0-9_.-/", () => {
+  const result = evaluateSsmParameter("lamassu", "dns validation");
+
+  assert.equal(result.validation.valid, false);
+  assert.ok(result.validation.failures.some((failure) => failure.code === "character-constraint"));
+});
+
+test("integration: aws_ssm_parameter forbids every letter-case spelling of aws and ssm, with and without a leading slash", () => {
+  const prefixes =
+    getResourceDefinition("aws_ssm_parameter").rendering_constraints.forbidden_prefixes;
+
+  assert.equal(prefixes.length, 32);
+  for (const prefix of ["aws", "AWS", "aWs", "ssm", "SSM", "/aws", "/AwS", "/ssm", "/SSM"]) {
+    assert.ok(prefixes.includes(prefix), prefix);
+  }
+});
+
+function evaluateSsmParameterPath(system, instance) {
+  return evaluate({
+    naming_request: {
+      convention: "aws-ssm-parameter-path",
+      resource_type: "aws_ssm_parameter",
+      functional: { component: "dns-validation" },
+      deployment: { instance },
+    },
+    convention_pack: getConventionPack("aws-ssm-parameter-path"),
+    evaluation_context: {
+      shared_organizational_context: { system },
+      shared_deployment_context: { environment: "development" },
+    },
+    resource_definition: getResourceDefinition("aws_ssm_parameter"),
+  });
+}
+
+test("integration: aws-ssm-parameter-path reproduces the consumer's hierarchical parameter name", () => {
+  const result = evaluateSsmParameterPath("lamassu", "example-com");
+
+  assert.equal(result.outputs.name, "/lamassu/dev/dns-validation/example-com");
+  assert.equal(result.validation.valid, true);
+  assert.deepEqual(result.outputs.metadata.tags, {
+    Project: "lamassu",
+    Environment: "development",
+    Component: "dns-validation",
+  });
+});
+
+test("integration: aws-ssm-parameter-path reports a reserved /aws path prefix", () => {
+  const result = evaluateSsmParameterPath("aws-tools", "example-com");
+
+  assert.equal(result.outputs.name, "/aws-tools/dev/dns-validation/example-com");
+  assert.ok(result.validation.failures.some((failure) => failure.code === "forbidden-prefix"));
+});
+
+function evaluateCompact(resourceType) {
+  return evaluate({
+    naming_request: {
+      convention: "aws-workload-compact",
+      resource_type: resourceType,
+      functional: { service: "ingestion" },
+    },
+    convention_pack: getConventionPack("aws-workload-compact"),
+    evaluation_context: {
+      shared_organizational_context: { system: "telemetry-platform" },
+      shared_deployment_context: { environment: "production" },
+    },
+    resource_definition: getResourceDefinition(resourceType),
+  });
+}
+
+test("integration: aws-workload-compact makes an aws_s3_bucket name valid", () => {
+  const compact = evaluateCompact("aws_s3_bucket");
+  const defaultResult = evaluate({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_s3_bucket",
+      functional: { service: "ingestion" },
+    },
+    convention_pack: getConventionPack("aws-workload-default"),
+    evaluation_context: {
+      shared_organizational_context: { system: "telemetry-platform" },
+      shared_deployment_context: { environment: "production" },
+    },
+    resource_definition: getResourceDefinition("aws_s3_bucket"),
+  });
+
+  assert.equal(compact.outputs.name, "telemetry-platform-ingestion-prod-s3");
+  assert.equal(compact.validation.valid, true);
+  assert.equal(defaultResult.validation.valid, false);
+});
+
+test("integration: aws-workload-compact abbreviates every AWS resource type in the catalog", () => {
+  const expected = {
+    aws_acm_certificate: "telemetry-platform-ingestion-prod-acm",
+    aws_iam_role: "telemetry-platform-ingestion-prod-role",
+    aws_lambda_function: "telemetry-platform-ingestion-prod-lambda",
+    aws_s3_bucket: "telemetry-platform-ingestion-prod-s3",
+    aws_ssm_parameter: "telemetry-platform-ingestion-prod-param",
+  };
+
+  for (const [resourceType, name] of Object.entries(expected)) {
+    const result = evaluateCompact(resourceType);
+    assert.equal(result.outputs.name, name, resourceType);
+    assert.equal(result.validation.valid, true, resourceType);
+  }
+  assert.equal(
+    evaluateCompact("aws_acm_certificate").outputs.metadata.tags.Name,
+    "telemetry-platform-ingestion-prod-acm",
+  );
 });

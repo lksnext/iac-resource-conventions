@@ -1,6 +1,7 @@
 import type {
   CanonicalResourceIdentityAttribute,
   ConventionPackId,
+  MetadataSourceReference,
 } from "../common/identifiers.js";
 import type { EvaluationContextSource } from "../contexts/evaluation-context-source.js";
 import type { GovernanceContext } from "../governance/governance-context.js";
@@ -18,12 +19,10 @@ import type { NamingCasing } from "./naming-casing.js";
  *
  * The Specification defines this concept only in prose and explicitly does not define a
  * JSON Schema, concrete syntax, or composition/merge algorithm for it (see
- * `specification/convention-pack.md`'s "Out of scope" section). Two named
- * responsibilities — normalization rules and metadata projection mappings — are
- * therefore intentionally not given a concrete shape here: the Specification itself
- * states no concrete naming syntax or key-mapping format is defined yet. Representing
- * them with an invented schema would exceed what the Specification defines; they are
- * deferred to a later Milestone 1 increment, once the Specification defines them.
+ * `specification/convention-pack.md`'s "Out of scope" section). Normalization rules,
+ * and label and annotation projection, are intentionally not given a concrete shape
+ * here: the Specification defines no concrete format for them yet. Tag projection is
+ * modeled by `tag_projections` (Specification v1.3).
  *
  * See `specification/convention-pack.md`.
  */
@@ -56,6 +55,9 @@ export interface ConventionPack {
   /** The literal separator inserted between adjacent naming components, if any. */
   readonly separator?: string;
 
+  /** Literal text prepended verbatim to a generated name (Specification v1.4). */
+  readonly prefix?: string;
+
   /** The casing transformation applied to each naming component before joining. */
   readonly casing?: NamingCasing;
 
@@ -68,6 +70,13 @@ export interface ConventionPack {
   >;
 
   /**
+   * Tag keys mapped to the metadata source whose resolved value each tag carries
+   * verbatim, in output order (Specification v1.3; see
+   * `specification/convention-pack.md#tag-projections`).
+   */
+  readonly tag_projections?: Readonly<Record<string, TagProjection>>;
+
+  /**
    * Which Evaluation Context source is authoritative for a specific canonical
    * attribute, keyed by dotted attribute path, whenever more than one source could
    * supply it.
@@ -76,6 +85,21 @@ export interface ConventionPack {
 
   /** Which attributes may be overridden on a Naming Request, and which are protected. */
   readonly override_policy?: ConventionPackOverridePolicy;
+}
+
+/**
+ * One `tag_projections` entry: a metadata source reference, or the object form with an
+ * optional condition (Specification v1.3; see
+ * `specification/convention-pack.md#tag-projections`).
+ */
+export type TagProjection = MetadataSourceReference | ConditionalTagProjection;
+
+/** The object form of a `tag_projections` entry. */
+export interface ConditionalTagProjection {
+  readonly source: MetadataSourceReference;
+
+  /** Project the tag only when the Resource Definition declares `accepts_name: false`. */
+  readonly only_when_resource_accepts_no_name?: boolean;
 }
 
 /**

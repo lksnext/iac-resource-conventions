@@ -10,7 +10,10 @@
 // `validate-resource-definition.ts` and `validate-convention-pack.ts` — rather than
 // each validator duplicating its own copy.
 
-import type { CanonicalResourceIdentityAttribute } from "@lksnext/iac-conventions-core";
+import type {
+  CanonicalResourceIdentityAttribute,
+  MetadataSourceReference,
+} from "@lksnext/iac-conventions-core";
 
 /**
  * The closed canonical Resource Identity attribute vocabulary (Specification v1.1; see
@@ -32,3 +35,16 @@ export const CANONICAL_RESOURCE_IDENTITY_ATTRIBUTES: ReadonlySet<CanonicalResour
     "functional.component",
     "functional.resource_type",
   ]);
+
+/**
+ * The closed metadata source reference vocabulary (Specification v1.3; see
+ * specification/convention-pack.md#metadata-source-references).
+ */
+export const METADATA_SOURCE_REFERENCES: ReadonlySet<MetadataSourceReference> = new Set([
+  ...CANONICAL_RESOURCE_IDENTITY_ATTRIBUTES,
+  "governance.owner",
+  "governance.managed_by",
+  "governance.cost_center",
+  "governance.profile",
+  "outputs.name",
+]);

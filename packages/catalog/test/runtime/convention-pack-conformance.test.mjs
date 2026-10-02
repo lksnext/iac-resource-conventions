@@ -39,6 +39,74 @@ function fixture(overrides) {
   return { id: "test-pack", ...overrides };
 }
 
+test("a tag_projections source outside the metadata source reference vocabulary is reported", () => {
+  const issues = validateConventionPack(
+    fixture({ tag_projections: { Project: "organizational.system", Cost: "governance.budget" } }),
+  );
+  assert.deepEqual(issues, [
+    {
+      convention_pack_id: "test-pack",
+      path: "tag_projections.Cost",
+      message: '"governance.budget" is not a metadata source reference',
+    },
+  ]);
+});
+
+test("tag_projections object entries with an invalid source or non-boolean condition are reported", () => {
+  const issues = validateConventionPack(
+    fixture({
+      tag_projections: {
+        Name: { source: "outputs.id" },
+        Owner: { source: "governance.owner", only_when_resource_accepts_no_name: "yes" },
+        Ok: { source: "outputs.name", only_when_resource_accepts_no_name: true },
+      },
+    }),
+  );
+  assert.deepEqual(issues, [
+    {
+      convention_pack_id: "test-pack",
+      path: "tag_projections.Name.source",
+      message: '"outputs.id" is not a metadata source reference',
+    },
+    {
+      convention_pack_id: "test-pack",
+      path: "tag_projections.Owner.only_when_resource_accepts_no_name",
+      message: "must be a boolean when declared",
+    },
+  ]);
+});
+
+test("an empty tag_projections key is reported", () => {
+  const issues = validateConventionPack(
+    fixture({ tag_projections: { "": "organizational.system" } }),
+  );
+  assert.deepEqual(issues, [
+    {
+      convention_pack_id: "test-pack",
+      path: "tag_projections.",
+      message: "tag key must not be empty",
+    },
+  ]);
+});
+
+test("tag_projections using Resource Identity and Governance Context references pass", () => {
+  assert.deepEqual(
+    validateConventionPack(
+      fixture({
+        tag_projections: {
+          Project: "organizational.system",
+          Owner: "governance.owner",
+          ManagedBy: "governance.managed_by",
+          CostCenter: "governance.cost_center",
+          Profile: "governance.profile",
+          Name: "outputs.name",
+        },
+      }),
+    ),
+    [],
+  );
+});
+
 test("a naming_component_order reference outside the canonical vocabulary is reported", () => {
   const issues = validateConventionPack(
     fixture({ naming_component_order: ["organizational.system", "functional.not_a_real_field"] }),

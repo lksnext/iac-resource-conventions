@@ -27,6 +27,10 @@ data "external" "convention" {
         functional = {
           service = "ingestion"
         }
+        governance = {
+          owner      = "platform-team"
+          managed_by = "terraform"
+        }
       }
       evaluation_context = {
         shared_organizational_context = {
@@ -45,6 +49,13 @@ data "external" "convention" {
 # protocol requires (see ./README.md).
 locals {
   convention_result = jsondecode(data.external.convention.result.result_json)
+
+  # The AWS tags aws-workload-default projects (Specification v1.3), for example
+  # { Project = "telemetry-platform", Environment = "production", Service = "ingestion",
+  # Owner = "platform-team", ManagedBy = "terraform" }. Resource types that accept no
+  # name, such as aws_acm_certificate, also get a `Name` tag. Merge them into a
+  # resource's `tags`, or into the AWS provider's `default_tags`.
+  tags = jsondecode(data.external.convention.result.tags_json)
 }
 
 output "generated_name" {
@@ -55,4 +66,9 @@ output "generated_name" {
 output "valid" {
   description = "Whether the generated outputs and resolved identity satisfied every checked constraint."
   value       = data.external.convention.result.valid
+}
+
+output "tags" {
+  description = "The AWS tags projected by the aws-workload-default Convention Pack."
+  value       = local.tags
 }

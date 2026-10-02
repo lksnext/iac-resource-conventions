@@ -273,6 +273,8 @@ for the full API contract, design rationale, and current capability scope.
   for the first alpha prerelease (published).
 - [`docs/release-notes/v0.1.0-alpha.1.md`](docs/release-notes/v0.1.0-alpha.1.md) — draft release
   notes for the current alpha prerelease (pending publication).
+- [`docs/release-notes/v0.1.0-alpha.2.md`](docs/release-notes/v0.1.0-alpha.2.md) — draft release
+  notes for the next alpha prerelease (unreleased).
 - [`docs/`](docs/) — further reference documentation (planned).
 - Reference Documentation — planned.
 - [`examples/terraform/external/`](examples/terraform/external/) — a runnable Terraform
@@ -303,7 +305,8 @@ for the full API contract, design rationale, and current capability scope.
 - ✓ Executable Convention Packs (Milestone 4.2 — complete; a first pack,
   `aws-workload-default`, is implemented, and the Azure portability slice added
   three Azure packs (`azure-workload-default`, `azure-workload-compact`,
-  `azure-workload-underscore`), see
+  `azure-workload-underscore`), `aws-ssm-parameter-path` renders hierarchical SSM
+  parameter names, and `aws-workload-compact` abbreviates AWS resource types, see
   [`docs/architecture/convention-pack-catalog.md`](docs/architecture/convention-pack-catalog.md)).
 - Contract Tests
 - ✓ CLI (Milestone 4 — complete for its planned scope; `evaluate` and `terraform-external`

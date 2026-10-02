@@ -238,6 +238,20 @@ export function validateResourceDefinition(
       message: "must not be empty when declared",
     });
   }
+  if (definition.accepts_name !== undefined && typeof definition.accepts_name !== "boolean") {
+    issues.push({
+      resource_type: String(resourceType),
+      path: "accepts_name",
+      message: "must be a boolean when declared",
+    });
+  }
+  if (definition.accepts_name === false && definition.rendering_constraints !== undefined) {
+    issues.push({
+      resource_type: String(resourceType),
+      path: "rendering_constraints",
+      message: "must not be declared when accepts_name is false",
+    });
+  }
 
   const identity = definition.identity_constraints;
   if (identity?.unique === true && !isNonEmptyString(identity.uniqueness_scope)) {

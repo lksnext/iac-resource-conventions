@@ -239,6 +239,48 @@ need for a resource type whose valid characters are not single-byte ASCII.
   entirely, since ACM certificates have no user-supplied name. This confirms the field's
   optionality is load-bearing, not merely a type-level nicety.
 
+### Hierarchical names (`aws_ssm_parameter`)
+
+`aws_ssm_parameter` was added for the `lamassuiot/lamassu-terraform-modules`
+`aws-acm-certificate` module, which writes hand-built parameter names such as
+`/lamassu/<env>/dns-validation/<name>` and `/lamassu/<env>/certificates/<name>`. Its
+constraints are cited in
+[`packages/catalog/src/aws/ssm-parameter.ts`](../../packages/catalog/src/aws/ssm-parameter.ts).
+The catalog entry validates any name AWS documents as valid character-wise, and every
+current Convention Pack can render a **flat** parameter name, for example
+`lamassu-dev-dns-validation-aws_ssm_parameter` under `aws-workload-default`.
+
+The Specification v1.3 naming model **could not render a hierarchical path**:
+
+- AWS requires a hierarchical name to start with `/` ("For parameters in a hierarchy,
+  you must include a leading forward slash character (/)"; `MyParameter3/L1` is "not
+  fully qualified"). A generated name was only the naming components joined by
+  `separator`; Specification v1.1 deliberately excluded literal (fixed-text) naming
+  components (see
+  [`specification/convention-pack.md#component-ordering`](../../specification/convention-pack.md#component-ordering)),
+  so no Convention Pack could emit the leading `/`.
+- `separator` applies to the whole Convention Pack. `aws-workload-default` uses `-`, so
+  a path needs a separate pack with `separator: "/"`, the same per-grammar precedent
+  `azure-workload-underscore` set for `azure_compute_gallery`. Without the leading `/`,
+  such a pack would render `lamassu/dev/dns-validation/...`, which AWS treats as not
+  fully qualified.
+
+Specification v1.4 closes this with the smallest change that does: an optional
+Convention Pack field, `prefix`, prepended verbatim to a generated name (see
+[`specification/convention-pack.md#prefix-specification-v14`](../../specification/convention-pack.md#prefix-specification-v14)).
+The [`aws-ssm-parameter-path`](../../specification/convention-packs/aws-ssm-parameter-path.md)
+pack uses `separator: "/"` and `prefix: "/"` to render, for example,
+`/lamassu/dev/dns-validation/example-com`, with the consumer's `<name>` segment
+supplied as `deployment.instance`.
+
+Two hierarchy rules remain unvalidated, because they are not representable as
+Resource Definition constraints: the conditional leading-`/` rule (always met by
+`aws-ssm-parameter-path`, which always emits it), and "a maximum depth of fifteen
+levels" (a count of `/` occurrences; `aws-ssm-parameter-path` emits at most five levels
+unless a resolved value contains `/`). Validating the depth limit would need a
+Resource Definition constraint counting a delimiter, which should be proposed once a
+second resource type needs it.
+
 ## Azure portability slice
 
 The Azure portability slice added a second, equally small, evidence-backed

@@ -4,12 +4,12 @@ This directory contains the Specification for `iac-resource-conventions`.
 
 ## Specification Status
 
-**Current version:** Specification v1.2
+**Current version:** Specification v1.4
 **Status:** Additive extension of the frozen v1.0 baseline (v1.2 changes one field's
 shape from v1.1, `placement_constraints`, and renames `allowed_characters`; see
 [Specification v1.2: Executable Resource Constraints](#specification-v12-executable-resource-constraints)
 below for why this is treated as a deliberate, low-risk pre-release migration rather
-than a purely additive change)
+than a purely additive change; v1.3 and v1.4 are purely additive)
 
 The conceptual Specification described in this directory — Resource Identity,
 Governance Context, Naming Request, Context Resolution, Resource Definition, Convention
@@ -26,6 +26,11 @@ Naming](#specification-v11-executable-naming) below. Specification v1.2 adds the
 minimum structured, executable Resource Definition constraint vocabulary demonstrated
 necessary by the AWS Resource Definition catalog — see [Specification v1.2: Executable
 Resource Constraints](#specification-v12-executable-resource-constraints) below.
+Specification v1.3 adds executable tag projection, demonstrated necessary by a
+Terraform consumer — see [Specification v1.3: Executable Tag
+Projection](#specification-v13-executable-tag-projection) below. Specification v1.4
+adds a literal naming prefix for hierarchical names — see [Specification v1.4: Naming
+Prefix](#specification-v14-naming-prefix) below.
 
 The Reference Evaluator, Resource Definitions, Convention Packs, and adapters are
 expected to validate this Specification rather than redefine it. (The Reference
@@ -230,6 +235,99 @@ Specification v1.2 intentionally does **not** introduce:
   impact](#specification-v12-schema-impact) above);
 - a redesign of `uniqueness_scope` or `global` (see
   [`resource-definition.md#unchanged-by-specification-v12`](./resource-definition.md#unchanged-by-specification-v12)).
+
+These remain deferred until implementation evidence demonstrates a genuine need to
+address them.
+
+## Specification v1.3: Executable Tag Projection
+
+`lamassuiot/lamassu-terraform-modules` (its `aws-acm-certificate` module) adopted
+`v0.1.0-alpha.1` through the CLI's `terraform-external` bridge to replace an AWS CDK
+project that configured `Project` and `Environment` tags. The Convention Result already
+carries `outputs.metadata.tags`, but no Specification rule populated it: metadata
+projection was an explicit Non-Goal of Specification v1.1 and v1.2, so the consumer
+could not generate tags from the same resolved Resource Identity and Governance
+Context it uses for naming. Specification v1.3 closes that gap for tags only,
+additively, changing [`convention-pack.md`](./convention-pack.md#metadata-projections),
+[`resource-definition.md`](./resource-definition.md#name-acceptance-specification-v13),
+and [`convention-result.md`](./convention-result.md), and the concrete
+[`aws-workload-default`](./convention-packs/aws-workload-default.md#metadata-projection)
+Convention Pack.
+
+### Specification v1.3 scope
+
+- a closed **metadata source reference** vocabulary: the canonical Resource Identity
+  attribute references, plus `governance.owner`, `governance.managed_by`,
+  `governance.cost_center`, and `governance.profile`, plus `outputs.name` — the
+  generated name, because resource types such as `aws_acm_certificate` have no name
+  argument and the same consumer had to copy the generated name into the AWS `Name`
+  tag by hand (see
+  [`convention-pack.md#metadata-source-references`](./convention-pack.md#metadata-source-references));
+- a new, optional Convention Pack field, **`tag_projections`**, mapping a tag key to a
+  metadata source reference, with verbatim values, omission of absent sources, and
+  declaration-order output (see
+  [`convention-pack.md#tag-projections`](./convention-pack.md#tag-projections));
+- a new, optional Resource Definition field, **`accepts_name`**, and an optional
+  `only_when_resource_accepts_no_name` condition on a tag projection entry, so a pack
+  can carry the generated name in a `Name` tag only for resource types, such as
+  `aws_acm_certificate`, that cannot carry it as their name (see
+  [`resource-definition.md#name-acceptance-specification-v13`](./resource-definition.md#name-acceptance-specification-v13)).
+
+### Delta from Specification v1.2
+
+| Field | v1.2 | v1.3 |
+| --- | --- | --- |
+| `tag_projections` | Did not exist; metadata projection was prose only. | New, optional. Additive. |
+| `accepts_name` (Resource Definition) | Did not exist. | New, optional; defaults to `true`. Additive. |
+| `outputs.metadata.tags` | Defined in shape only; never populated. | Populated from `tag_projections`. A Convention Pack that declares no `tag_projections` produces the same Convention Result as before. |
+
+Adding `tag_projections` to an existing concrete Convention Pack changes the tags that
+pack generates, which is potentially breaking for that pack (see
+[`convention-pack.md#versioning`](./convention-pack.md#versioning)); the Specification
+change itself does not alter any existing output.
+
+### Specification v1.3 Non-Goals
+
+Specification v1.3 intentionally does **not** define:
+
+- labels or annotations projection;
+- value transformations for tags (abbreviation, casing, templates, or concatenation);
+- literal (fixed-value) tags;
+- validation of tag keys or values against a platform's tag constraints;
+- per-resource-type tag projection rules, beyond the single
+  `only_when_resource_accepts_no_name` condition;
+- merging caller-supplied tags or projecting `custom_metadata`.
+
+These remain deferred until implementation evidence demonstrates a genuine need to
+address them.
+
+## Specification v1.4: Naming Prefix
+
+The same Terraform consumer writes AWS Systems Manager parameters with hierarchical
+names such as `/lamassu/<env>/dns-validation/<name>`. AWS requires a hierarchical
+parameter name to start with `/`, but a generated name was only its naming components
+joined by `separator`, and Specification v1.1 deliberately excluded literal naming
+components, so no Convention Pack could render it. Specification v1.4 adds one
+optional, additive Convention Pack field, **`prefix`**: literal text prepended verbatim
+to a generated name (see
+[`convention-pack.md#prefix-specification-v14`](./convention-pack.md#prefix-specification-v14)).
+It also adds the concrete
+[`aws-ssm-parameter-path`](./convention-packs/aws-ssm-parameter-path.md) Convention
+Pack, which uses it.
+
+### Delta from Specification v1.3
+
+| Field | v1.3 | v1.4 |
+| --- | --- | --- |
+| `prefix` | Did not exist. | New, optional; defaults to `""`. A pack that declares no `prefix` generates the same name as before. Additive. |
+
+### Specification v1.4 Non-Goals
+
+Specification v1.4 intentionally does **not** define:
+
+- a suffix, or literal text between naming components;
+- a Resource Definition constraint for hierarchy depth (for example, Systems
+  Manager's fifteen-level limit) or for a conditional leading delimiter.
 
 These remain deferred until implementation evidence demonstrates a genuine need to
 address them.
@@ -462,8 +560,12 @@ additive naming-semantics extension driven by the Reference Evaluator's own
 implementation experience, not a theoretical redesign. Specification v1.2 (see
 [Specification v1.2: Executable Resource Constraints](#specification-v12-executable-resource-constraints)
 above) is the second, driven by the Resource Definition catalog's own implementation
-experience rather than a theoretical redesign. Future changes should follow these
-principles:
+experience rather than a theoretical redesign. Specification v1.3 (see
+[Specification v1.3: Executable Tag Projection](#specification-v13-executable-tag-projection)
+above) is the third, driven by a Terraform consumer's adoption, and Specification v1.4
+(see [Specification v1.4: Naming Prefix](#specification-v14-naming-prefix) above) the
+fourth, driven by the same consumer. Future changes should
+follow these principles:
 
 - **Implementation first** — build the Reference Evaluator, a Resource Definition
   catalog, executable Convention Packs, and adapters before revisiting conceptual

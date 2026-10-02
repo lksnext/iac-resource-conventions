@@ -110,7 +110,9 @@ undefined in Specification v1.1 (see [Specification v1.1
 Non-Goals](./README.md#specification-v11-non-goals)).
 
 **Metadata projection rules** — how resolved Resource Identity and Governance Context
-attributes map onto platform-specific tags, labels, and annotations.
+attributes map onto platform-specific tags, labels, and annotations. Formalized
+normatively for tags in Specification v1.3 (see [Metadata
+projections](#metadata-projections) below).
 
 **Context authority rules** — which Evaluation Context source is considered
 authoritative for a specific canonical attribute whenever more than one source could
@@ -288,6 +290,8 @@ in what order. Rendering order always matches declaration order.
   implementation evidence demonstrated a need for one, and introducing one
   speculatively would be inconsistent with this Specification's evidence-driven
   evolution principle (see [`README.md#future-evolution`](./README.md#future-evolution)).
+  Specification v1.4 adds only a leading literal, [`prefix`](#prefix-specification-v14),
+  demonstrated necessary by hierarchical AWS Systems Manager parameter names.
 
 ### Separator
 
@@ -393,6 +397,23 @@ Convention Pack defines one (see
 Formalizing the field for the first time, rather than reusing an under-specified shape
 that was never exercised, is treated as the smaller-risk option.
 
+### Prefix (Specification v1.4)
+
+`prefix` is a new, optional string a Convention Pack declares to place literal text
+before the first naming component. When omitted, its value is the empty string.
+
+- `prefix` is inserted verbatim: casing and abbreviations never apply to it, the same
+  way they never apply to `separator`.
+- `prefix` is prepended only to a generated name. When no name is generated (no
+  naming components are declared, or a required naming component is absent), there is
+  no name to prefix.
+- No other literal is defined: there is no suffix and no literal between components.
+
+Evidence: an AWS Systems Manager parameter in a hierarchy "must include a leading
+forward slash character (/)" (see `packages/catalog/src/aws/ssm-parameter.ts`). With
+`separator: "/"` alone, a pack can render `lamassu/dev/dns-validation`, which AWS
+treats as not fully qualified; `prefix: "/"` renders `/lamassu/dev/dns-validation`.
+
 ### Naming rule execution order
 
 A conforming implementation of Specification v1.1 naming rules produces the following
@@ -413,7 +434,8 @@ sequence, in this exact order, for every reference declared by
    [Casing](#casing)).
 5. **Omit** every absent-and-optional component from the sequence.
 6. **Join** the remaining, ordered per-component values using `separator` (see
-   [Separator](#separator)).
+   [Separator](#separator)), then prepend `prefix`, if declared (see
+   [Prefix](#prefix-specification-v14)).
 7. The joined string is the resource's generated name, validated against the resource's
    Resource Definition constraints exactly as already described in
    [`convention-result.md`](./convention-result.md#convention-evaluation-pipeline).
@@ -434,6 +456,7 @@ Non-Goals](./README.md#specification-v11-non-goals).
 | `separator` | No | `""` (components are concatenated directly) | None beyond being a string |
 | `casing` | No | `preserve` | Any value other than `preserve`, `lower`, or `upper` |
 | `abbreviations` | No | No abbreviation applies to any component | An outer key outside the canonical attribute vocabulary |
+| `prefix` | No | `""` (nothing is prepended) | None beyond being a string |
 
 ### Naming rule examples
 
@@ -552,14 +575,248 @@ validation:
     - message: "name exceeds max_length of 24 characters"
 ```
 
+**Prefix** — `prefix` is prepended verbatim after joining, and an absent optional
+component leaves no doubled separator:
+
+```yaml
+naming_component_order:
+  - organizational.system
+  - deployment.environment
+  - functional.service
+  - functional.component
+  - deployment.instance
+separator: "/"
+casing: lower
+prefix: "/"
+abbreviations:
+  deployment.environment:
+    development: dev
+
+organizational:
+  system: Lamassu
+deployment:
+  environment: development
+  instance: example-com
+functional:
+  component: dns-validation
+# functional.service is not resolved for this resource
+
+name: /lamassu/dev/dns-validation/example-com
+```
+
 ## Metadata projections
 
 A Convention Pack defines how resolved Resource Identity and Governance Context become
 platform-specific metadata, such as AWS Tags, Azure Tags, Kubernetes Labels, and
-Kubernetes Annotations. This document does not define concrete key mappings or value
-formats; it only describes that this is a Convention Pack responsibility, consistent
-with the metadata projection described in
+Kubernetes Annotations, consistent with the metadata projection described in
 [`governance-context.md`](./governance-context.md#metadata-projection).
+
+Specification v1.0–v1.2 described this responsibility in prose only. Specification
+v1.3 adds the normative rules below for **tags only** — additively, the same way
+Specification v1.1 added naming rules — because a Terraform consumer of the
+`terraform-external` bridge could not generate the tags it previously configured by
+hand (see [Specification v1.3: Executable Tag
+Projection](./README.md#specification-v13-executable-tag-projection) for the evidence,
+scope, and Non-Goals). Labels and annotations remain conceptual.
+
+### Metadata source references
+
+A tag projection refers to the value it projects using a **metadata source
+reference**, from a closed vocabulary:
+
+- every canonical Resource Identity attribute reference (see [Canonical attribute
+  references](#canonical-attribute-references));
+- `governance.owner`, `governance.managed_by`, `governance.cost_center`, and
+  `governance.profile` — the Governance Context attributes (see
+  [`governance-context.md`](./governance-context.md#governance-attributes));
+- `outputs.name` — the name generated for the resource by [Naming
+  projections](#naming-projections), exactly as generated, or no value when no name
+  is generated.
+
+A reference outside this vocabulary is invalid. Governance Context references are
+valid only in metadata projections; they remain invalid in naming rules.
+
+`outputs.name` is a Convention Output, not a Resource Identity or Governance Context
+attribute. It is the only Convention Output a tag may project, because some resource
+types have no name argument at all: an AWS Certificate Manager certificate, for
+example, is identified only by its ARN and domain name (see
+`packages/catalog/src/aws/acm-certificate.ts`), so the AWS `Name` tag is the only
+place its generated name can appear. Projecting the generated name keeps that tag
+consistent with naming instead of leaving each consumer to copy it by hand.
+
+### Tag projections
+
+`tag_projections` is a new, optional mapping from a tag key to a metadata source
+reference:
+
+```yaml
+tag_projections:
+  Project: organizational.system
+  Environment: deployment.environment
+  Owner: governance.owner
+```
+
+- The tag key is emitted exactly as declared. An empty tag key is invalid.
+- The tag value is the source's resolved value, exactly as resolved (for
+  `outputs.name`, the name exactly as generated). Abbreviations,
+  casing, and separator are naming rules only (see [Naming
+  projections](#naming-projections)); none of them is applied to a tag value, and no
+  other normalization or truncation is applied.
+- When the source has no resolved value, the tag is omitted. This is neither a
+  validation failure nor a warning: whether an attribute must be available is decided
+  only by [Required attributes](#required-attributes).
+- Tags are emitted in `tag_projections` declaration order, so the serialized output is
+  deterministic.
+- A tag projection that declares an empty key or an invalid metadata source reference
+  is reported as a validation failure, and that tag is omitted; every other declared
+  tag is still projected.
+- Tag projection does not depend on naming, except through `outputs.name`: every other
+  tag is projected even when no name is generated.
+- Projected tags appear in the Convention Result's `outputs.metadata.tags` (see
+  [`convention-result.md`](./convention-result.md#convention-outputs)). When
+  `tag_projections` is absent or empty, or no declared tag resolves, `outputs.metadata`
+  is omitted.
+- Tag keys and values are not validated against a platform's own tag constraints (for
+  example, key or value length and allowed characters): that is a deferred Non-Goal of
+  Specification v1.3.
+
+A `tag_projections` entry is either a metadata source reference, as above, or an
+object:
+
+```yaml
+tag_projections:
+  Name:
+    source: outputs.name
+    only_when_resource_accepts_no_name: true
+```
+
+- `source` is required and is a metadata source reference, exactly like the string
+  form.
+- `only_when_resource_accepts_no_name` is optional and defaults to `false`. When
+  `true`, the tag is projected only when the selected Resource Definition declares
+  `accepts_name: false` (see
+  [`resource-definition.md#name-acceptance-specification-v13`](./resource-definition.md#name-acceptance-specification-v13));
+  otherwise it is omitted, which is neither a validation failure nor a warning. This
+  lets a pack carry the generated name in a tag only for resource types that cannot
+  carry it as their name.
+- No other property is defined. An object without a valid `source` is invalid.
+
+### Tag projection fields
+
+| Field | Required | Default | Invalid values |
+| --- | --- | --- | --- |
+| `tag_projections` | No | No tags are projected | An empty tag key; a source outside the metadata source reference vocabulary; an object entry without a valid `source` |
+
+### Tag projection examples
+
+These are normative test vectors: given the `tag_projections` and resolved attributes
+shown, the projected `tags` are exactly as shown.
+
+**Verbatim values, absent source omitted** — `deployment.environment` is abbreviated
+in the name, but not in the tag; `functional.component` is not resolved, so its tag is
+omitted:
+
+```yaml
+naming_component_order:
+  - organizational.system
+  - deployment.environment
+separator: "-"
+casing: lower
+abbreviations:
+  deployment.environment:
+    production: prod
+tag_projections:
+  Project: organizational.system
+  Environment: deployment.environment
+  Component: functional.component
+  Owner: governance.owner
+
+organizational:
+  system: Telemetry-Platform
+deployment:
+  environment: production
+governance:
+  owner: platform-team
+
+name: telemetry-platform-prod
+tags:
+  Project: Telemetry-Platform
+  Environment: production
+  Owner: platform-team
+```
+
+**Generated name** — `outputs.name` projects the name exactly as generated, including
+its abbreviation and casing; when a required naming component is absent, no name is
+generated and the `Name` tag is omitted:
+
+```yaml
+naming_component_order:
+  - organizational.system
+  - deployment.environment
+  - functional.resource_type
+separator: "-"
+casing: lower
+abbreviations:
+  deployment.environment:
+    production: prod
+tag_projections:
+  Name: outputs.name
+  Environment: deployment.environment
+
+organizational:
+  system: telemetry-platform
+deployment:
+  environment: production
+functional:
+  resource_type: aws_acm_certificate
+
+name: telemetry-platform-prod-aws_acm_certificate
+tags:
+  Name: telemetry-platform-prod-aws_acm_certificate
+  Environment: production
+```
+
+**Only for resources that accept no name** — the same pack names an
+`aws_acm_certificate` (Resource Definition `accepts_name: false`) and an
+`aws_iam_role` (`accepts_name` omitted, so `true`):
+
+```yaml
+tag_projections:
+  Name:
+    source: outputs.name
+    only_when_resource_accepts_no_name: true
+  Environment: deployment.environment
+
+# aws_acm_certificate
+name: telemetry-platform-prod-aws_acm_certificate
+tags:
+  Name: telemetry-platform-prod-aws_acm_certificate
+  Environment: production
+
+# aws_iam_role
+name: telemetry-platform-prod-aws_iam_role
+tags:
+  Environment: production
+```
+
+**Invalid source** — a reference outside the vocabulary is reported, and only that tag
+is omitted:
+
+```yaml
+tag_projections:
+  Project: organizational.system
+  Cost: governance.budget
+
+organizational:
+  system: telemetry-platform
+
+tags:
+  Project: telemetry-platform
+validation:
+  valid: false
+  failures:
+    - message: 'tag_projections maps tag key "Cost" to unknown metadata source reference "governance.budget"'
+```
 
 ## Context authority rules
 

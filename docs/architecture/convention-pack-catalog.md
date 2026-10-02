@@ -22,7 +22,8 @@ as Markdown policy documents, not executable data (see
 `aws-workload-default` was the first such artifact; the Azure portability slice
 added three more — `azure-workload-default`, `azure-workload-compact`, and
 `azure-workload-underscore` (see [Azure portability slice](#azure-portability-slice)
-below).
+below); `aws-ssm-parameter-path` and `aws-workload-compact` followed (see
+[AWS path pack](#aws-path-pack) and [AWS compact pack](#aws-compact-pack) below).
 
 The catalog implements each artifact it carries; it does not extend, reinterpret, or
 duplicate the policy those artifacts define. Every catalog entry is a `ConventionPack`
@@ -31,7 +32,7 @@ subtype, and no field the Specification does not already describe. Where an arti
 states a field only in prose (not a concrete YAML/JSON value), the executable value
 maps it faithfully rather than inventing policy the artifact does not state; where an
 artifact provides no value at all for a `ConventionPack` field (for example,
-`aws-workload-default.md` defines no concrete Governance Profile or tag mapping), that
+`aws-workload-default.md` defines no concrete Governance Profile), that
 field is omitted from the executable pack rather than given a fabricated default.
 
 ## Package ownership
@@ -171,6 +172,24 @@ Each pack is deliberately scoped to the Resource Types that actually need it, ra
 than a single pack attempting to cover every Azure Resource Type in this catalog slice
 — see [`docs/architecture/resource-definition-catalog.md#azure-portability-slice`](resource-definition-catalog.md#azure-portability-slice)
 for the corresponding Resource Definition slice these packs name.
+
+## AWS path pack
+
+`aws-ssm-parameter-path` renders hierarchical `aws_ssm_parameter` names, such as
+`/lamassu/dev/dns-validation/example-com`, using `separator: "/"` and the
+Specification v1.4 naming `prefix: "/"`. Every non-naming field matches
+`aws-workload-default`, which a fidelity test asserts. Like the Azure variants, it is
+scoped to the one Resource Type that needs it (see
+[`docs/architecture/resource-definition-catalog.md#hierarchical-names-aws_ssm_parameter`](resource-definition-catalog.md#hierarchical-names-aws_ssm_parameter)).
+
+## AWS compact pack
+
+`aws-workload-compact` is `aws-workload-default` with one added abbreviation table for
+`functional.resource_type` (`acm`, `role`, `lambda`, `s3`, `param`). It exists as a
+separate pack because abbreviating the resource type in `aws-workload-default` would
+change every name that pack already generates. It also makes `aws_s3_bucket` names
+valid, since S3 forbids the underscore in the unabbreviated resource type. A fidelity
+test asserts that every other field matches `aws-workload-default`.
 
 ## CLI relationship
 

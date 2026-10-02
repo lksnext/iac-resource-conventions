@@ -253,6 +253,22 @@ This boundary — Convention Pack policy generates a name; Resource Definition
 constraints only validate it — is unchanged by this version; it is restated here
 because the new constraint families make the distinction easy to blur in practice.
 
+### Name acceptance (Specification v1.3)
+
+`accepts_name` is a new, optional boolean declaring whether the provider accepts a
+caller-supplied name for the resource type. It defaults to `true`. `false` declares
+that the provider assigns every identifier itself, so a generated name can never be
+applied as the resource's name and can only be carried as metadata (see
+[`convention-pack.md#tag-projections`](./convention-pack.md#tag-projections)).
+
+- `accepts_name` does not change naming: Convention Evaluation still generates and
+  validates `outputs.name` from the Convention Pack's naming rules.
+- A Resource Definition that declares `accepts_name: false` declares no
+  `rendering_constraints`, since the provider has no caller-supplied name to constrain.
+
+Evidence: `aws_acm_certificate`'s `RequestCertificate` accepts only `DomainName` and
+`SubjectAlternativeNames`, never a name (see [AWS ACM Certificate](#aws-acm-certificate)).
+
 ### Placement Constraints
 
 Placement Constraints describe the valid deployment topology for a resource type — not
@@ -637,7 +653,8 @@ Placement Constraints:
 ### AWS ACM Certificate
 
 No `rendering_constraints` (unchanged: `RequestCertificate` never accepts a
-user-supplied name).
+user-supplied name), and `accepts_name: false` (Specification v1.3; see [Name
+acceptance](#name-acceptance-specification-v13)).
 
 Placement Constraints — two entries, illustrating a statement that *can* be executed
 unconditionally and one that remains blocked on the conditional-input problem:

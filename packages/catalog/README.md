@@ -47,6 +47,15 @@ full naming component set), and `azure-workload-underscore` (for
 for the normative Specification Artifacts these packs implement. As with the AWS
 slice, this is a deliberately small, evidence-backed set — not broad Azure coverage.
 
+`aws_ssm_parameter` (under `src/aws/`) was added for the first Terraform consumer of
+the `terraform-external` bridge, with every constraint cited from the Systems Manager
+`PutParameter` API reference and Parameter Store user guide, together with the
+`aws-ssm-parameter-path` Convention Pack, which renders hierarchical parameter paths
+(`/a/b/c`) using the Specification v1.4 naming `prefix`; see
+[`docs/architecture/resource-definition-catalog.md#hierarchical-names-aws_ssm_parameter`](https://github.com/lksnext/iac-resource-conventions/blob/main/docs/architecture/resource-definition-catalog.md#hierarchical-names-aws_ssm_parameter).
+`aws-workload-compact` is `aws-workload-default` with abbreviated resource types
+(`acm`, `role`, `lambda`, `s3`, `param`).
+
 ## Intended responsibilities
 
 This package owns two separate, static, immutable artifact families:

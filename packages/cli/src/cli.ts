@@ -30,8 +30,8 @@ Commands:
                        write the resulting ConventionResult as JSON to stdout.
   terraform-external   Evaluate a Naming Request for Terraform's "external"
                        data source: reads a { request_json } query object as
-                       JSON from stdin, and writes { name, valid, result_json }
-                       as a JSON object of strings to stdout.
+                       JSON from stdin, and writes { name, valid, tags_json,
+                       result_json } as a JSON object of strings to stdout.
 
 Options:
   -h, --help     Show this help message and exit.
@@ -56,7 +56,8 @@ Input (terraform-external):
 
 Output (terraform-external):
   A JSON object of string values on stdout: "name" (the generated name, or ""
-  if none was produced), "valid" ("true"/"false"), and "result_json" (the full
+  if none was produced), "valid" ("true"/"false"), "tags_json" (the projected
+  tags, JSON-encoded as a string; "{}" if none), and "result_json" (the full
   ConventionResult, JSON-encoded as a string). This matches the
   hashicorp/external provider's "result" attribute, which only supports string
   values.

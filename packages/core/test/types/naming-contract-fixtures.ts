@@ -20,6 +20,7 @@ export const conventionPackWithNaming: ConventionPack = {
   naming_component_order: ["organizational.system", "functional.service"],
   separator: "-",
   casing: "preserve",
+  prefix: "/",
   abbreviations: {
     "deployment.environment": {
       production: "prod",

@@ -43,8 +43,9 @@ This is the **implementation foundation** only. As of this writing:
   `azure_linux_virtual_machine`, `azure_key_vault`, `azure_postgresql_flexible_server`,
   `azure_log_analytics_workspace`, `azure_compute_gallery`) — and an executable
   Convention Pack Catalog (Milestone 4.2, extended by the Azure portability
-  slice) — a `getConventionPack` / `listConventionPackIds` lookup API over four packs,
-  `aws-workload-default`, `azure-workload-default`, `azure-workload-compact`, and
+  slice) — a `getConventionPack` / `listConventionPackIds` lookup API over six packs,
+  `aws-workload-default`, `aws-workload-compact`, `aws-ssm-parameter-path`,
+  `azure-workload-default`, `azure-workload-compact`, and
   `azure-workload-underscore`. See [Milestones](#milestones) below,
   [`docs/architecture/resource-definition-catalog.md`](docs/architecture/resource-definition-catalog.md),
   and
@@ -89,7 +90,11 @@ This is the **implementation foundation** only. As of this writing:
   Specification v1.2's executable Resource Constraints — `min_length`/`max_length`,
   `character_constraints`, and Placement Constraint validation — are also implemented (see
   [`packages/core/src/evaluator/convention-evaluation/resource-constraints/`](packages/core/src/evaluator/convention-evaluation/resource-constraints/)).
-  Metadata projection, general normalization, truncation-by-the-evaluator, hashing, and global
+  Specification v1.3's executable tag projection (`tag_projections` into
+  `outputs.metadata.tags`) is implemented in
+  [`packages/core/src/evaluator/convention-evaluation/metadata/`](packages/core/src/evaluator/convention-evaluation/metadata/).
+  Label and annotation projection, general normalization, truncation-by-the-evaluator,
+  hashing, and global
   uniqueness remain unimplemented. Adapter integration is no longer purely future: `packages/cli`
   (Milestone 4) is an implemented adapter, including a Terraform integration via the
   `terraform-external` command (Milestone 4.4); a native Terraform/CDK/Ansible provider/adapter
@@ -324,7 +329,8 @@ This is the **implementation foundation** only. As of this writing:
     [`docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented`](docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented)
     and
     [`docs/architecture/convention-evaluation-executability.md#length-and-truncation`](docs/architecture/convention-evaluation-executability.md#length-and-truncation).
-  - Not yet started: metadata projection, general normalization, Governance Profile defaults,
+  - Not yet started: label and annotation projection (tag projection is implemented for
+    Specification v1.3), general normalization, Governance Profile defaults,
     truncation, hashing, and global uniqueness. Every one of these is a Specification v1.1
     Non-Goal (see
     [`specification/README.md#specification-v11-non-goals`](specification/README.md#specification-v11-non-goals)),
@@ -1452,11 +1458,12 @@ implemented.
   itself is reserved for a possible future convenience package and is not created yet.
 - `core`, `catalog`, and `cli` are publishable (no `"private"` field) as of Milestone 4.5, each
   at the synchronized prerelease version declared in each package's `package.json` (currently
-  `0.1.0-alpha.1`), with `publishConfig.registry` pointed at GitHub Packages (see [Release
+  `0.1.0-alpha.2`), with `publishConfig.registry` pointed at GitHub Packages (see [Release
   Readiness](#release-readiness) below). The monorepo root itself remains `"private": true` and
   is never published. The first alpha, `0.1.0-alpha.0`, has been published to GitHub Packages
-  via [`publish-alpha.yml`](.github/workflows/publish-alpha.yml); the current synchronized
-  version, `0.1.0-alpha.1`, is prepared but not yet published.
+  via [`publish-alpha.yml`](.github/workflows/publish-alpha.yml), and `0.1.0-alpha.1` is tagged
+  `v0.1.0-alpha.1`; the current synchronized version, `0.1.0-alpha.2`, is prepared but not
+  yet published.
 - During this initial implementation phase, package versions are kept synchronized
   (single repository version) rather than independently versioned; independent
   versioning is only introduced once a package has an actual reason to release on its
@@ -1646,7 +1653,7 @@ and no product behavior changed.
   build kept as an alternative.
 - **Publication order:** `core`, then `catalog`, then `cli` — required by the exact-pinned
   internal dependency versions (`catalog` depends on `core` at the synchronized version; `cli`
-  depends on both `catalog` and `core` at that same version — currently `0.1.0-alpha.1`);
+  depends on both `catalog` and `core` at that same version — currently `0.1.0-alpha.2`);
   publishing a dependent before its dependency exists on the registry would fail the dependent's
   own install.
 - **Registry target: GitHub Packages only (decided during first-alpha release-readiness

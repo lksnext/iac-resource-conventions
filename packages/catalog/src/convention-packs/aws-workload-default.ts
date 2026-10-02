@@ -24,11 +24,12 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  *   `deployment_scope` must not normally be overridden.
  * - `override_policy.overridable_attributes` — "Override policy": `location` may be
  *   overridden for legacy resources.
+ * - `tag_projections` — "Metadata projection", reproduced verbatim from the
+ *   artifact's own YAML example (Specification v1.3).
  *
- * The artifact does not state a concrete default Governance Profile or metadata/tag
- * key mapping ("This document does not define actual AWS Tag key names, value
- * formats, or casing"), so `governance_defaults` and `context_authority_rules` are
- * intentionally omitted here rather than invented.
+ * The artifact does not state a concrete default Governance Profile, so
+ * `governance_defaults` and `context_authority_rules` are intentionally omitted here
+ * rather than invented.
  */
 export const AWS_WORKLOAD_DEFAULT: ConventionPack = deepFreeze({
   id: "aws-workload-default",
@@ -61,5 +62,15 @@ export const AWS_WORKLOAD_DEFAULT: ConventionPack = deepFreeze({
   override_policy: {
     protected_attributes: ["organizational.organization", "deployment.deployment_scope"],
     overridable_attributes: ["deployment.location"],
+  },
+  tag_projections: {
+    Name: { source: "outputs.name", only_when_resource_accepts_no_name: true },
+    Project: "organizational.system",
+    Environment: "deployment.environment",
+    Service: "functional.service",
+    Component: "functional.component",
+    Owner: "governance.owner",
+    ManagedBy: "governance.managed_by",
+    CostCenter: "governance.cost_center",
   },
 });

@@ -9,18 +9,13 @@
 // which remains `evaluate()`'s responsibility (see
 // docs/architecture/cli.md#transport-and-domain-validation-boundary).
 //
-// core's Context Resolution dereferences every nested NamingRequest/EvaluationContext
-// field with optional chaining only (see
-// packages/core/src/evaluator/context-resolution/resolve-resource-identity.ts and
-// resolve-governance-context.ts), so a malformed *nested* value (wrong type, absent
-// field) cannot throw there — it only resolves to `undefined`, which core's own
-// required-attribute validation already reports. The only external shapes that could
-// otherwise reach core unsafely are: the JSON root, `naming_request`, and
-// `evaluation_context` not being plain objects at all; and the two catalog lookup
-// keys, `naming_request.resource_type`/`naming_request.convention`, needing to be
-// non-empty strings before they are used as object-map lookup keys. No deeper
-// structural validation is required or added (see
-// docs/architecture/cli.md#transport-and-domain-validation-boundary).
+// core's `evaluate()` trusts its TypeScript input types: a known attribute whose value
+// is not a string (for example, JSON `null` emitted by Terraform's `jsonencode` for an
+// unset optional attribute, or a number) reaches naming and throws there. This parser
+// therefore checks every field the Specification's JSON Schemas type as a string or
+// an object (see specification/schemas/), and rejects any other value — including
+// `null`, which the Specification gives no meaning: an unset attribute is expressed
+// by omitting it (see docs/architecture/cli.md#transport-and-domain-validation-boundary).
 
 import type { EvaluationContext, NamingRequest } from "@lksnext/iac-conventions-core";
 import { CliError } from "../errors.js";
@@ -47,6 +42,106 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
+}
+
+/** The JSON type a known field must have when present: a string, or an object whose own known fields are checked recursively. */
+type FieldShape = "string" | "object" | { readonly [field: string]: FieldShape };
+
+const ORGANIZATIONAL_SHAPE = {
+  organization: "string",
+  business_unit: "string",
+  system: "string",
+  tenant: "string",
+} as const;
+
+const DEPLOYMENT_SHAPE = {
+  platform: "string",
+  deployment_scope: "string",
+  environment: "string",
+  location: "string",
+  instance: "string",
+} as const;
+
+const FUNCTIONAL_SHAPE = {
+  service: "string",
+  component: "string",
+  resource_type: "string",
+} as const;
+
+const GOVERNANCE_SHAPE = {
+  owner: "string",
+  managed_by: "string",
+  cost_center: "string",
+  profile: "string",
+} as const;
+
+// Mirrors specification/schemas/naming-request.schema.json and the EvaluationContext
+// model (packages/core/src/model/contexts/). Unknown nested fields are not checked.
+const NAMING_REQUEST_SHAPE: Readonly<Record<string, FieldShape>> = {
+  functional: { service: "string", component: "string" },
+  governance: GOVERNANCE_SHAPE,
+  deployment: { instance: "string" },
+  overrides: {
+    organizational: ORGANIZATIONAL_SHAPE,
+    deployment: DEPLOYMENT_SHAPE,
+    functional: FUNCTIONAL_SHAPE,
+    governance: GOVERNANCE_SHAPE,
+  },
+  custom_metadata: "object",
+};
+
+const EVALUATION_CONTEXT_SHAPE: Readonly<Record<string, FieldShape>> = {
+  shared_organizational_context: ORGANIZATIONAL_SHAPE,
+  shared_deployment_context: DEPLOYMENT_SHAPE,
+  runtime_context: {
+    organizational: ORGANIZATIONAL_SHAPE,
+    deployment: DEPLOYMENT_SHAPE,
+    provider_scope_id: "string",
+  },
+};
+
+function describeJsonType(value: unknown): string {
+  if (value === null) {
+    return "null";
+  }
+  if (Array.isArray(value)) {
+    return "an array";
+  }
+  if (typeof value === "object") {
+    return "an object";
+  }
+  return `a ${typeof value}`;
+}
+
+/** Throws {@link CliError} for the first present field in `value` whose JSON type does not match `shape`. */
+function checkFieldTypes(
+  value: Record<string, unknown>,
+  shape: Readonly<Record<string, FieldShape>>,
+  path: string,
+): void {
+  for (const [field, fieldShape] of Object.entries(shape)) {
+    if (!Object.hasOwn(value, field)) {
+      continue;
+    }
+    const fieldValue = value[field];
+    const fieldPath = `${path}.${field}`;
+    if (fieldShape === "string") {
+      if (typeof fieldValue !== "string") {
+        throw new CliError(
+          `"${fieldPath}" must be a string, not ${describeJsonType(fieldValue)}; omit the field to leave it unset.`,
+        );
+      }
+      continue;
+    }
+    if (!isPlainObject(fieldValue)) {
+      throw new CliError(
+        `"${fieldPath}" must be an object, not ${describeJsonType(fieldValue)}; omit the field to leave it unset.`,
+      );
+    }
+    if (fieldShape !== "object") {
+      checkFieldTypes(fieldValue, fieldShape, fieldPath);
+    }
+  }
 }
 
 /**
@@ -89,6 +184,9 @@ export function parseEvaluateRequest(raw: string): EvaluateRequest {
   if (!isNonEmptyString(namingRequest.convention)) {
     throw new CliError('"naming_request.convention" must be a non-empty string.');
   }
+
+  checkFieldTypes(namingRequest, NAMING_REQUEST_SHAPE, "naming_request");
+  checkFieldTypes(evaluationContext, EVALUATION_CONTEXT_SHAPE, "evaluation_context");
 
   return {
     naming_request: namingRequest as unknown as EvaluateRequest["naming_request"],

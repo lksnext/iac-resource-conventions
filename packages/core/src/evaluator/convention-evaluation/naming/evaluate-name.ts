@@ -36,5 +36,5 @@ export function evaluateName(
     transformedComponents.push(applyCasing(abbreviatedValue, casing));
   }
 
-  return transformedComponents.join(separator);
+  return (conventionPack.prefix ?? "") + transformedComponents.join(separator);
 }

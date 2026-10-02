@@ -188,8 +188,47 @@ supplied by Evaluation Context or the calling adapter, not hard-coded by the pac
 itself, so the same effective pack remains reusable whether the AWS workload account is
 managed by Terraform, AWS CDK, or a future adapter.
 
-This document does not define actual AWS Tag key names, value formats, or casing; those
-concrete mappings are left for a later iteration of this Convention Pack.
+`aws-workload-default` declares the following `tag_projections` (Specification v1.3;
+see [`convention-pack.md#tag-projections`](../convention-pack.md#tag-projections)):
+
+```yaml
+tag_projections:
+  Name:
+    source: outputs.name
+    only_when_resource_accepts_no_name: true
+  Project: organizational.system
+  Environment: deployment.environment
+  Service: functional.service
+  Component: functional.component
+  Owner: governance.owner
+  ManagedBy: governance.managed_by
+  CostCenter: governance.cost_center
+```
+
+`Project` and `Environment` match the tag keys of the AWS CDK project the first
+Terraform consumer of this pack replaced. `Name` carries the generated name only for a
+resource type whose Resource Definition declares `accepts_name: false` (for example,
+`aws_acm_certificate`), since such a resource can carry its generated name nowhere
+else; a resource that accepts a name already carries it as its name, and keeping
+`Name` off it lets the AWS provider's `default_tags` carry the remaining tags
+unchanged. `Name` is also omitted when no name is generated. Every other tag value is
+the resolved value, exactly
+as resolved: unlike the generated name, they are not abbreviated or lowercased (for
+example, `deployment.environment: production` produces `Environment: production`, not
+`prod`). A tag whose attribute has no resolved value is omitted.
+
+For example, a `production` `aws_s3_bucket` resource for the `ingestion` service of the
+`telemetry-platform` system, owned by `platform-team`, generates these tags:
+
+```yaml
+Project: telemetry-platform
+Environment: production
+Service: ingestion
+Owner: platform-team
+```
+
+The same request for an `aws_acm_certificate` additionally generates
+`Name: telemetry-platform-ingestion-prod-aws_acm_certificate`.
 
 ## Override policy
 

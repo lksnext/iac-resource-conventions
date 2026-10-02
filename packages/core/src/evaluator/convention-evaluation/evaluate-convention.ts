@@ -5,52 +5,15 @@ import type {
   ConventionValidation,
   ConventionValidationFailure,
 } from "../../model/index.js";
-import type { ContextResolutionResult } from "../contracts/context-resolution-result.js";
 import type { ConventionEvaluationInput } from "../contracts/convention-evaluation-input.js";
 import { projectResource } from "../resource-projection/index.js";
+import { projectTags } from "./metadata/index.js";
 import { evaluateName } from "./naming/index.js";
+import { resolveAttributeReference } from "./resolve-attribute-reference.js";
 import {
   validatePlacementConstraints,
   validateRenderingConstraints,
 } from "./resource-constraints/index.js";
-
-type RequiredAttributeAccessor = (context: ContextResolutionResult) => string | undefined;
-
-/**
- * Every Resource Identity and Governance Context attribute this increment knows how to
- * resolve, keyed by the same dotted attribute path convention
- * `ConventionPack.required_attributes` uses (see
- * `../../model/conventions/convention-pack.ts`). A `required_attributes` entry outside
- * this table refers to no known attribute, so it can never resolve to a value; it is
- * therefore always treated as unresolved — the same honest "no value found" outcome an
- * unrecognized path and a genuinely absent value both produce, with nothing fabricated
- * for either case.
- */
-const REQUIRED_ATTRIBUTE_ACCESSORS: Readonly<Record<string, RequiredAttributeAccessor>> = {
-  "organizational.organization": (c) => c.resource_identity.organizational?.organization,
-  "organizational.business_unit": (c) => c.resource_identity.organizational?.business_unit,
-  "organizational.system": (c) => c.resource_identity.organizational?.system,
-  "organizational.tenant": (c) => c.resource_identity.organizational?.tenant,
-  "deployment.platform": (c) => c.resource_identity.deployment?.platform,
-  "deployment.deployment_scope": (c) => c.resource_identity.deployment?.deployment_scope,
-  "deployment.environment": (c) => c.resource_identity.deployment?.environment,
-  "deployment.location": (c) => c.resource_identity.deployment?.location,
-  "deployment.instance": (c) => c.resource_identity.deployment?.instance,
-  "functional.service": (c) => c.resource_identity.functional?.service,
-  "functional.component": (c) => c.resource_identity.functional?.component,
-  "functional.resource_type": (c) => c.resource_identity.functional?.resource_type,
-  "governance.owner": (c) => c.governance_context.owner,
-  "governance.managed_by": (c) => c.governance_context.managed_by,
-  "governance.cost_center": (c) => c.governance_context.cost_center,
-  "governance.profile": (c) => c.governance_context.profile,
-};
-
-function resolveRequiredAttributeValue(
-  context: ContextResolutionResult,
-  attribute: string,
-): string | undefined {
-  return REQUIRED_ATTRIBUTE_ACCESSORS[attribute]?.(context);
-}
 
 /**
  * Finds every canonical attribute reference that `naming_component_order` lists more
@@ -86,6 +49,7 @@ function explain(
   duplicateNamingReferences: ReadonlyArray<string>,
   renderingConstraintFailures: ReadonlyArray<ConventionValidationFailure>,
   placementConstraintFailures: ReadonlyArray<ConventionValidationFailure>,
+  tagProjectionFailures: ReadonlyArray<ConventionValidationFailure>,
 ): string {
   const requiredAttributesSummary =
     requiredAttributes.length === 0
@@ -112,7 +76,12 @@ function explain(
       ? ""
       : ` ${placementConstraintFailures.map((failure) => failure.message).join(". ")}.`;
 
-  return `${requiredAttributesSummary}${duplicateNamingReferencesSummary}${renderingConstraintSummary}${placementConstraintSummary}`;
+  const tagProjectionSummary =
+    tagProjectionFailures.length === 0
+      ? ""
+      : ` ${tagProjectionFailures.map((failure) => failure.message).join(" ")}`;
+
+  return `${requiredAttributesSummary}${duplicateNamingReferencesSummary}${renderingConstraintSummary}${placementConstraintSummary}${tagProjectionSummary}`;
 }
 
 /**
@@ -170,6 +139,11 @@ function explain(
  * None of these checks transforms the generated name or the resolved Resource
  * Identity — every violation is reported, unmodified.
  *
+ * **Implemented rule: executable tag projection (Specification v1.3).** `projectTags`
+ * (see `./metadata/index.js`) projects `tag_projections` into `outputs.metadata.tags`,
+ * per `specification/convention-pack.md#tag-projections`. An empty tag key or an
+ * unknown metadata source reference is reported as a `ConventionValidationFailure`.
+ *
  * **Deliberately not implemented — the current frozen Specification and Executable
  * Domain Model do not yet define the concrete rule, only its concept in prose (see
  * `docs/architecture/reference-evaluator.md#convention-evaluation-rules-implemented`
@@ -178,8 +152,7 @@ function explain(
  *   machine-executable rule);
  * - truncation and hashing (no field or normative rule defines either anywhere in the
  *   Specification or domain model);
- * - metadata projection — Tags, Labels, Annotations (`ConventionPack` has no metadata
- *   projection mapping field at all; see `../../model/conventions/convention-pack.ts`);
+ * - label and annotation projection (Specification v1.3 defines tags only);
  * - the ACM/CloudFront-shaped conditional Placement Constraint half remains
  *   `statement`-only in the catalog — no canonical relationship attribute exists (see
  *   `specification/resource-definition.md#the-conditional-input-problem`);
@@ -187,7 +160,7 @@ function explain(
  *   uniqueness is required, but proving it requires knowledge external to the
  *   evaluator (a registry), which this function must not consult.
  *
- * Consequently `outputs.metadata` is always absent in this increment. `warnings` is
+ * `outputs.metadata` is present only when at least one tag was projected. `warnings` is
  * never populated, since every currently-implementable warning-worthy transformation
  * (truncation, normalization) is itself unimplemented.
  *
@@ -213,8 +186,9 @@ export function evaluateConvention(input: ConventionEvaluationInput): Convention
         )
       : undefined;
 
+  // An unknown required attribute reference never resolves, so it is reported as unresolved.
   const missing = requiredAttributes.filter(
-    (attribute) => resolveRequiredAttributeValue(resolvedContext, attribute) === undefined,
+    (attribute) => resolveAttributeReference(resolvedContext, attribute) === undefined,
   );
 
   const renderingConstraintFailures = validateRenderingConstraints(name, resourceDefinition);
@@ -222,6 +196,7 @@ export function evaluateConvention(input: ConventionEvaluationInput): Convention
     resolvedContext.resource_identity,
     resourceDefinition,
   );
+  const tagProjection = projectTags(resolvedContext, conventionPack, resourceDefinition, name);
 
   const failures: ConventionValidationFailure[] = [
     ...missing.map(
@@ -236,12 +211,16 @@ export function evaluateConvention(input: ConventionEvaluationInput): Convention
     ),
     ...renderingConstraintFailures,
     ...placementConstraintFailures,
+    ...tagProjection.failures,
   ];
 
   const validation: ConventionValidation =
     failures.length === 0 ? { valid: true } : { valid: false, failures };
 
-  const outputs: ConventionOutputs = name === undefined ? {} : { name };
+  const outputs: ConventionOutputs = {
+    ...(name === undefined ? {} : { name }),
+    ...(tagProjection.tags === undefined ? {} : { metadata: { tags: tagProjection.tags } }),
+  };
 
   return {
     resource_identity: resolvedContext.resource_identity,
@@ -255,6 +234,7 @@ export function evaluateConvention(input: ConventionEvaluationInput): Convention
       duplicateNamingReferences,
       renderingConstraintFailures,
       placementConstraintFailures,
+      tagProjection.failures,
     ),
   };
 }
