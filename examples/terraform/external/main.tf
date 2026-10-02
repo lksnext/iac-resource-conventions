@@ -51,9 +51,10 @@ locals {
   convention_result = jsondecode(data.external.convention.result.result_json)
 
   # The AWS tags aws-workload-default projects (Specification v1.3), for example
-  # { Project = "telemetry-platform", Environment = "production", Service = "ingestion",
-  # Owner = "platform-team", ManagedBy = "terraform" }. Merge them into a resource's
-  # `tags`, or into the AWS provider's `default_tags`.
+  # { Name = "telemetry-platform-ingestion-prod-aws_iam_role", Project = "telemetry-platform",
+  # Environment = "production", Service = "ingestion", Owner = "platform-team",
+  # ManagedBy = "terraform" }. Merge them into a resource's `tags`, or into the AWS
+  # provider's `default_tags` (without `Name`, which is per resource).
   tags = jsondecode(data.external.convention.result.tags_json)
 }
 

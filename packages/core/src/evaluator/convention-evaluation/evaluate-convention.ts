@@ -196,7 +196,7 @@ export function evaluateConvention(input: ConventionEvaluationInput): Convention
     resolvedContext.resource_identity,
     resourceDefinition,
   );
-  const tagProjection = projectTags(resolvedContext, conventionPack);
+  const tagProjection = projectTags(resolvedContext, conventionPack, name);
 
   const failures: ConventionValidationFailure[] = [
     ...missing.map(

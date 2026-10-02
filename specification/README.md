@@ -255,7 +255,10 @@ Convention Pack.
 
 - a closed **metadata source reference** vocabulary: the canonical Resource Identity
   attribute references, plus `governance.owner`, `governance.managed_by`,
-  `governance.cost_center`, and `governance.profile` (see
+  `governance.cost_center`, and `governance.profile`, plus `outputs.name` — the
+  generated name, because resource types such as `aws_acm_certificate` have no name
+  argument and the same consumer had to copy the generated name into the AWS `Name`
+  tag by hand (see
   [`convention-pack.md#metadata-source-references`](./convention-pack.md#metadata-source-references));
 - a new, optional Convention Pack field, **`tag_projections`**, mapping a tag key to a
   metadata source reference, with verbatim values, omission of absent sources, and

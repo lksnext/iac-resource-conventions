@@ -46,4 +46,5 @@ export const METADATA_SOURCE_REFERENCES: ReadonlySet<MetadataSourceReference> = 
   "governance.managed_by",
   "governance.cost_center",
   "governance.profile",
+  "outputs.name",
 ]);

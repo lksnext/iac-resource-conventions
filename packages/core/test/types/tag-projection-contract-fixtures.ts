@@ -13,10 +13,12 @@ import type {
 export const governanceReference: GovernanceContextAttribute = "governance.owner";
 export const identityMetadataReference: MetadataSourceReference = "deployment.environment";
 export const governanceMetadataReference: MetadataSourceReference = "governance.cost_center";
+export const generatedNameReference: MetadataSourceReference = "outputs.name";
 
 export const conventionPackWithTags: ConventionPack = {
   id: "test-pack",
   tag_projections: {
+    Name: "outputs.name",
     Project: "organizational.system",
     Owner: "governance.owner",
   },
@@ -24,6 +26,9 @@ export const conventionPackWithTags: ConventionPack = {
 
 // @ts-expect-error -- the metadata source reference vocabulary is closed.
 export const invalidMetadataReference: MetadataSourceReference = "governance.budget";
+
+// @ts-expect-error -- outputs.name is the only Convention Output a tag may project.
+export const invalidOutputReference: MetadataSourceReference = "outputs.metadata";
 
 export const invalidTagProjection: ConventionPack = {
   id: "test-pack",

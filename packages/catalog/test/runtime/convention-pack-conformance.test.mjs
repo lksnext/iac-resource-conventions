@@ -75,6 +75,7 @@ test("tag_projections using Resource Identity and Governance Context references 
           ManagedBy: "governance.managed_by",
           CostCenter: "governance.cost_center",
           Profile: "governance.profile",
+          Name: "outputs.name",
         },
       }),
     ),

@@ -578,10 +578,21 @@ reference**, from a closed vocabulary:
   references](#canonical-attribute-references));
 - `governance.owner`, `governance.managed_by`, `governance.cost_center`, and
   `governance.profile` — the Governance Context attributes (see
-  [`governance-context.md`](./governance-context.md#governance-attributes)).
+  [`governance-context.md`](./governance-context.md#governance-attributes));
+- `outputs.name` — the name generated for the resource by [Naming
+  projections](#naming-projections), exactly as generated, or no value when no name
+  is generated.
 
 A reference outside this vocabulary is invalid. Governance Context references are
 valid only in metadata projections; they remain invalid in naming rules.
+
+`outputs.name` is a Convention Output, not a Resource Identity or Governance Context
+attribute. It is the only Convention Output a tag may project, because some resource
+types have no name argument at all: an AWS Certificate Manager certificate, for
+example, is identified only by its ARN and domain name (see
+`packages/catalog/src/aws/acm-certificate.ts`), so the AWS `Name` tag is the only
+place its generated name can appear. Projecting the generated name keeps that tag
+consistent with naming instead of leaving each consumer to copy it by hand.
 
 ### Tag projections
 
@@ -596,9 +607,10 @@ tag_projections:
 ```
 
 - The tag key is emitted exactly as declared. An empty tag key is invalid.
-- The tag value is the source's resolved value, exactly as resolved. Abbreviations,
+- The tag value is the source's resolved value, exactly as resolved (for
+  `outputs.name`, the name exactly as generated). Abbreviations,
   casing, and separator are naming rules only (see [Naming
-  projections](#naming-projections)); none of them applies to a tag value, and no
+  projections](#naming-projections)); none of them is applied to a tag value, and no
   other normalization or truncation is applied.
 - When the source has no resolved value, the tag is omitted. This is neither a
   validation failure nor a warning: whether an attribute must be available is decided
@@ -608,8 +620,8 @@ tag_projections:
 - A tag projection that declares an empty key or an invalid metadata source reference
   is reported as a validation failure, and that tag is omitted; every other declared
   tag is still projected.
-- Tag projection does not depend on naming: tags are projected even when no name is
-  generated.
+- Tag projection does not depend on naming, except through `outputs.name`: every other
+  tag is projected even when no name is generated.
 - Projected tags appear in the Convention Result's `outputs.metadata.tags` (see
   [`convention-result.md`](./convention-result.md#convention-outputs)). When
   `tag_projections` is absent or empty, or no declared tag resolves, `outputs.metadata`
@@ -660,6 +672,37 @@ tags:
   Project: Telemetry-Platform
   Environment: production
   Owner: platform-team
+```
+
+**Generated name** — `outputs.name` projects the name exactly as generated, including
+its abbreviation and casing; when a required naming component is absent, no name is
+generated and the `Name` tag is omitted:
+
+```yaml
+naming_component_order:
+  - organizational.system
+  - deployment.environment
+  - functional.resource_type
+separator: "-"
+casing: lower
+abbreviations:
+  deployment.environment:
+    production: prod
+tag_projections:
+  Name: outputs.name
+  Environment: deployment.environment
+
+organizational:
+  system: telemetry-platform
+deployment:
+  environment: production
+functional:
+  resource_type: aws_acm_certificate
+
+name: telemetry-platform-prod-aws_acm_certificate
+tags:
+  Name: telemetry-platform-prod-aws_acm_certificate
+  Environment: production
 ```
 
 **Invalid source** — a reference outside the vocabulary is reported, and only that tag

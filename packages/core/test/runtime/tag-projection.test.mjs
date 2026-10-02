@@ -186,3 +186,72 @@ test("tag projection: evaluate() projects tags from Naming Request governance an
     Owner: "platform-team",
   });
 });
+
+// --- outputs.name (specification/convention-pack.md#metadata-source-references) -------
+
+test("tag projection: the normative generated-name example projects the name exactly as generated", () => {
+  const result = evaluateConvention(
+    deepFreeze({
+      resolved_context: {
+        resource_identity: {
+          organizational: { system: "telemetry-platform" },
+          deployment: { environment: "production" },
+          functional: { resource_type: "aws_acm_certificate" },
+        },
+        governance_context: {},
+      },
+      resource_definition: { resource_type: "aws_acm_certificate", platform: "aws" },
+      convention_pack: {
+        id: "test-pack",
+        naming_component_order: [
+          "organizational.system",
+          "deployment.environment",
+          "functional.resource_type",
+        ],
+        separator: "-",
+        casing: "lower",
+        abbreviations: { "deployment.environment": { production: "prod" } },
+        tag_projections: { Name: "outputs.name", Environment: "deployment.environment" },
+      },
+    }),
+  );
+
+  assert.equal(result.outputs.name, "telemetry-platform-prod-aws_acm_certificate");
+  assert.deepEqual(result.outputs.metadata.tags, {
+    Name: "telemetry-platform-prod-aws_acm_certificate",
+    Environment: "production",
+  });
+});
+
+test("tag projection: outputs.name is omitted when no name is generated", () => {
+  const result = evaluateConvention(
+    input({
+      naming_component_order: ["organizational.system", "functional.component"],
+      required_attributes: ["functional.component"],
+      tag_projections: { Name: "outputs.name", Project: "organizational.system" },
+    }),
+  );
+
+  assert.equal(result.outputs.name, undefined);
+  assert.deepEqual(result.outputs.metadata.tags, { Project: "Telemetry-Platform" });
+});
+
+test("tag projection: outputs.name carries a generated name even when validation fails", () => {
+  const result = evaluateConvention(
+    deepFreeze({
+      ...input({
+        naming_component_order: ["organizational.system", "functional.resource_type"],
+        separator: "-",
+        tag_projections: { Name: "outputs.name" },
+      }),
+      resource_definition: {
+        resource_type: "aws_s3_bucket",
+        platform: "aws",
+        rendering_constraints: { max_length: 5, length_unit: "code_points" },
+      },
+    }),
+  );
+
+  assert.equal(result.validation.valid, false);
+  assert.deepEqual(result.outputs.metadata.tags, { Name: result.outputs.name });
+});

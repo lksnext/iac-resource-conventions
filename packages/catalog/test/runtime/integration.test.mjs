@@ -126,6 +126,7 @@ test("integration: aws-workload-default reproduces the artifact's worked tag exa
 
   assert.deepEqual(result.outputs.metadata, {
     tags: {
+      Name: "telemetry-platform-ingestion-prod-aws_s3_bucket",
       Project: "telemetry-platform",
       Environment: "production",
       Service: "ingestion",

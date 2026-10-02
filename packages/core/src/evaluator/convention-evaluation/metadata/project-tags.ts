@@ -15,12 +15,13 @@ export interface TagProjection {
 /**
  * Projects `conventionPack.tag_projections` per Specification v1.3 (see
  * `specification/convention-pack.md#tag-projections`): each tag carries its source's
- * resolved value verbatim; an absent source omits the tag; an empty key or an
- * unknown source is reported and only that tag is omitted.
+ * resolved value verbatim (`outputs.name` resolves to `name`); an absent source omits
+ * the tag; an empty key or an unknown source is reported and only that tag is omitted.
  */
 export function projectTags(
   context: ContextResolutionResult,
   conventionPack: ConventionPack,
+  name: string | undefined,
 ): TagProjection {
   const tags: Record<string, string> = {};
   const failures: ConventionValidationFailure[] = [];
@@ -32,13 +33,14 @@ export function projectTags(
       });
       continue;
     }
-    if (!isKnownAttributeReference(reference)) {
+    if (reference !== "outputs.name" && !isKnownAttributeReference(reference)) {
       failures.push({
         message: `tag_projections declared by convention pack "${conventionPack.id}" maps tag key "${key}" to unknown metadata source reference "${reference}".`,
       });
       continue;
     }
-    const value = resolveAttributeReference(context, reference);
+    const value =
+      reference === "outputs.name" ? name : resolveAttributeReference(context, reference);
     if (value !== undefined) {
       tags[key] = value;
     }

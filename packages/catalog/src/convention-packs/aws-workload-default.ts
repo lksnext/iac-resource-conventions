@@ -64,6 +64,7 @@ export const AWS_WORKLOAD_DEFAULT: ConventionPack = deepFreeze({
     overridable_attributes: ["deployment.location"],
   },
   tag_projections: {
+    Name: "outputs.name",
     Project: "organizational.system",
     Environment: "deployment.environment",
     Service: "functional.service",

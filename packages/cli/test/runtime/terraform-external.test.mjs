@@ -102,6 +102,7 @@ test("terraform-external: projected tags are exposed as tags_json and in result_
 
   const output = JSON.parse(stdout);
   const expectedTags = {
+    Name: "lamassu-dev-us-east-1-cloudfront-aws_acm_certificate",
     Project: "lamassu",
     Environment: "dev",
     Component: "cloudfront",

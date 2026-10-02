@@ -43,12 +43,14 @@ export type GovernanceContextAttribute =
   | "governance.profile";
 
 /**
- * The closed vocabulary a tag projection may address (Specification v1.3; see
- * `specification/convention-pack.md#metadata-source-references`).
+ * The closed vocabulary a tag projection may address: Resource Identity and Governance
+ * Context attribute references, plus `outputs.name`, the generated name
+ * (Specification v1.3; see `specification/convention-pack.md#metadata-source-references`).
  */
 export type MetadataSourceReference =
   | CanonicalResourceIdentityAttribute
-  | GovernanceContextAttribute;
+  | GovernanceContextAttribute
+  | "outputs.name";
 
 /**
  * The canonical technical resource kind used to select a resource's
