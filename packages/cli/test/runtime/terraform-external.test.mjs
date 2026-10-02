@@ -128,6 +128,34 @@ test("terraform-external: tags_json is an empty JSON object when no tag is proje
   assert.equal(output.tags_json, "{}");
 });
 
+// --- aws_ssm_parameter ------------------------------------------------------------------
+
+test("terraform-external: aws_ssm_parameter is a known resource_type with a valid flat name", async () => {
+  const requestJson = JSON.stringify({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_ssm_parameter",
+      functional: { component: "dns-validation" },
+    },
+    evaluation_context: {
+      shared_organizational_context: { system: "lamassu" },
+      shared_deployment_context: { environment: "dev" },
+    },
+  });
+
+  const { exitCode, stdout, stderr } = await runCli(
+    ["terraform-external"],
+    JSON.stringify({ request_json: requestJson }),
+  );
+
+  assert.equal(exitCode, 0);
+  assert.equal(stderr, "");
+
+  const output = JSON.parse(stdout);
+  assert.equal(output.name, "lamassu-dev-dns-validation-aws_ssm_parameter");
+  assert.equal(output.valid, "true");
+});
+
 // --- domain-invalid result ---------------------------------------------------------------
 
 test("terraform-external: a domain-invalid ConventionResult still completes with exit 0", async () => {

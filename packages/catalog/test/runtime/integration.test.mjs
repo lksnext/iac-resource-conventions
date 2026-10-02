@@ -208,3 +208,55 @@ test("integration: azure-workload-underscore produces a hyphen-free name for azu
   assert.equal(result.validation.valid, true);
   assert.ok(!result.outputs.name.includes("-"), "expected no hyphens in a compute gallery name");
 });
+
+function evaluateSsmParameter(system, component) {
+  return evaluate({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_ssm_parameter",
+      functional: { component },
+    },
+    convention_pack: getConventionPack("aws-workload-default"),
+    evaluation_context: {
+      shared_organizational_context: { system },
+      shared_deployment_context: { environment: "dev" },
+    },
+    resource_definition: getResourceDefinition("aws_ssm_parameter"),
+  });
+}
+
+test("integration: aws-workload-default renders a valid flat aws_ssm_parameter name", () => {
+  const result = evaluateSsmParameter("lamassu", "dns-validation");
+
+  assert.equal(result.outputs.name, "lamassu-dev-dns-validation-aws_ssm_parameter");
+  assert.equal(result.validation.valid, true);
+});
+
+test("integration: an aws_ssm_parameter name with a reserved aws/ssm prefix is invalid in any letter case", () => {
+  for (const system of ["aws-tools", "AWS-Tools", "ssm-store", "SsM-store"]) {
+    const result = evaluateSsmParameter(system, "dns-validation");
+
+    assert.equal(result.validation.valid, false, system);
+    assert.ok(
+      result.validation.failures.some((failure) => failure.code === "forbidden-prefix"),
+      `${system}: expected a forbidden-prefix failure`,
+    );
+  }
+});
+
+test("integration: aws_ssm_parameter rejects characters outside a-zA-Z0-9_.-/", () => {
+  const result = evaluateSsmParameter("lamassu", "dns validation");
+
+  assert.equal(result.validation.valid, false);
+  assert.ok(result.validation.failures.some((failure) => failure.code === "character-constraint"));
+});
+
+test("integration: aws_ssm_parameter forbids every letter-case spelling of aws and ssm, with and without a leading slash", () => {
+  const prefixes =
+    getResourceDefinition("aws_ssm_parameter").rendering_constraints.forbidden_prefixes;
+
+  assert.equal(prefixes.length, 32);
+  for (const prefix of ["aws", "AWS", "aWs", "ssm", "SSM", "/aws", "/AwS", "/ssm", "/SSM"]) {
+    assert.ok(prefixes.includes(prefix), prefix);
+  }
+});

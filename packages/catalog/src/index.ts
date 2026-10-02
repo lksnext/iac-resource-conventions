@@ -23,6 +23,7 @@ import { AWS_ACM_CERTIFICATE } from "./aws/acm-certificate.js";
 import { AWS_IAM_ROLE } from "./aws/iam-role.js";
 import { AWS_LAMBDA_FUNCTION } from "./aws/lambda-function.js";
 import { AWS_S3_BUCKET } from "./aws/s3-bucket.js";
+import { AWS_SSM_PARAMETER } from "./aws/ssm-parameter.js";
 import { AZURE_COMPUTE_GALLERY } from "./azure/compute-gallery.js";
 import { AZURE_KEY_VAULT } from "./azure/key-vault.js";
 import { AZURE_LINUX_VIRTUAL_MACHINE } from "./azure/linux-virtual-machine.js";
@@ -56,6 +57,7 @@ const resourceDefinitions: Readonly<Record<ResourceType, ResourceDefinition>> = 
   [AWS_IAM_ROLE.resource_type]: AWS_IAM_ROLE,
   [AWS_LAMBDA_FUNCTION.resource_type]: AWS_LAMBDA_FUNCTION,
   [AWS_S3_BUCKET.resource_type]: AWS_S3_BUCKET,
+  [AWS_SSM_PARAMETER.resource_type]: AWS_SSM_PARAMETER,
   [AZURE_COMPUTE_GALLERY.resource_type]: AZURE_COMPUTE_GALLERY,
   [AZURE_KEY_VAULT.resource_type]: AZURE_KEY_VAULT,
   [AZURE_LINUX_VIRTUAL_MACHINE.resource_type]: AZURE_LINUX_VIRTUAL_MACHINE,

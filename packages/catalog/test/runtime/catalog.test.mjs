@@ -81,6 +81,7 @@ test("listResourceTypes returns exactly the expected catalog entries in lexical 
     "aws_iam_role",
     "aws_lambda_function",
     "aws_s3_bucket",
+    "aws_ssm_parameter",
     "azure_compute_gallery",
     "azure_key_vault",
     "azure_linux_virtual_machine",
