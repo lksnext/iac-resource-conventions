@@ -132,7 +132,11 @@ name (`Environment = "production"`, while the name contains `prod`). A `Name` ta
 carrying the generated name is added only for resource types that accept no name,
 such as `aws_acm_certificate`; an `aws_iam_role` already carries the name as its
 `name` argument, so the remaining tags can also go into the AWS provider's
-`default_tags`. A tag whose attribute is not resolved is omitted. Merge the decoded
+`default_tags`. A tag whose attribute is not resolved is omitted. Every AWS resource
+type also validates the projected tags against the AWS tag limits (Specification v1.5):
+a value such as `platform#team` makes `result.valid` `"false"` with a
+`tag-value-character` failure in `result_json`, while `tags_json` still carries the
+tag unchanged. Merge the decoded
 map into a resource's `tags`:
 
 ```hcl

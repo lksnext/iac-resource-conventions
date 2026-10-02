@@ -67,8 +67,9 @@ For example, a `development` parameter of the `lamassu` system for the
 `/lamassu/dev/dns-validation/example-com`.
 
 At most five path levels are generated, well within Systems Manager's fifteen-level
-limit, unless a resolved value itself contains `/`; that limit is not validated (see
-[`../README.md#specification-v14-non-goals`](../README.md#specification-v14-non-goals)).
+limit, unless a resolved value itself contains `/`; `aws_ssm_parameter` reports a
+deeper path as invalid (see
+[`../resource-definition.md#maximum-segments`](../resource-definition.md#maximum-segments)).
 
 ## Metadata projection
 

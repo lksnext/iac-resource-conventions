@@ -4,12 +4,12 @@ This directory contains the Specification for `iac-resource-conventions`.
 
 ## Specification Status
 
-**Current version:** Specification v1.4
+**Current version:** Specification v1.5
 **Status:** Additive extension of the frozen v1.0 baseline (v1.2 changes one field's
 shape from v1.1, `placement_constraints`, and renames `allowed_characters`; see
 [Specification v1.2: Executable Resource Constraints](#specification-v12-executable-resource-constraints)
 below for why this is treated as a deliberate, low-risk pre-release migration rather
-than a purely additive change; v1.3 and v1.4 are purely additive)
+than a purely additive change; v1.3, v1.4, and v1.5 are purely additive)
 
 The conceptual Specification described in this directory — Resource Identity,
 Governance Context, Naming Request, Context Resolution, Resource Definition, Convention
@@ -30,7 +30,9 @@ Specification v1.3 adds executable tag projection, demonstrated necessary by a
 Terraform consumer — see [Specification v1.3: Executable Tag
 Projection](#specification-v13-executable-tag-projection) below. Specification v1.4
 adds a literal naming prefix for hierarchical names — see [Specification v1.4: Naming
-Prefix](#specification-v14-naming-prefix) below.
+Prefix](#specification-v14-naming-prefix) below. Specification v1.5 validates tags and
+hierarchy depth — see [Specification v1.5: Executable Tag and Hierarchy
+Constraints](#specification-v15-executable-tag-and-hierarchy-constraints) below.
 
 The Reference Evaluator, Resource Definitions, Convention Packs, and adapters are
 expected to validate this Specification rather than redefine it. (The Reference
@@ -293,7 +295,8 @@ Specification v1.3 intentionally does **not** define:
 - labels or annotations projection;
 - value transformations for tags (abbreviation, casing, templates, or concatenation);
 - literal (fixed-value) tags;
-- validation of tag keys or values against a platform's tag constraints;
+- validation of tag keys or values against a platform's tag constraints (added by
+  [Specification v1.5](#specification-v15-executable-tag-and-hierarchy-constraints));
 - per-resource-type tag projection rules, beyond the single
   `only_when_resource_accepts_no_name` condition;
 - merging caller-supplied tags or projecting `custom_metadata`.
@@ -328,6 +331,47 @@ Specification v1.4 intentionally does **not** define:
 - a suffix, or literal text between naming components;
 - a Resource Definition constraint for hierarchy depth (for example, Systems
   Manager's fifteen-level limit) or for a conditional leading delimiter.
+
+These remain deferred until implementation evidence demonstrates a genuine need to
+address them.
+
+## Specification v1.5: Executable Tag and Hierarchy Constraints
+
+Specification v1.3 projected tags without validating them against the platform's tag
+limits, and the AWS Systems Manager parameter Resource Definition could not represent
+its maximum name length or its fifteen-level hierarchy depth. Specification v1.5
+closes those gaps, additively, in
+[`resource-definition.md`](./resource-definition.md#executable-tag-and-hierarchy-constraints-specification-v15):
+
+- three Unicode General Category character classes, `unicode_letters`,
+  `unicode_numbers`, and `unicode_separators`, because every cited AWS tag API
+  publishes its tag grammar as `[\p{L}\p{Z}\p{N}_.:/=+\-@]`;
+- a `max_segments` rendering constraint (delimiter-separated segment count);
+- a `tag_constraints` Resource Definition field (`max_count`, and `key`/`value`
+  length, character, and reserved-prefix constraints) that validates projected tags;
+- new failure codes: `max-segments` and the `tag-*` codes.
+
+It also supersedes the v1.4 Non-Goal for hierarchy depth. The conditional leading
+delimiter (a leading `/` required only when a name contains another `/`) remains
+unrepresented; `aws-ssm-parameter-path` always emits it.
+
+### Delta from Specification v1.4
+
+| Field | v1.4 | v1.5 |
+| --- | --- | --- |
+| Character `classes` | `ascii_lowercase`, `ascii_uppercase`, `ascii_letters`, `ascii_digits`. | Adds `unicode_letters`, `unicode_numbers`, `unicode_separators`. Additive. |
+| `rendering_constraints.max_segments` | Did not exist. | New, optional. Additive. |
+| `tag_constraints` | Did not exist; projected tags were never validated. | New, optional. Additive for the Specification; a Resource Definition that adopts it can turn a previously valid result invalid. |
+| `ConventionValidationFailure.code` | v1.2 vocabulary. | Adds `max-segments`, `tag-key-length`, `tag-key-character`, `tag-key-forbidden-prefix`, `tag-value-length`, `tag-value-character`, `tag-value-forbidden-prefix`, `tag-count`. Additive. |
+
+### Specification v1.5 Non-Goals
+
+Specification v1.5 intentionally does **not** define:
+
+- a length bound relative to a provider identifier (for example, an ARN); a Resource
+  Definition declares a fixed bound derived from it instead;
+- a conditional leading delimiter;
+- case-insensitive reserved prefixes (each spelling is listed explicitly).
 
 These remain deferred until implementation evidence demonstrates a genuine need to
 address them.
@@ -564,7 +608,10 @@ experience rather than a theoretical redesign. Specification v1.3 (see
 [Specification v1.3: Executable Tag Projection](#specification-v13-executable-tag-projection)
 above) is the third, driven by a Terraform consumer's adoption, and Specification v1.4
 (see [Specification v1.4: Naming Prefix](#specification-v14-naming-prefix) above) the
-fourth, driven by the same consumer. Future changes should
+fourth, driven by the same consumer, as is Specification v1.5 (see
+[Specification v1.5: Executable Tag and Hierarchy
+Constraints](#specification-v15-executable-tag-and-hierarchy-constraints) above). Future
+changes should
 follow these principles:
 
 - **Implementation first** — build the Reference Evaluator, a Resource Definition

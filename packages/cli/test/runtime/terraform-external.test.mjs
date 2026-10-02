@@ -128,6 +128,35 @@ test("terraform-external: tags_json is an empty JSON object when no tag is proje
   assert.equal(output.tags_json, "{}");
 });
 
+test("terraform-external: a tag that violates AWS tag constraints makes the result invalid", async () => {
+  const requestJson = JSON.stringify({
+    naming_request: {
+      convention: "aws-workload-default",
+      resource_type: "aws_iam_role",
+      functional: { service: "ingestion" },
+      governance: { owner: "platform#team" },
+    },
+    evaluation_context: {
+      shared_organizational_context: { system: "telemetry-platform" },
+      shared_deployment_context: { environment: "production" },
+    },
+  });
+
+  const { exitCode, stdout } = await runCli(
+    ["terraform-external"],
+    JSON.stringify({ request_json: requestJson }),
+  );
+
+  assert.equal(exitCode, 0);
+  const output = JSON.parse(stdout);
+  assert.equal(output.valid, "false");
+  assert.equal(JSON.parse(output.tags_json).Owner, "platform#team");
+  assert.deepEqual(
+    JSON.parse(output.result_json).validation.failures.map((failure) => failure.code),
+    ["tag-value-character"],
+  );
+});
+
 // --- aws_ssm_parameter ------------------------------------------------------------------
 
 test("terraform-external: aws_ssm_parameter is a known resource_type with a valid flat name", async () => {

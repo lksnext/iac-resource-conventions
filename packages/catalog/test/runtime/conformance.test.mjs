@@ -347,6 +347,97 @@ test("aws_acm_certificate declares accepts_name: false", () => {
   assert.equal(getResourceDefinition("aws_acm_certificate").accepts_name, false);
 });
 
+// --- Negative fixtures: tag and hierarchy constraints (Specification v1.5) -----------
+
+test("unicode character classes are recognized", () => {
+  assert.deepEqual(
+    validateResourceDefinition(
+      fixture({
+        rendering_constraints: {
+          character_constraints: {
+            classes: ["unicode_letters", "unicode_numbers", "unicode_separators"],
+          },
+        },
+      }),
+    ),
+    [],
+  );
+});
+
+test("a malformed max_segments is reported", () => {
+  const issues = validateResourceDefinition(
+    fixture({ rendering_constraints: { max_segments: { delimiter: "//", max: 0 } } }),
+  );
+  assert.deepEqual(issues, [
+    {
+      resource_type: "test_resource",
+      path: "rendering_constraints.max_segments.delimiter",
+      message: "must contain exactly one Unicode code point",
+    },
+    {
+      resource_type: "test_resource",
+      path: "rendering_constraints.max_segments.max",
+      message: "must be a positive integer",
+    },
+  ]);
+});
+
+test("malformed tag_constraints are reported", () => {
+  const issues = validateResourceDefinition(
+    fixture({
+      tag_constraints: {
+        max_count: 0,
+        key: { min_length: 5, max_length: 2, length_unit: "code_points", forbidden_prefixes: [""] },
+        value: { max_length: 256, character_constraints: {} },
+      },
+    }),
+  );
+  assert.deepEqual(issues, [
+    {
+      resource_type: "test_resource",
+      path: "tag_constraints.max_count",
+      message: "must be a positive integer",
+    },
+    {
+      resource_type: "test_resource",
+      path: "tag_constraints.key.min_length",
+      message: "must not exceed max_length",
+    },
+    {
+      resource_type: "test_resource",
+      path: "tag_constraints.key.forbidden_prefixes[0]",
+      message: "must not be empty",
+    },
+    {
+      resource_type: "test_resource",
+      path: "tag_constraints.value.length_unit",
+      message: "must be declared whenever min_length or max_length is declared",
+    },
+    {
+      resource_type: "test_resource",
+      path: "tag_constraints.value.character_constraints",
+      message: "must declare at least one class or literal (an empty allowed set admits no name)",
+    },
+  ]);
+});
+
+test("every AWS Resource Definition declares the AWS tag constraints", () => {
+  for (const resourceType of listResourceTypes().filter((type) => type.startsWith("aws_"))) {
+    const tags = getResourceDefinition(resourceType).tag_constraints;
+    assert.equal(tags.max_count, 50, resourceType);
+    assert.equal(tags.key.max_length, 128, resourceType);
+    assert.equal(tags.value.max_length, 256, resourceType);
+    assert.deepEqual(tags.key.forbidden_prefixes, ["aws:"], resourceType);
+  }
+  assert.deepEqual(getResourceDefinition("aws_iam_role").tag_constraints.value.forbidden_prefixes, [
+    "aws:",
+  ]);
+  assert.equal(
+    getResourceDefinition("aws_s3_bucket").tag_constraints.value.forbidden_prefixes,
+    undefined,
+  );
+});
+
 // --- Negative fixtures: registration-level invariants --------------------------------
 
 test("a mismatched catalog key and resource_type is reported", () => {

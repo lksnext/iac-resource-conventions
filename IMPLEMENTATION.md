@@ -92,7 +92,10 @@ This is the **implementation foundation** only. As of this writing:
   [`packages/core/src/evaluator/convention-evaluation/resource-constraints/`](packages/core/src/evaluator/convention-evaluation/resource-constraints/)).
   Specification v1.3's executable tag projection (`tag_projections` into
   `outputs.metadata.tags`) is implemented in
-  [`packages/core/src/evaluator/convention-evaluation/metadata/`](packages/core/src/evaluator/convention-evaluation/metadata/).
+  [`packages/core/src/evaluator/convention-evaluation/metadata/`](packages/core/src/evaluator/convention-evaluation/metadata/),
+  and Specification v1.5's tag and hierarchy constraints (`tag_constraints`,
+  `max_segments`, Unicode character classes) are validated in
+  [`packages/core/src/evaluator/convention-evaluation/resource-constraints/`](packages/core/src/evaluator/convention-evaluation/resource-constraints/).
   Label and annotation projection, general normalization, truncation-by-the-evaluator,
   hashing, and global
   uniqueness remain unimplemented. Adapter integration is no longer purely future: `packages/cli`

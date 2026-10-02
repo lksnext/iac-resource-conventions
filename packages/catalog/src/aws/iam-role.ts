@@ -1,5 +1,6 @@
 import type { ResourceDefinition } from "@lksnext/iac-conventions-core";
 import { deepFreeze } from "../internal/deep-freeze.js";
+import { AWS_IAM_TAG_CONSTRAINTS } from "./tag-constraints.js";
 
 /**
  * AWS IAM role.
@@ -54,6 +55,9 @@ import { deepFreeze } from "../internal/deep-freeze.js";
  *   represented today. Documented as a gap only (P1: needed before a future IAM-like
  *   resource with a path is cataloged) — not encoded as a fabricated `max_length`
  *   covering both fields.
+ * - **Tags** — {@link AWS_IAM_TAG_CONSTRAINTS} (see `./tag-constraints.ts`): the IAM
+ *   `Tag` API publishes the same lengths and pattern, and IAM also reserves `aws:`
+ *   for tag values. Evidence: Explicit.
  */
 export const AWS_IAM_ROLE: ResourceDefinition = deepFreeze({
   resource_type: "aws_iam_role",
@@ -75,4 +79,5 @@ export const AWS_IAM_ROLE: ResourceDefinition = deepFreeze({
     },
   },
   placement_constraints: [{ statement: "global within the deployment scope (AWS account)" }],
+  tag_constraints: AWS_IAM_TAG_CONSTRAINTS,
 });

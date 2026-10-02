@@ -1,46 +1,34 @@
 import type { ResourceNameCharacterClass, ResourceNameCharacterSet } from "../../../model/index.js";
 
-const ASCII_LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
-const ASCII_UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const ASCII_DIGITS = "0123456789";
+/**
+ * The membership test for one closed {@link ResourceNameCharacterClass} (see
+ * `specification/resource-definition.md#character-constraints`). The ASCII classes are
+ * plain ranges; the `unicode_*` classes are Unicode General Categories L, N, and Z
+ * (see `specification/resource-definition.md#unicode-character-classes`). All are
+ * locale-insensitive.
+ */
+const CHARACTER_CLASS_PATTERNS: Readonly<Record<ResourceNameCharacterClass, RegExp>> = {
+  ascii_lowercase: /^[a-z]$/u,
+  ascii_uppercase: /^[A-Z]$/u,
+  ascii_letters: /^[A-Za-z]$/u,
+  ascii_digits: /^[0-9]$/u,
+  unicode_letters: /^\p{L}$/u,
+  unicode_numbers: /^\p{N}$/u,
+  unicode_separators: /^\p{Z}$/u,
+};
 
 /**
- * Expands one closed {@link ResourceNameCharacterClass} into its member characters
- * (see `specification/resource-definition.md#character-constraints`). Locale-
- * independent: the four classes are plain ASCII ranges, never a locale-sensitive
- * Unicode general category.
+ * The membership test for a {@link ResourceNameCharacterSet}'s allowed set: the union
+ * of every code point covered by its declared `classes` and every code point listed in
+ * its `literals` (see `specification/resource-definition.md#character-constraints`).
  */
-function expandCharacterClass(characterClass: ResourceNameCharacterClass): string {
-  switch (characterClass) {
-    case "ascii_lowercase":
-      return ASCII_LOWERCASE;
-    case "ascii_uppercase":
-      return ASCII_UPPERCASE;
-    case "ascii_letters":
-      return ASCII_LOWERCASE + ASCII_UPPERCASE;
-    case "ascii_digits":
-      return ASCII_DIGITS;
-  }
-}
-
-/**
- * The allowed set for a {@link ResourceNameCharacterSet}: the union of every code
- * point covered by its declared `classes` and every code point listed in its
- * `literals` (see `specification/resource-definition.md#character-constraints`). A
- * code point appearing more than once, across classes or literals, has no effect on
- * the union.
- */
-export function allowedCodePoints(set: ResourceNameCharacterSet): ReadonlySet<string> {
-  const allowed = new Set<string>();
-  for (const characterClass of set.classes ?? []) {
-    for (const character of expandCharacterClass(characterClass)) {
-      allowed.add(character);
-    }
-  }
-  for (const literal of set.literals ?? []) {
-    allowed.add(literal);
-  }
-  return allowed;
+export function characterSetMatcher(set: ResourceNameCharacterSet): (codePoint: string) => boolean {
+  const literals = new Set(set.literals ?? []);
+  const patterns = (set.classes ?? []).map(
+    (characterClass) => CHARACTER_CLASS_PATTERNS[characterClass],
+  );
+  return (codePoint) =>
+    literals.has(codePoint) || patterns.some((pattern) => pattern?.test(codePoint) === true);
 }
 
 /**

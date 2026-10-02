@@ -72,8 +72,8 @@ export interface ConventionValidation {
 }
 
 /**
- * The closed, optional failure-code vocabulary introduced by Specification v1.2, one
- * value per executable Resource Definition constraint family (see
+ * The closed, optional failure-code vocabulary introduced by Specification v1.2 and
+ * extended by v1.5, one value per executable Resource Definition constraint family (see
  * `specification/resource-definition.md#validation-behavior-and-failure-semantics-specification-v12`).
  * A `ConventionValidationFailure` produced for a reason this vocabulary does not cover
  * (for example, required-attribute completeness) carries no `code`.
@@ -86,7 +86,15 @@ export type ConventionValidationFailureCode =
   | "ends-with"
   | "forbidden-prefix"
   | "forbidden-suffix"
-  | "placement";
+  | "placement"
+  | "max-segments"
+  | "tag-key-length"
+  | "tag-key-character"
+  | "tag-key-forbidden-prefix"
+  | "tag-value-length"
+  | "tag-value-character"
+  | "tag-value-forbidden-prefix"
+  | "tag-count";
 
 /** A single constraint violation found while validating a Convention Result. */
 export interface ConventionValidationFailure {

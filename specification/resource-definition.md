@@ -269,6 +269,116 @@ applied as the resource's name and can only be carried as metadata (see
 Evidence: `aws_acm_certificate`'s `RequestCertificate` accepts only `DomainName` and
 `SubjectAlternativeNames`, never a name (see [AWS ACM Certificate](#aws-acm-certificate)).
 
+### Executable tag and hierarchy constraints (Specification v1.5)
+
+Specification v1.3 made tags executable but left them unvalidated, and two AWS Systems
+Manager parameter name rules (a maximum length and a maximum hierarchy depth) could
+not be represented. Specification v1.5 adds the minimum vocabulary those real catalog
+entries need, reusing the existing length, character-set, and reserved-prefix
+families rather than introducing a pattern language.
+
+#### Unicode character classes
+
+The closed `classes` vocabulary of a character set (see [Character
+constraints](#character-constraints)) gains three members, each defined by the Unicode
+General Category property:
+
+- `unicode_letters` — every code point whose General Category is a letter (`L`: `Lu`,
+  `Ll`, `Lt`, `Lm`, `Lo`);
+- `unicode_numbers` — every code point whose General Category is a number (`N`: `Nd`,
+  `Nl`, `No`);
+- `unicode_separators` — every code point whose General Category is a separator (`Z`:
+  `Zs`, `Zl`, `Zp`), which includes the space.
+
+These classes are locale-insensitive. They depend on the Unicode version an evaluator
+implements: a code point assigned, or reassigned to another category, in a later
+Unicode version may be classified differently by an evaluator implementing an earlier
+version. This residual difference is accepted because every AWS tag API this catalog
+cites publishes its tag grammar as exactly these categories
+(`[\p{L}\p{Z}\p{N}_.:/=+\-@]`), and no ASCII class can represent it without rejecting
+valid tags. The ASCII classes remain the only classes used for resource names.
+
+#### Maximum segments
+
+`max_segments` is a new, optional rendering constraint:
+
+```yaml
+max_segments:
+  delimiter: "/"
+  max: 15
+```
+
+- `delimiter` is exactly one code point; `max` is a positive integer.
+- The rendered name is split at every occurrence of `delimiter`; empty pieces (from a
+  leading, trailing, or doubled delimiter) are discarded. The name is invalid when
+  more than `max` pieces remain.
+- Like every rendering constraint, `max_segments` only validates; it never removes a
+  segment.
+
+Evidence: "Parameter hierarchies are limited to a maximum depth of fifteen levels",
+with `/Level-1/L2/…/L14/parameter-name` (fifteen pieces) valid and a seventeen-piece
+name failing with `HierarchyLevelLimitExceededException` (see
+`packages/catalog/src/aws/ssm-parameter.ts`).
+
+#### Tag constraints
+
+`tag_constraints` is a new, optional Resource Definition field declaring the technical
+limits a platform imposes on the tags of the resource type. It validates the tags
+projected by the Convention Pack (see
+[`convention-pack.md#tag-projections`](./convention-pack.md#tag-projections)); it never
+changes them.
+
+```yaml
+tag_constraints:
+  max_count: 50
+  key:
+    min_length: 1
+    max_length: 128
+    length_unit: code_points
+    character_constraints:
+      classes: [unicode_letters, unicode_numbers, unicode_separators]
+      literals: ["_", ".", ":", "/", "=", "+", "-", "@"]
+    forbidden_prefixes: ["aws:"]
+  value:
+    max_length: 256
+    length_unit: code_points
+    character_constraints:
+      classes: [unicode_letters, unicode_numbers, unicode_separators]
+      literals: ["_", ".", ":", "/", "=", "+", "-", "@"]
+```
+
+- `max_count` — the maximum number of projected tags; a positive integer.
+- `key` and `value` — each optional, each validating every projected tag key or tag
+  value with the same semantics as the rendering constraint of the same name:
+  `min_length`, `max_length`, `length_unit` (required whenever either bound is
+  declared), `character_constraints`, and `forbidden_prefixes` (see [Executable
+  Resource Constraints](#executable-resource-constraints-specification-v12)).
+- Tag constraints apply only when at least one tag is projected. A pack that projects
+  no tags is never affected by them.
+- A Resource Definition declares tag constraints per resource type because platforms
+  differ by service (for example, IAM also reserves `aws:` for tag values); a catalog
+  may share one value across the resource types it applies to.
+
+#### Validation order and failure codes (Specification v1.5)
+
+`max_segments` is evaluated after `forbidden_suffixes` and before Placement
+Constraints. Tag constraints are evaluated last: for each projected tag, in projection
+order, the key's length, characters, and forbidden prefixes, then the value's length,
+characters, and forbidden prefixes; then `max_count`. Every violation is reported (see
+[Constraint validation order](#constraint-validation-order-specification-v12)), with
+these new failure codes:
+
+| Code | Meaning |
+| --- | --- |
+| `max-segments` | The rendered name has more delimiter-separated segments than `max_segments.max`. |
+| `tag-key-length` | A projected tag key is shorter than `key.min_length` or longer than `key.max_length`. |
+| `tag-key-character` | A projected tag key contains a code point outside `key.character_constraints`. |
+| `tag-key-forbidden-prefix` | A projected tag key starts with an entry of `key.forbidden_prefixes`. |
+| `tag-value-length` | A projected tag value is shorter than `value.min_length` or longer than `value.max_length`. |
+| `tag-value-character` | A projected tag value contains a code point outside `value.character_constraints`. |
+| `tag-value-forbidden-prefix` | A projected tag value starts with an entry of `value.forbidden_prefixes`. |
+| `tag-count` | More tags are projected than `max_count`. |
+
 ### Placement Constraints
 
 Placement Constraints describe the valid deployment topology for a resource type — not
@@ -509,7 +619,10 @@ Reference Evaluator implementations report the same outcome for the same input:
 3. `character_constraints`
 4. `starts_with` / `ends_with`
 5. `forbidden_prefixes` / `forbidden_suffixes`
-6. Placement Constraints with an executable `rule`
+6. `max_segments` (Specification v1.5)
+7. Placement Constraints with an executable `rule`
+8. `tag_constraints`, per projected tag and then `max_count` (Specification v1.5; see
+   [Validation order and failure codes](#validation-order-and-failure-codes-specification-v15))
 
 This order proceeds from the coarsest, cheapest check (a single length comparison) to
 progressively finer-grained checks (individual code points, then whole-name boundary
@@ -523,7 +636,7 @@ A Placement Constraint with no executable `rule` (see [The conditional-input
 problem](#the-conditional-input-problem) above) contributes no automated validation
 outcome; it remains descriptive only.
 
-Steps 4, 5, and 6 each combine more than one constraint family or entry; within each,
+Steps 4, 5, and 7 each combine more than one constraint family or entry; within each,
 the following sub-order is also normative, so that no combined step is itself
 ambiguous between two independently conforming implementations:
 
@@ -532,7 +645,7 @@ ambiguous between two independently conforming implementations:
   each of those two fields, its entries are themselves evaluated in declaration order,
   unchanged from [Reserved prefixes and suffixes](#reserved-prefixes-and-suffixes)
   above.
-- Within step 6, `PlacementConstraint` entries are evaluated in the declaration order
+- Within step 7, `PlacementConstraint` entries are evaluated in the declaration order
   of the `placement_constraints` array.
 
 This sub-ordering is, like the top-level order above, only about the deterministic
@@ -570,6 +683,9 @@ of one (`max_length`). The closed vocabulary is:
 | `forbidden-prefix` | The rendered name starts with an entry of `forbidden_prefixes`. |
 | `forbidden-suffix` | The rendered name ends with an entry of `forbidden_suffixes`. |
 | `placement` | The resolved Resource Identity does not satisfy an executable Placement Constraint `rule`. |
+
+Specification v1.5 extends this vocabulary with `max-segments` and the `tag-*` codes
+(see [Validation order and failure codes](#validation-order-and-failure-codes-specification-v15)).
 
 `code` remains optional and additive: a `ConventionValidationFailure` produced for a
 reason this vocabulary does not cover (for example, required-attribute completeness,
