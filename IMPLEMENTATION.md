@@ -1458,11 +1458,12 @@ implemented.
   itself is reserved for a possible future convenience package and is not created yet.
 - `core`, `catalog`, and `cli` are publishable (no `"private"` field) as of Milestone 4.5, each
   at the synchronized prerelease version declared in each package's `package.json` (currently
-  `0.1.0-alpha.1`), with `publishConfig.registry` pointed at GitHub Packages (see [Release
+  `0.1.0-alpha.2`), with `publishConfig.registry` pointed at GitHub Packages (see [Release
   Readiness](#release-readiness) below). The monorepo root itself remains `"private": true` and
   is never published. The first alpha, `0.1.0-alpha.0`, has been published to GitHub Packages
-  via [`publish-alpha.yml`](.github/workflows/publish-alpha.yml); the current synchronized
-  version, `0.1.0-alpha.1`, is prepared but not yet published.
+  via [`publish-alpha.yml`](.github/workflows/publish-alpha.yml), and `0.1.0-alpha.1` is tagged
+  `v0.1.0-alpha.1`; the current synchronized version, `0.1.0-alpha.2`, is prepared but not
+  yet published.
 - During this initial implementation phase, package versions are kept synchronized
   (single repository version) rather than independently versioned; independent
   versioning is only introduced once a package has an actual reason to release on its
@@ -1652,7 +1653,7 @@ and no product behavior changed.
   build kept as an alternative.
 - **Publication order:** `core`, then `catalog`, then `cli` — required by the exact-pinned
   internal dependency versions (`catalog` depends on `core` at the synchronized version; `cli`
-  depends on both `catalog` and `core` at that same version — currently `0.1.0-alpha.1`);
+  depends on both `catalog` and `core` at that same version — currently `0.1.0-alpha.2`);
   publishing a dependent before its dependency exists on the registry would fail the dependent's
   own install.
 - **Registry target: GitHub Packages only (decided during first-alpha release-readiness
